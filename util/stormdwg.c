@@ -2,7 +2,7 @@
 
 
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/util/stormdwg.c,v 1.1 1997/04/12 14:11:29 hohndel Exp $ */
+/* $XFree86$ */
 
 #include <stdio.h>
 /* #include <stdlib.h> */
