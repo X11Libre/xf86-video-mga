@@ -47,11 +47,6 @@
  
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.244tsi Exp $ */
 
-/*
- * This is a first cut at a non-accelerated version to work with the
- * new server design (DHD).
- */
-
 
 /* All drivers should typically include these */
 #include "xf86.h"
