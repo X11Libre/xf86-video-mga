@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.98 2003/01/16 16:09:10 eich Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99 2004/01/29 03:28:25 dawes Exp $ */
 
 
 /* All drivers should typically include these */
@@ -1076,7 +1076,9 @@ MGAStormSync(ScrnInfoPtr pScrn)
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    while(MGAISBUSY());
+    /* This reportedly causes a freeze for the Mystique. */
+    if (pMga->Chipset != PCI_CHIP_MGA1064)
+	while(MGAISBUSY());
     /* flush cache before a read (mga-1064g 5.1.6) */
     OUTREG8(MGAREG_CRTC_INDEX, 0);
     if(pMga->AccelFlags & CLIPPER_ON) {
