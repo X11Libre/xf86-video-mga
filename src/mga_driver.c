@@ -45,7 +45,7 @@
  *		Added digital screen option for first head
  */
  
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.231 2003/01/29 19:29:49 eich Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.244 2003/11/03 05:11:17 tsi Exp $ */
 
 /*
  * This is a first cut at a non-accelerated version to work with the
@@ -124,8 +124,8 @@ static void     VgaIORestore(int i, void *arg);
 
 /* Optional functions */
 static void	MGAFreeScreen(int scrnIndex, int flags);
-static int	MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose,
-			     int flags);
+static ModeStatus MGAValidMode(int scrnIndex, DisplayModePtr mode,
+			       Bool verbose, int flags);
 
 /* Internally used functions */
 static Bool	MGAMapMem(ScrnInfoPtr pScrn);
@@ -272,10 +272,8 @@ static const char *xaaSymbols[] = {
     "XAACreateInfoRec",
     "XAADestroyInfoRec",
     "XAAFallbackOps",
-    "XAAFillSolidRects",
     "XAAInit",
     "XAAMoveDWORDS",
-    "XAAScreenIndex",
     "XAA_888_plus_PICT_a8_to_8888",
     NULL
 };
@@ -287,7 +285,6 @@ static const char *ramdacSymbols[] = {
     NULL
 };
 
-#ifdef XFree86LOADER
 #ifdef XF86DRI
 static const char *drmSymbols[] = {
     "drmAddBufs",
@@ -304,7 +301,10 @@ static const char *drmSymbols[] = {
     "drmAgpVendorId",
     "drmCommandNone",
     "drmCommandWrite",
+    "drmCtlInstHandler",
+    "drmCtlUninstHandler",
     "drmFreeVersion",
+    "drmGetInterruptFromBusID",
     "drmGetLibVersion",
     "drmGetVersion",
     "drmMap",
@@ -327,7 +327,6 @@ static const char *driSymbols[] = {
     "GlxSetVisualConfigs",
     NULL
 };
-#endif
 #endif
 
 #define MGAuseI2C 1
@@ -980,12 +979,10 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 {
   vgaHWPtr hwp;
   MGAPtr pMga;
-  MGARamdacPtr MGAdac;
   xf86MonPtr MonInfo = NULL;
 
   hwp = VGAHWPTR(pScrn);
   pMga = MGAPTR(pScrn);
-  MGAdac = &pMga->Dac;
 
   /* Load DDC if we have the code to use it */
   /* This gives us DDC1 */
@@ -1052,7 +1049,8 @@ MGAdoDDC(ScrnInfoPtr pScrn)
   /* Read and output monitor info using DDC2 over I2C bus */
   if (pMga->I2C) {
     MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->I2C);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", MonInfo);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n",
+		(void *)MonInfo);
     xf86PrintEDID(MonInfo);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
   }
@@ -1063,7 +1061,8 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
 					 pMga->DDC1SetSpeed,
 					 pMga->ddc1Read ) ;
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", MonInfo);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n",
+	       (void *)MonInfo);
     xf86PrintEDID( MonInfo );
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
   }
@@ -1075,7 +1074,8 @@ MGAdoDDC(ScrnInfoPtr pScrn)
       vbeFree(pVbe);
 
       if (MonInfo){
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", MonInfo);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n",
+		   (void *)MonInfo);
 	xf86PrintEDID( MonInfo );
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
       }
@@ -1438,7 +1438,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (pMga->SecondCrtc)
 	flags24 = Support32bppFb;
 
-    if (!xf86SetDepthBpp(pScrn, 8, 8, 8, flags24)) {
+    if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24)) {
 	return FALSE;
     } else {
 	/* Check that the returned depth is one we support */
@@ -2403,6 +2403,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86LoaderReqSymLists(shadowSymbols, NULL);
     }
 
+#ifdef XF86DRI
+    /* Load the dri module if requested. */
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_DRI, FALSE)) {
+       if (xf86LoadSubModule(pScrn, "dri")) {
+	  xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
+       }
+    }
+#endif
     pMga->CurrentLayout.bitsPerPixel = pScrn->bitsPerPixel;
     pMga->CurrentLayout.depth = pScrn->depth;
     pMga->CurrentLayout.displayWidth = pScrn->displayWidth;
@@ -3489,19 +3497,28 @@ MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
     char sCmdIn[256];
     char sCmdOut[256];
     FILE* fdIn;
+# ifdef MATROX_WRITEBACK
     FILE* fdOut;
+# endif
 #endif
-    MGAPtr pMga;
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    pMga = MGAPTR(pScrn);
  
     if  (mode->Flags & 0x80000000) {
 #ifdef USEMGAHAL
-     MGA_HAL(
+
+# ifdef MATROX_WRITEBACK
+#  define MWB(x) { x; }
+#  define MWB_COND(x) x
+# else
+#  define MWB(x)
+#  define MWB_COND(x) 1
+# endif
+	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+
+	MGA_HAL(
 	fdIn = fopen("/tmp/mgaDriverIn", "rt");
-	fdOut = fopen("/tmp/mgaDriverOut", "wt");
- 
-	if(fdIn && fdOut)
+	MWB(fdOut = fopen("/tmp/mgaDriverOut", "wt"))
+
+	if(fdIn && MWB_COND(fdOut))
 	{
  
 	    fgets(sCmdIn, 255, fdIn);
@@ -3514,11 +3531,12 @@ MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 		/* Remove file and close file descriptor */
 		remove("/tmp/mgaDriverIn");
 		fclose(fdIn);
- 
-		/* Write output data to output file for calling application */
-		fputs(sCmdOut, fdOut);
-		fclose(fdOut);
- 
+		MWB(
+		    /* Write output data to output file for
+		       calling application */
+		    fputs(sCmdOut, fdOut);
+		    fclose(fdOut);
+		    )
 		mode->Flags &= 0x7FFFFFFF;
 		return TRUE;
 	    }
@@ -3900,7 +3918,7 @@ MGAFreeScreen(int scrnIndex, int flags)
 /* Checks if a mode is suitable for the selected chipset. */
 
 /* Optional */
-static int
+static ModeStatus
 MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 {
     int lace;

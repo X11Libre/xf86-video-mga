@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.56 2001/04/05 21:29:14 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.58 2003/11/03 05:11:17 tsi Exp $ */
 /*
  * Copyright 1994 by Robin Cutshaw <robin@XFree86.org>
  *
@@ -277,16 +277,12 @@ MGATi3026CalcClock (
 static void
 MGATi3026SetMCLK( ScrnInfoPtr pScrn, long f_out )
 {
-	double f_pll;
 	int mclk_m, mclk_n, mclk_p;
 	int pclk_m, pclk_n, pclk_p;
 	int mclk_ctl;
 	MGAPtr pMga = MGAPTR(pScrn);
 
-	f_pll = MGATi3026CalcClock(
-		f_out, TI_MAX_MCLK_FREQ,
-		& mclk_m, & mclk_n, & mclk_p
-	);
+	MGATi3026CalcClock(f_out, TI_MAX_MCLK_FREQ, &mclk_m, &mclk_n, &mclk_p);
 
 	/* Save PCLK settings */
 	outTi3026( TVP3026_PLL_ADDR, 0, 0xfc );
@@ -1079,7 +1075,8 @@ MGA3026RamdacInit(ScrnInfoPtr pScrn)
 				HARDWARE_CURSOR_SOURCE_MASK_NOT_INTERLEAVED;
 
     MGAdac->LoadPalette 	= MGA3026LoadPalette;
-
+    MGAdac->RestorePalette	= MGA3026RestorePalette;
+    
     MGAdac->ClockFrom = X_PROBED;
     if ( pMga->Chipset == PCI_CHIP_MGA2064 && pMga->Bios2.PinID == 0 )
     {
