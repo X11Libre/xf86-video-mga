@@ -88,6 +88,7 @@
 #include "mga_reg.h"
 #include "mga.h"
 #include "mga_macros.h"
+#include "mga_maven.h"
 
 #include "xaa.h"
 #include "xf86cmap.h"
@@ -996,9 +997,8 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	} else {
 	  /* ddc module not found, we can do without it */
 	  pMga->ddc1Read = NULL;
-
-	  /* Without DDC, we have no use for the I2C bus */
-	  pMga->i2cInit = NULL;
+	  pMga->DDC_Bus1 = NULL;
+	  pMga->DDC_Bus2 = NULL;
 	  return NULL;
 	}
     } else 
@@ -1013,7 +1013,8 @@ MGAdoDDC(ScrnInfoPtr pScrn)
       } else {
 	/* i2c module not found, we can do without it */
 	pMga->i2cInit = NULL;
-	pMga->I2C = NULL;
+	pMga->DDC_Bus1 = NULL;
+	pMga->DDC_Bus2 = NULL;
       }
     }
 #endif /* MGAuseI2C */
@@ -1046,47 +1047,58 @@ MGAdoDDC(ScrnInfoPtr pScrn)
   /* It is now safe to talk to the card */
 
 #if MGAuseI2C
-  /* Initialize I2C bus - used by DDC if available */
+  /* Initialize I2C buses - used by DDC if available */
   if (pMga->i2cInit) {
     pMga->i2cInit(pScrn);
   }
-  /* Read and output monitor info using DDC2 over I2C bus */
-  if (pMga->I2C) {
-    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->I2C);
+
+   /* DDC for second head... */
+  if (pMga->SecondCrtc && pMga->DDC_Bus2) {
+    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->DDC_Bus2);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n",
 		(void *)MonInfo);
     xf86PrintEDID(MonInfo);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
+    xf86SetDDCproperties(pScrn, MonInfo);
+    return MonInfo;
   }
-  if (!MonInfo)
+
+  else {
+	/* Its the first head... */ 
+	  if (pMga->DDC_Bus1) {
+	    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->DDC_Bus1);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", MonInfo);
+	    xf86PrintEDID(MonInfo);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
+	  }
+	  if (!MonInfo)
 #endif /* MGAuseI2C */
-  /* Read and output monitor info using DDC1 */
-  if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
-    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
-					 pMga->DDC1SetSpeed,
-					 pMga->ddc1Read ) ;
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n",
-	       (void *)MonInfo);
-    xf86PrintEDID( MonInfo );
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
-  }
-  if (!MonInfo){
-    vbeInfoPtr pVbe;
-    if (xf86LoadSubModule(pScrn, "vbe")) {
-      pVbe = VBEInit(NULL,pMga->pEnt->index);
-      MonInfo = vbeDoEDID(pVbe, NULL);
-      vbeFree(pVbe);
-
-      if (MonInfo){
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n",
-		   (void *)MonInfo);
-	xf86PrintEDID( MonInfo );
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
-      }
-    }
-  }
-
-
+	  /* Read and output monitor info using DDC1 */
+	  if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
+	    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
+						 pMga->DDC1SetSpeed,
+						 pMga->ddc1Read ) ;
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", MonInfo);
+	    xf86PrintEDID( MonInfo );
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
+	  }
+	  if (!MonInfo){
+	    vbeInfoPtr pVbe;
+	    if (xf86LoadSubModule(pScrn, "vbe")) {
+	      pVbe = VBEInit(NULL,pMga->pEnt->index);
+	      MonInfo = vbeDoEDID(pVbe, NULL);
+	      vbeFree(pVbe);
+	
+	      if (MonInfo){
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", MonInfo);
+		xf86PrintEDID( MonInfo );
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
+	      }
+	    }
+	  }
+#if MGAuseI2C
+   }
+#endif
   /* Restore previous state and unmap MGA memory and MMIO areas */
   MGARestore(pScrn);
   MGAUnmapMem(pScrn);
@@ -1168,6 +1180,30 @@ MGAProbeDDC(ScrnInfoPtr pScrn, int index)
 	ConfiguredMonitor = vbeDoEDID(pVbe, NULL);
 	vbeFree(pVbe); 
     }
+}
+
+Bool
+MGAMavenRead(ScrnInfoPtr pScrn, I2CByte reg, I2CByte *val)
+{
+	MGAPtr pMga = MGAPTR(pScrn);
+
+	if (!pMga->Maven) return FALSE;
+
+	/* FIXME: Using private interfaces for the moment until a more
+	 * flexible xf86I2CWriteRead() variant shows up for us
+	 *
+	 * MAVEN does _not_ like a start bit in the middle of its transaction
+	 * MAVEN does _not_ like ACK at the end of the transaction
+	 */
+
+	if (!pMga->Maven_Bus->I2CStart(pMga->Maven_Bus, pMga->Maven->ByteTimeout)) return FALSE;
+	if (!pMga->Maven_Bus->I2CPutByte(pMga->Maven, MAVEN_READ)) return FALSE;
+	if (!pMga->Maven_Bus->I2CPutByte(pMga->Maven, reg)) return FALSE;
+	pMga->Maven_Bus->I2CStop(pMga->Maven);
+	if (!pMga->Maven_Bus->I2CGetByte(pMga->Maven, val, 0)) return FALSE;
+	pMga->Maven_Bus->I2CStop(pMga->Maven);
+
+	return TRUE;
 }
 
 /* Mandatory */
@@ -3974,6 +4010,8 @@ MGASaveScreen(ScreenPtr pScreen, int mode)
  * MGADisplayPowerManagementSet --
  *
  * Sets VESA Display Power Management Signaling (DPMS) Mode.
+ *
+ * XXX This needs fixing for sync-on-green!
  */
 void
 MGADisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
@@ -4020,12 +4058,55 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 				  int flags)
 {
 	MGAPtr pMga = MGAPTR(pScrn);
-	CARD32 crtc2 = 0;
+	CARD32 val = INREG(MGAREG_C2CTL);
 
-        if (PowerManagementMode != DPMSModeOn)
-            crtc2 = 0x8;			/* c2pixclkdis */
-	crtc2 |= INREG(MGAREG_C2CTL) & ~0x8;
-	OUTREG(MGAREG_C2CTL, crtc2);
+	if (PowerManagementMode==DPMSModeOn) {
+		/* Enable CRTC2 */
+		val |= 0x1;
+		val &= ~(0x8);
+		OUTREG(MGAREG_C2CTL, val);
+		/* Restore normal MAVEN values */
+		if (pMga->Maven) {
+			/* if TV MODE -- for later implementation
+				MAVW(MONEN, 0xb3);
+				MAVW(MONSET, 0x20);
+				MAVW(OUTMODE, 0x08);    output: SVideo/Composite
+			        MAVW(STABLE, 0x02);             makes picture stable?
+				fixme? linux uses 0x14...
+				MAVW(TEST, (MAVR(TEST) & 0x10));
+			 
+			 */
+			/* else monitor mode */
+
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_MONEN, 0xb2);
+			/* must be set to this in monitor mode */
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_MONSET, 0x20);
+			/* output: monitor mode */
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_OUTMODE, 0x03);
+			/* makes picture stable? */
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_STABLE, 0x22);
+			/* turn off test signal */
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_TEST, 0x00);
+		}
+	}
+	else {
+		/* Disable CRTC2 video */
+		val |= 0x8;
+		val &= ~(0x1);
+		OUTREG(MGAREG_C2CTL, val);
+
+		/* Disable MAVEN display */
+		if (pMga->Maven) {
+		/* In order to blank the 2nd display, we must set some MAVEN registers.
+		 * It seems that not always the same values work on different hardware so
+		 * we try a few different (possibly redundant) ones. */
+			/* xf86I2CWriteByte(pMga->Maven, MGAMAV_STABLE, 0x6a); */
+			/* xf86I2CWriteByte(pMga->Maven, MGAMAV_TEST, 0x03); */
+			/* xf86I2CWriteByte(pMga->Maven, MGAMAV_TEST, 0x10); */
+			xf86I2CWriteByte(pMga->Maven, MGAMAV_OUTMODE, 0x80);
+		}
+
+	}
 }
 
 

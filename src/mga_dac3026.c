@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.56 2001/04/05 21:29:14 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.58tsi Exp $ */
 /*
  * Copyright 1994 by Robin Cutshaw <robin@XFree86.org>
  *
@@ -277,16 +277,12 @@ MGATi3026CalcClock (
 static void
 MGATi3026SetMCLK( ScrnInfoPtr pScrn, long f_out )
 {
-	double f_pll;
 	int mclk_m, mclk_n, mclk_p;
 	int pclk_m, pclk_n, pclk_p;
 	int mclk_ctl;
 	MGAPtr pMga = MGAPTR(pScrn);
 
-	f_pll = MGATi3026CalcClock(
-		f_out, TI_MAX_MCLK_FREQ,
-		& mclk_m, & mclk_n, & mclk_p
-	);
+	MGATi3026CalcClock(f_out, TI_MAX_MCLK_FREQ, &mclk_m, &mclk_n, &mclk_p);
 
 	/* Save PCLK settings */
 	outTi3026( TVP3026_PLL_ADDR, 0, 0xfc );
@@ -988,7 +984,8 @@ MGA3026_ddc1Read(ScrnInfoPtr pScrn)
 static void
 MGA3026_I2CGetBits(I2CBusPtr b, int *clock, int *data) 
 {
-  MGAPtr pMga = MGAPTR(xf86Screens[b->scrnIndex]);
+  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
+  MGAPtr pMga = MGAPTR(pScrn);
   unsigned char val;
 
   /* Get the result. */
@@ -1009,7 +1006,8 @@ MGA3026_I2CGetBits(I2CBusPtr b, int *clock, int *data)
 static void
 MGA3026_I2CPutBits(I2CBusPtr b, int clock, int data)
 {
-  MGAPtr pMga = MGAPTR(xf86Screens[b->scrnIndex]);
+  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
+  MGAPtr pMga = MGAPTR(pScrn);
   unsigned char val,drv;
 
   /* Write the values */
@@ -1035,7 +1033,7 @@ MGA3026_i2cInit(ScrnInfoPtr pScrn)
     I2CPtr = xf86CreateI2CBusRec();
     if(!I2CPtr) return FALSE;
 
-    pMga->I2C = I2CPtr;
+    pMga->DDC_Bus1 = I2CPtr;
 
     I2CPtr->BusName    = "DDC";
     I2CPtr->scrnIndex  = pScrn->scrnIndex;
@@ -1079,7 +1077,8 @@ MGA3026RamdacInit(ScrnInfoPtr pScrn)
 				HARDWARE_CURSOR_SOURCE_MASK_NOT_INTERLEAVED;
 
     MGAdac->LoadPalette 	= MGA3026LoadPalette;
-
+    MGAdac->RestorePalette	= MGA3026RestorePalette;
+    
     MGAdac->ClockFrom = X_PROBED;
     if ( pMga->Chipset == PCI_CHIP_MGA2064 && pMga->Bios2.PinID == 0 )
     {
