@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_video.c,v 1.33 2003/11/10 18:22:23 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_video.c,v 1.33tsi Exp $ */
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -460,6 +460,7 @@ MGACopyData(
 ){
     w <<= 1;
     while(h--) {
+	/* XXX Maybe this one needs big-endian fixes, too? -ReneR */
 	memcpy(dst, src, w);
 	src += srcPitch;
 	dst += dstPitch;
@@ -489,16 +490,27 @@ MGACopyMungedData(
         s1 = src1;  s2 = src2;  s3 = src3;
         i = w;
         while(i > 4) {
+#if X_BYTE_ORDER == X_LITTLE_ENDIAN
            dst[0] = s1[0] | (s1[1] << 16) | (s3[0] << 8) | (s2[0] << 24);
            dst[1] = s1[2] | (s1[3] << 16) | (s3[1] << 8) | (s2[1] << 24);
            dst[2] = s1[4] | (s1[5] << 16) | (s3[2] << 8) | (s2[2] << 24);
            dst[3] = s1[6] | (s1[7] << 16) | (s3[3] << 8) | (s2[3] << 24);
+#else
+           dst[0] = (s1[0] << 16) | s1[1] | (s3[0] << 24) | (s2[0] << 8);
+           dst[1] = (s1[2] << 16) | s1[3] | (s3[1] << 24) | (s2[1] << 8);
+           dst[2] = (s1[4] << 16) | s1[5] | (s3[2] << 24) | (s2[2] << 8);
+           dst[3] = (s1[6] << 16) | s1[7] | (s3[3] << 24) | (s2[3] << 8);
+#endif
            dst += 4; s2 += 4; s3 += 4; s1 += 8;
            i -= 4;
         }
 
         while(i--) {
+#if X_BYTE_ORDER == X_LITTLE_ENDIAN
            dst[0] = s1[0] | (s1[1] << 16) | (s3[0] << 8) | (s2[0] << 24);
+#else
+           dst[0] = (s1[0] << 16) | s1[1] | (s3[0] << 24) | (s2[0] << 8);
+#endif
            dst++; s2++; s3++;
            s1 += 2;
         }
@@ -1008,7 +1020,8 @@ MGAStopSurface(
     OffscreenPrivPtr pPriv = (OffscreenPrivPtr)surface->devPrivate.ptr;
 
     if(pPriv->isOn) {
-	MGAPtr pMga = MGAPTR(surface->pScrn);
+	ScrnInfoPtr pScrn = surface->pScrn;
+	MGAPtr pMga = MGAPTR(pScrn);
 	OUTREG(MGAREG_BESCTL, 0);
 	pPriv->isOn = FALSE;
     }

@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dga.c,v 1.17 2003/10/08 15:48:41 eich Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dga.c,v 1.14 1999/11/02 23:12:00 mvojkovi Exp $ */
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
