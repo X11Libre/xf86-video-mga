@@ -745,7 +745,7 @@ MGANAME(AccelInit)(ScreenPtr pScreen)
 	infoPtr->SubsequentScreenToScreenColorExpandFill =
 		MGANAME(SubsequentPlanarScreenToScreenColorExpandFill);
 	infoPtr->CacheColorExpandDensity = PSZ;
-	infoPtr->CacheMonoStipple = XAACachePlanarMonoStippleWeak();
+	infoPtr->CacheMonoStipple = XAAGetCachePlanarMonoStipple();
 	/* It's faster to blit the stipples if you have fastbilt */
 	if(pMga->HasFBitBlt)
 	    infoPtr->ScreenToScreenColorExpandFillFlags = TRANSPARENCY_ONLY;
