@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_esc.c,v 1.3 2003/10/31 15:06:25 tsi Exp $ */
+/* $XFree86$ */
 /****************************************************************************
 * mga_esc.c
 *
