@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dh.c,v 1.4tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dh.c,v 1.4 2002/01/11 15:42:57 dawes Exp $ */
 /*********************************************************************
 *  	G450: This is for Dual Head. 
 *       Matrox Graphics
@@ -151,11 +151,13 @@ void MGACRTC2Get(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
     CARD32 ulHTotal;
     CARD32 ulHDispEnd;
     CARD32 ulHBlkStr;
+    CARD32 ulHBlkEnd;
     CARD32 ulHSyncStr;
     CARD32 ulHSyncEnd;
     CARD32 ulVTotal;
     CARD32 ulVDispEnd;
     CARD32 ulVBlkStr;
+    CARD32 ulVBlkEnd;
     CARD32 ulVSyncStr;
     CARD32 ulVSyncEnd;
     CARD32 ulOffset;
@@ -179,6 +181,7 @@ void MGACRTC2Get(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
     
     ulHDispEnd = tmpModeInfo.ulDispWidth;
     ulHBlkStr  = ulHDispEnd;
+    ulHBlkEnd  = ulHBlkStr + tmpModeInfo.ulHBPorch + tmpModeInfo.ulHFPorch + tmpModeInfo.ulHSync;
     ulHSyncStr = ulHBlkStr + tmpModeInfo.ulHFPorch;
     ulHSyncEnd = ulHSyncStr + tmpModeInfo.ulHSync;
     
@@ -190,6 +193,7 @@ void MGACRTC2Get(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
     
     ulVDispEnd = ulDispHeight;
     ulVBlkStr = ulVDispEnd;
+    ulVBlkEnd = ulVBlkStr + tmpModeInfo.ulVBPorch + tmpModeInfo.ulVFPorch + tmpModeInfo.ulVSync;
     ulVSyncStr = ulVBlkStr + tmpModeInfo.ulVFPorch;
     ulVSyncEnd = ulVSyncStr + tmpModeInfo.ulVSync;
     
@@ -281,7 +285,7 @@ void MGACRTC2Set(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
 void MGAEnableSecondOutPut(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
 {
     CARD8   ucByte, ucXDispCtrl;
-    CARD32   ulC2CTL;
+    CARD32   ulC2CTL, ulStatusReg;
     MGAPtr pMga = MGAPTR(pScrn);
     MGARegPtr pReg;
     pReg = &pMga->ModeReg;
@@ -296,8 +300,8 @@ void MGAEnableSecondOutPut(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
     /*--- Disable Pixel clock oscillations On Crtc1 */
     OUTREG( MGAREG_C2CTL, ulC2CTL | C2CTL_PIXCLKDIS_MASK);
     /*--- Have to wait minimum time (2 acces will be ok) */
-    (void) INREG( MGAREG_Status);
-    (void) INREG( MGAREG_Status);
+    ulStatusReg = INREG( MGAREG_Status);
+    ulStatusReg = INREG( MGAREG_Status);
     
     
     ulC2CTL &= ~(C2CTL_PIXCLKSEL_MASK | C2CTL_PIXCLKSELH_MASK);

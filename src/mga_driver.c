@@ -45,7 +45,7 @@
  *		Added digital screen option for first head
  */
  
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.244tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.236 2003/08/23 15:03:02 dawes Exp $ */
 
 /*
  * This is a first cut at a non-accelerated version to work with the
@@ -124,8 +124,8 @@ static void     VgaIORestore(int i, void *arg);
 
 /* Optional functions */
 static void	MGAFreeScreen(int scrnIndex, int flags);
-static ModeStatus MGAValidMode(int scrnIndex, DisplayModePtr mode,
-			       Bool verbose, int flags);
+static int	MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose,
+			     int flags);
 
 /* Internally used functions */
 static Bool	MGAMapMem(ScrnInfoPtr pScrn);
@@ -134,7 +134,7 @@ static void	MGASave(ScrnInfoPtr pScrn);
 static void	MGARestore(ScrnInfoPtr pScrn);
 static Bool	MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
 static void 	MGABlockHandler(int, pointer, pointer, pointer);
-static void	MGAG100BlackMagic(ScrnInfoPtr pScrn);
+static void     MGAG100BlackMagic(MGAPtr pMga);
 
 static int MGAEntityIndex = -1;
 
@@ -272,8 +272,10 @@ static const char *xaaSymbols[] = {
     "XAACreateInfoRec",
     "XAADestroyInfoRec",
     "XAAFallbackOps",
+    "XAAFillSolidRects",
     "XAAInit",
     "XAAMoveDWORDS",
+    "XAAScreenIndex",
     "XAA_888_plus_PICT_a8_to_8888",
     NULL
 };
@@ -285,6 +287,7 @@ static const char *ramdacSymbols[] = {
     NULL
 };
 
+#ifdef XFree86LOADER
 #ifdef XF86DRI
 static const char *drmSymbols[] = {
     "drmAddBufs",
@@ -300,7 +303,9 @@ static const char *drmSymbols[] = {
     "drmAgpUnbind",
     "drmAgpVendorId",
     "drmCommandNone",
+    "drmCommandRead",
     "drmCommandWrite",
+    "drmCommandWriteRead",
     "drmCtlInstHandler",
     "drmCtlUninstHandler",
     "drmFreeVersion",
@@ -327,6 +332,7 @@ static const char *driSymbols[] = {
     "GlxSetVisualConfigs",
     NULL
 };
+#endif
 #endif
 
 #define MGAuseI2C 1
@@ -413,7 +419,7 @@ static XF86ModuleVersionInfo mgaVersRec =
 	MODULEVENDORSTRING,
 	MODINFOSTRING1,
 	MODINFOSTRING2,
-	XORG_VERSION_CURRENT,
+	XF86_VERSION_CURRENT,
 	MGA_MAJOR_VERSION, MGA_MINOR_VERSION, MGA_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,			/* This is a video driver */
 	ABI_VIDEODRV_VERSION,
@@ -926,7 +932,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 		return 16384;
 	    }
 	}
-	ProbeSize = 8192;
+	ProbeSize = 16384;
 	break;
     case PCI_CHIP_MGAG100:
     case PCI_CHIP_MGAG100_PCI:
@@ -954,14 +960,11 @@ MGACountRam(ScrnInfoPtr pScrn)
 	tmp = INREG8(MGAREG_CRTCEXT_DATA);
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp | 0x80);
 
-	/* write, read and compare method
-	   split into two loops to make it more reliable on RS/6k -ReneR */
+	/* write, read and compare method */
 	for(i = ProbeSize; i > 2048; i -= 2048) {
 	    base[(i * 1024) - 1] = 0xAA;
-	}
-	OUTREG8(MGAREG_CRTC_INDEX, 0);  /* flush the cache */
-	usleep(4);  /* twart write combination */
-	for(i = ProbeSize; i > 2048; i -= 2048) {
+	    OUTREG8(MGAREG_CRTC_INDEX, 0);  /* flush the cache */
+	    usleep(1);  /* twart write combination */
 	    if(base[(i * 1024) - 1] == 0xAA) {
 		SizeFound = i;
 		break;
@@ -982,10 +985,12 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 {
   vgaHWPtr hwp;
   MGAPtr pMga;
+  MGARamdacPtr MGAdac;
   xf86MonPtr MonInfo = NULL;
 
   hwp = VGAHWPTR(pScrn);
   pMga = MGAPTR(pScrn);
+  MGAdac = &pMga->Dac;
 
   /* Load DDC if we have the code to use it */
   /* This gives us DDC1 */
@@ -1052,8 +1057,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
   /* Read and output monitor info using DDC2 over I2C bus */
   if (pMga->I2C) {
     MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->I2C);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n",
-		(void *)MonInfo);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", MonInfo);
     xf86PrintEDID(MonInfo);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
   }
@@ -1064,8 +1068,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
 					 pMga->DDC1SetSpeed,
 					 pMga->ddc1Read ) ;
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n",
-	       (void *)MonInfo);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", MonInfo);
     xf86PrintEDID( MonInfo );
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
   }
@@ -1077,8 +1080,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
       vbeFree(pVbe);
 
       if (MonInfo){
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n",
-		   (void *)MonInfo);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", MonInfo);
 	xf86PrintEDID( MonInfo );
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
       }
@@ -1265,7 +1267,12 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     pMga->Access.AccessDisable = VgaIODisable;
     pMga->Access.AccessEnable = VgaIOEnable;
     pMga->Access.arg = pMga;
-    xf86SetAccessFuncs(pMga->pEnt, &pMga->Access, &pMga->Access);
+    /* please check if this is correct. I've impiled that the VGA fb
+       is handled locally and not visible outside. If the VGA fb is
+       handeled by the same function the third argument has to be set,
+       too.*/
+    xf86SetAccessFuncs(pMga->pEnt, &pMga->Access, &pMga->Access,
+			&pMga->Access, NULL);
 #endif
 
     /* Set pScrn->monitor */
@@ -1762,9 +1769,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	}
 	pMga->IOAddress = pMga->device->IOBase;
 	from = X_CONFIG;
-    } else
-#endif
-    {
+    } else {
 	/* details: mgabase1 sdk pp 4-11 */
 	int i = ((pMga->Chipset == PCI_CHIP_MGA1064 && pMga->ChipRev < 3) ||
 		    pMga->Chipset == PCI_CHIP_MGA2064) ? 0 : 1;
@@ -1778,6 +1783,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    return FALSE;
 	}
     }
+#else
+    pMga->IOAddress = pMga->PciInfo->memBase[0];
+#endif
     xf86DrvMsg(pScrn->scrnIndex, from, "MMIO registers at 0x%lX\n",
 	       (unsigned long)pMga->IOAddress);
 
@@ -2400,14 +2408,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86LoaderReqSymLists(shadowSymbols, NULL);
     }
 
-#ifdef XF86DRI
-    /* Load the dri module if requested. */
-    if (xf86ReturnOptValBool(pMga->Options, OPTION_DRI, FALSE)) {
-       if (xf86LoadSubModule(pScrn, "dri")) {
-	  xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
-       }
-    }
-#endif
     pMga->CurrentLayout.bitsPerPixel = pScrn->bitsPerPixel;
     pMga->CurrentLayout.depth = pScrn->depth;
     pMga->CurrentLayout.displayWidth = pScrn->displayWidth;
@@ -2502,6 +2502,7 @@ MGAMapMem(ScrnInfoPtr pScrn)
 	return FALSE;
 
     pMga->FbStart = pMga->FbBase + pMga->YDstOrg * (pScrn->bitsPerPixel / 8);
+
 
     /* Map the ILOAD transfer window if there is one.  We only make
 	DWORD access on DWORD boundaries to this window */
@@ -3070,7 +3071,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     
     if ((pMga->Chipset == PCI_CHIP_MGAG100)
 	|| (pMga->Chipset == PCI_CHIP_MGAG100_PCI))
-        MGAG100BlackMagic(pScrn);
+        MGAG100BlackMagic(pMga);
 
     if (pMga->DualHeadEnabled) {
        DevUnion *pPriv;
@@ -3497,6 +3498,9 @@ MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
     FILE* fdOut;
 # endif
 #endif
+    MGAPtr pMga;
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    pMga = MGAPTR(pScrn);
  
     if  (mode->Flags & 0x80000000) {
 #ifdef USEMGAHAL
@@ -3508,7 +3512,6 @@ MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 #  define MWB(x)
 #  define MWB_COND(x) 1
 # endif
-	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 
 	MGA_HAL(
 	fdIn = fopen("/tmp/mgaDriverIn", "rt");
@@ -3914,7 +3917,7 @@ MGAFreeScreen(int scrnIndex, int flags)
 /* Checks if a mode is suitable for the selected chipset. */
 
 /* Optional */
-static ModeStatus
+static int
 MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 {
     int lace;
@@ -4055,88 +4058,96 @@ MGABlockHandler (
 	(*pMga->RenderCallback)(pScrn);
 }
 
-#if defined (EXTRADEBUG)
+#if defined (DEBUG)
 /*
  * some functions to track input/output in the server
  */
 
 CARD8
-MGAdbg_inreg8(ScrnInfoPtr pScrn,int addr,int verbose, char* func)
+dbg_inreg8(ScrnInfoPtr pScrn,int addr,int verbose)
 {
+    MGAPtr pMga;
     CARD8 ret;
 
-    ret = MMIO_IN8(MGAPTR(pScrn)->IOBase,addr);
+    pMga = MGAPTR(pScrn);
+    ret = *(volatile CARD8 *)(pMga->IOBase + (addr));
     if(verbose)
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"inreg8 : %s: 0x%8x = 0x%x\n",func, addr,ret);
+			"inreg8 : 0x%8x = 0x%x\n",addr,ret);
     return ret;
 }
 
 CARD16
-MGAdbg_inreg16(ScrnInfoPtr pScrn,int addr,int verbose, char* func)
+dbg_inreg16(ScrnInfoPtr pScrn,int addr,int verbose)
 {
+    MGAPtr pMga;
     CARD16 ret;
 
-    ret = MMIO_IN16(MGAPTR(pScrn)->IOBase,addr);
+    pMga = MGAPTR(pScrn);
+    ret = *(volatile CARD16 *)(pMga->IOBase + (addr));
     if(verbose)
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"inreg16: %s: 0x%8x = 0x%x\n",func, addr,ret);
+			"inreg16: 0x%8x = 0x%x\n",addr,ret);
     return ret;
 }
 
 CARD32
-MGAdbg_inreg32(ScrnInfoPtr pScrn,int addr,int verbose, char* func)
+dbg_inreg32(ScrnInfoPtr pScrn,int addr,int verbose)
 {
+    MGAPtr pMga;
     CARD32 ret;
 
-    ret = MMIO_IN32(MGAPTR(pScrn)->IOBase,addr);
+    pMga = MGAPTR(pScrn);
+    ret = *(volatile CARD32 *)(pMga->IOBase + (addr));
     if(verbose)
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"inreg32: %s: 0x%8x = 0x%x\n",func, addr,ret);
+			"inreg32: 0x%8x = 0x%x\n",addr,ret);
     return ret;
 }
 
 void
-MGAdbg_outreg8(ScrnInfoPtr pScrn,int addr,int val, char* func)
+dbg_outreg8(ScrnInfoPtr pScrn,int addr,int val)
 {
+    MGAPtr pMga;
     CARD8 ret;
 
+    pMga = MGAPTR(pScrn);
 #if 0
     if( addr = MGAREG_CRTCEXT_DATA )
     	return;
 #endif
     if( addr != 0x3c00 ) {
-	ret = MGAdbg_inreg8(pScrn,addr,0,func);
+	ret = dbg_inreg8(pScrn,addr,0);
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"outreg8 : %s: 0x%8x = 0x%x was 0x%x\n",
-			func,addr,val,ret);
+			"outreg8 : 0x%8x = 0x%x was 0x%x\n",addr,val,ret);
     }
     else {
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "outreg8 : %s: index 0x%x\n",
-	func,val);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "outreg8 : index 0x%x\n",val);
     }
-    MMIO_OUT8(MGAPTR(pScrn)->IOBase,addr,val);
+    *(volatile CARD8 *)(pMga->IOBase + (addr)) = (val);
 }
 
 void
-MGAdbg_outreg16(ScrnInfoPtr pScrn,int addr,int val, char* func)
+dbg_outreg16(ScrnInfoPtr pScrn,int addr,int val)
 {
+    MGAPtr pMga;
     CARD16 ret;
 
 #if 0
     if (addr == MGAREG_CRTCEXT_INDEX)
     	return;
 #endif
-    ret = MGAdbg_inreg16(pScrn,addr,0, func);
+    pMga = MGAPTR(pScrn);
+    ret = dbg_inreg16(pScrn,addr,0);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"outreg16: %s: 0x%8x = 0x%x was 0x%x\n",
-			func,addr,val,ret);
-    MMIO_OUT16(MGAPTR(pScrn)->IOBase,addr,val);
+			"outreg16 : 0x%8x = 0x%x was 0x%x\n",addr,val,ret);
+    *(volatile CARD16 *)(pMga->IOBase + (addr)) = (val);
 }
 
 void
-MGAdbg_outreg32(ScrnInfoPtr pScrn,int addr,int val, char* func)
+dbg_outreg32(ScrnInfoPtr pScrn,int addr,int val)
 {
+    MGAPtr pMga;
     CARD32 ret;
 
     if (((addr & 0xff00) == 0x1c00)
@@ -4150,23 +4161,20 @@ MGAdbg_outreg32(ScrnInfoPtr pScrn,int addr,int val, char* func)
     	&& (addr != 0x1c98)
     	&& (addr != 0x1c9c)
 	 ) {
-	 xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%s: refused address 0x%x\n",
-			func,addr);
+	 xf86DrvMsg(pScrn->scrnIndex, X_INFO, "refused address 0x%x\n",addr);
     	return;
     }
-    ret = MGAdbg_inreg32(pScrn,addr,0, func);
+    pMga = MGAPTR(pScrn);
+    ret = dbg_inreg32(pScrn,addr,0);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"outreg32: %s: 0x%8x = 0x%x was 0x%x\n",
-			func,addr,val,ret);
-    MMIO_OUT32(MGAPTR(pScrn)->IOBase,addr,val);
+			"outreg32 : 0x%8x = 0x%x was 0x%x\n",addr,val,ret);
+    *(volatile CARD32 *)(pMga->IOBase + (addr)) = (val);
 }
 #endif /* DEBUG */
 
 static void
-MGAG100BlackMagic(ScrnInfoPtr pScrn)
+MGAG100BlackMagic(MGAPtr pMga)
 {
-    MGAPtr pMga = MGAPTR(pScrn);
-
     OUTREG(MGAREG_PLNWT, ~(CARD32)0x0);
     /* reset memory */
     OUTREG(MGAREG_MACCESS, 1<<15);

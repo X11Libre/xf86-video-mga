@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.c,v 1.31tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.c,v 1.29 2003/07/09 01:45:23 dawes Exp $ */
 
 /*
  * Copyright 2000 VA Linux Systems Inc., Fremont, California.
@@ -672,7 +672,7 @@ static Bool MGADRIAgpInit(ScreenPtr pScreen)
       return FALSE;
    }
    xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] %d kB allocated with handle 0x%08lx\n",
+	       "[agp] %d kB allocated with handle 0x%08x\n",
 	       pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
 
    if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
@@ -1078,8 +1078,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    xf86DrvMsg( pScrn->scrnIndex, X_INFO,
 	       "[drm] Sarea %d+%d: %d\n",
-	       (int)sizeof(XF86DRISAREARec), (int)sizeof(MGASAREAPrivRec),
-	       (int)sizeof(XF86DRISAREARec) + (int)sizeof(MGASAREAPrivRec) );
+	       sizeof(XF86DRISAREARec), sizeof(MGASAREAPrivRec),
+	       sizeof(XF86DRISAREARec) + sizeof(MGASAREAPrivRec) );
 
    pDRIInfo->SAREASize = SAREA_MAX;
 
@@ -1389,10 +1389,10 @@ void MGADRICloseScreen( ScreenPtr pScreen )
       pMGADRIServer->agpTextures.map = NULL;
    }
 
-   if ( pMGADRIServer->agp.handle != DRM_AGP_NO_HANDLE ) {
+   if ( pMGADRIServer->agp.handle ) {
       drmAgpUnbind( pMga->drmFD, pMGADRIServer->agp.handle );
       drmAgpFree( pMga->drmFD, pMGADRIServer->agp.handle );
-      pMGADRIServer->agp.handle = DRM_AGP_NO_HANDLE;
+      pMGADRIServer->agp.handle = 0;
       drmAgpRelease( pMga->drmFD );
    }
 
