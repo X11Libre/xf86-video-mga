@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.58 2003/11/03 05:11:17 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dac3026.c,v 1.58tsi Exp $ */
 /*
  * Copyright 1994 by Robin Cutshaw <robin@XFree86.org>
  *
@@ -984,7 +984,8 @@ MGA3026_ddc1Read(ScrnInfoPtr pScrn)
 static void
 MGA3026_I2CGetBits(I2CBusPtr b, int *clock, int *data) 
 {
-  MGAPtr pMga = MGAPTR(xf86Screens[b->scrnIndex]);
+  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
+  MGAPtr pMga = MGAPTR(pScrn);
   unsigned char val;
 
   /* Get the result. */
@@ -1005,7 +1006,8 @@ MGA3026_I2CGetBits(I2CBusPtr b, int *clock, int *data)
 static void
 MGA3026_I2CPutBits(I2CBusPtr b, int clock, int data)
 {
-  MGAPtr pMga = MGAPTR(xf86Screens[b->scrnIndex]);
+  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
+  MGAPtr pMga = MGAPTR(pScrn);
   unsigned char val,drv;
 
   /* Write the values */

@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_merge.c,v 1.5 2003/11/02 04:24:36 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_merge.c,v 1.4 2003/09/24 02:43:24 dawes Exp $ */
 
 /* All drivers should typically include these */
 #include "xf86.h"
