@@ -515,8 +515,10 @@ static void MGAWakeupHandler( int screenNum, pointer wakeupData,
 {
     ScreenPtr pScreen = screenInfo.screens[screenNum];
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    MGAPtr pMga = MGAPTR(pScrn);
 
-    if ( xf86IsEntityShared( pScrn->entityList[0] ) ) {
+    if ( xf86IsEntityShared( pScrn->entityList[0] ) 
+		&& pMga->DualHeadEnabled) {
         MGASwapContextShared( pScreen );
     } else {
         MGASwapContext( pScreen );
@@ -1115,7 +1117,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->CreateContext = MGACreateContext;
    pDRIInfo->DestroyContext = MGADestroyContext;
-   if ( xf86IsEntityShared( pScrn->entityList[0] ) ) {
+   if ( xf86IsEntityShared( pScrn->entityList[0] ) 
+		&& pMga->DualHeadEnabled) {
       pDRIInfo->SwapContext = MGADRISwapContextShared;
    } else {
       pDRIInfo->SwapContext = MGADRISwapContext;
