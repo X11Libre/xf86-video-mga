@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga.h,v 1.85 2002/12/16 16:19:17 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga.h,v 1.87 2003/10/08 15:48:41 eich Exp $ */
 /*
  * MGA Millennium (MGA2064W) functions
  *
@@ -148,7 +148,7 @@ void dbg_outreg32(ScrnInfoPtr,int,int);
 #define MGA_DRIVER_NAME "mga"
 #define MGA_MAJOR_VERSION 1
 #define MGA_MINOR_VERSION 1
-#define MGA_PATCHLEVEL 0
+#define MGA_PATCHLEVEL 1
 
 typedef struct {
     unsigned char	ExtVga[6];
@@ -212,6 +212,7 @@ typedef struct {
     MessageType MemClkFrom;
     Bool	SetMemClk;
     void	(*LoadPalette)(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
+    void	(*RestorePalette)(ScrnInfoPtr, unsigned char *);
     void	(*PreInit)(ScrnInfoPtr);
     void	(*Save)(ScrnInfoPtr, vgaRegPtr, MGARegPtr, Bool);
     void	(*Restore)(ScrnInfoPtr, vgaRegPtr, MGARegPtr, Bool);
