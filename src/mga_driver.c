@@ -1029,7 +1029,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
       return NULL;
   } else {
     /* XXX Need to write an MGA mode ddc1SetSpeed */
-    if (pMga->DDC1SetSpeed == LoaderSymbol("vgaHWddc1SetSpeed")) {
+    if (pMga->DDC1SetSpeed == vgaHWddc1SetSpeedWeak()) {
       pMga->DDC1SetSpeed = NULL;
       xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2,
 		     "DDC1 disabled - chip not in VGA mode\n");
@@ -1692,11 +1692,11 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
 	if (!fbdevHWInit(pScrn, pMga->PciInfo, NULL))
 	    return FALSE;
-	pScrn->SwitchMode    = LoaderSymbol("fbdevHWSwitchMode");
-	pScrn->AdjustFrame   = LoaderSymbol("fbdevHWAdjustFrame");
+	pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
+	pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
 	pScrn->EnterVT       = MGAEnterVTFBDev;
-	pScrn->LeaveVT       = LoaderSymbol("fbdevHWLeaveVT");
-	pScrn->ValidMode     = LoaderSymbol("fbdevHWValidMode");
+	pScrn->LeaveVT       = fbdevHWLeaveVTWeak();
+	pScrn->ValidMode     = fbdevHWValidModeWeak();
     }
     pMga->Rotate = 0;
     if ((s = xf86GetOptValString(pMga->Options, OPTION_ROTATE))) {
@@ -3428,7 +3428,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     else
 	f = CMAP_RELOAD_ON_MODE_SWITCH;
     if(!xf86HandleColormaps(pScreen, 256, 8,
-	pMga->FBDev ? LoaderSymbol("fbdevHWLoadPalette") : MGAdac->LoadPalette,
+	pMga->FBDev ? fbdevHWLoadPaletteWeak() : MGAdac->LoadPalette,
 	NULL, f))
 	return FALSE;
 

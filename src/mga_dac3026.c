@@ -1282,6 +1282,6 @@ void MGA2064SetupFuncs(ScrnInfoPtr pScrn)
     pMga->ModeInit = MGA3026Init;
     pMga->ddc1Read = MGA3026_ddc1Read;
     /* vgaHWddc1SetSpeed will only work if the card is in VGA mode */
-    pMga->DDC1SetSpeed = LoaderSymbol("vgaHWddc1SetSpeed");
+    pMga->DDC1SetSpeed = vgaHWddc1SetSpeedWeak();
     pMga->i2cInit = MGA3026_i2cInit;
 }
