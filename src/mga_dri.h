@@ -32,7 +32,6 @@
 #define __MGA_DRI_H__
 
 #include "xf86drm.h"
-#include "mga_common.h"
 
 #define MGA_DEFAULT_AGP_MODE     1
 #define MGA_MAX_AGP_MODE         4

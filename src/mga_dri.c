@@ -52,6 +52,7 @@
 #include "mga_macros.h"
 #include "mga_dri.h"
 #include "mga_sarea.h"
+#include "mga_common.h"
 
 #define _XF86DRI_SERVER_
 #include "GL/glxtokens.h"
@@ -321,14 +322,14 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
 }
 
 static Bool MGACreateContext( ScreenPtr pScreen, VisualPtr visual,
-			      drmContext hwContext, void *pVisualConfigPriv,
+			      drm_context_t hwContext, void *pVisualConfigPriv,
 			      DRIContextType contextStore )
 {
    /* Nothing yet */
    return TRUE;
 }
 
-static void MGADestroyContext( ScreenPtr pScreen, drmContext hwContext,
+static void MGADestroyContext( ScreenPtr pScreen, drm_context_t hwContext,
 			       DRIContextType contextStore )
 {
    /* Nothing yet */
@@ -809,7 +810,7 @@ static Bool MGADRIMapInit( ScreenPtr pScreen )
    pMGADRIServer->registers.size = MGAIOMAPSIZE;
 
    if ( drmAddMap( pMga->drmFD,
-		   (drmHandle)pMga->IOAddress,
+		   (drm_handle_t)pMga->IOAddress,
 		   pMGADRIServer->registers.size,
 		   DRM_REGISTERS, DRM_READ_ONLY,
 		   &pMGADRIServer->registers.handle ) < 0 ) {
@@ -1040,11 +1041,15 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->drmDriverName = MGAKernelDriverName;
    pDRIInfo->clientDriverName = MGAClientDriverName;
-   pDRIInfo->busIdString = xalloc(64);
-   sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
-	    ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
-	    ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
-	    ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum );
+   if (xf86LoaderCheckSymbol("DRICreatePCIBusID")) {
+      pDRIInfo->busIdString = DRICreatePCIBusID(pMga->PciInfo);
+   } else {
+      pDRIInfo->busIdString = xalloc(64);
+      sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum );
+   }
    pDRIInfo->ddxDriverMajorVersion = MGA_MAJOR_VERSION;
    pDRIInfo->ddxDriverMinorVersion = MGA_MINOR_VERSION;
    pDRIInfo->ddxDriverPatchVersion = MGA_PATCHLEVEL;
@@ -1389,10 +1394,10 @@ void MGADRICloseScreen( ScreenPtr pScreen )
       pMGADRIServer->agpTextures.map = NULL;
    }
 
-   if ( pMGADRIServer->agp.handle ) {
+   if ( pMGADRIServer->agp.handle != DRM_AGP_NO_HANDLE ) {
       drmAgpUnbind( pMga->drmFD, pMGADRIServer->agp.handle );
       drmAgpFree( pMga->drmFD, pMGADRIServer->agp.handle );
-      pMGADRIServer->agp.handle = 0;
+      pMGADRIServer->agp.handle = DRM_AGP_NO_HANDLE;
       drmAgpRelease( pMga->drmFD );
    }
 
