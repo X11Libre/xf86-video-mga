@@ -745,7 +745,7 @@ MGANAME(AccelInit)(ScreenPtr pScreen)
 	infoPtr->SubsequentScreenToScreenColorExpandFill =
 		MGANAME(SubsequentPlanarScreenToScreenColorExpandFill);
 	infoPtr->CacheColorExpandDensity = PSZ;
-	infoPtr->CacheMonoStipple = XAACachePlanarMonoStipple;
+	infoPtr->CacheMonoStipple = XAAGetCachePlanarMonoStipple();
 	/* It's faster to blit the stipples if you have fastbilt */
 	if(pMga->HasFBitBlt)
 	    infoPtr->ScreenToScreenColorExpandFillFlags = TRANSPARENCY_ONLY;
@@ -1076,8 +1076,8 @@ MGAStormSync(ScrnInfoPtr pScrn)
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    /* This reportedly causes a freeze for the Mystique. */
-    if (pMga->Chipset != PCI_CHIP_MGA1064)
+    /* MGAISBUSY() reportedly causes a freeze for Mystique revision 2 and older */
+    if (!(pMga->Chipset == PCI_CHIP_MGA1064 && (pMga->ChipRev >= 0 && pMga->ChipRev <= 2)))
 	while(MGAISBUSY());
     /* flush cache before a read (mga-1064g 5.1.6) */
     OUTREG8(MGAREG_CRTC_INDEX, 0);
@@ -2366,7 +2366,7 @@ MGAPolyPoint (
     if(!numRects) return;
 
     if(numRects != 1) {
-	XAAFallbackOps.PolyPoint(pDraw, pGC, mode, npt, ppt);
+	XAAGetFallbackOps()->PolyPoint(pDraw, pGC, mode, npt, ppt);
 	return;
     }
 
@@ -2419,7 +2419,7 @@ MGAValidatePolyPoint(
    MGAPtr pMga = MGAPTR(pScrn);
    Bool fullPlanemask = TRUE;
 
-   pGC->ops->PolyPoint = XAAFallbackOps.PolyPoint;
+   pGC->ops->PolyPoint = XAAGetFallbackOps()->PolyPoint;
 
    if((pGC->planemask & pMga->AccelInfoRec->FullPlanemask) !=
 	pMga->AccelInfoRec->FullPlanemask)
