@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.c,v 1.29 2003/07/09 01:45:23 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.c,v 1.31tsi Exp $ */
 
 /*
  * Copyright 2000 VA Linux Systems Inc., Fremont, California.
@@ -673,7 +673,7 @@ static Bool MGADRIAgpInit(ScreenPtr pScreen)
       return FALSE;
    }
    xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] %d kB allocated with handle 0x%08x\n",
+	       "[agp] %d kB allocated with handle 0x%08lx\n",
 	       pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
 
    if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
@@ -1083,8 +1083,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    xf86DrvMsg( pScrn->scrnIndex, X_INFO,
 	       "[drm] Sarea %d+%d: %d\n",
-	       sizeof(XF86DRISAREARec), sizeof(MGASAREAPrivRec),
-	       sizeof(XF86DRISAREARec) + sizeof(MGASAREAPrivRec) );
+	       (int)sizeof(XF86DRISAREARec), (int)sizeof(MGASAREAPrivRec),
+	       (int)sizeof(XF86DRISAREARec) + (int)sizeof(MGASAREAPrivRec) );
 
    pDRIInfo->SAREASize = SAREA_MAX;
 

@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.h,v 1.8 2002/11/29 11:06:42 eich Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dri.h,v 1.6 2001/04/10 16:08:01 dawes Exp $ */
 
 /*
  * Copyright 2000 VA Linux Systems Inc., Fremont, California.
