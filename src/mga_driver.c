@@ -247,7 +247,7 @@ static const char *vgahwSymbols[] = {
     "vgaHWSetMmioFuncs",
     "vgaHWUnlock",
     "vgaHWUnmapMem",
-    "vgaHWddc1SetSpeed",
+    "vgaHWddc1SetSpeedWeak",
     NULL
 };
 
@@ -365,22 +365,22 @@ static const char *int10Symbols[] = {
 };
 
 static const char *fbdevHWSymbols[] = {
-    "fbdevHWAdjustFrame",
+    "fbdevHWAdjustFrameWeak",
     "fbdevHWEnterVT",
     "fbdevHWGetVidmem",
     "fbdevHWInit",
-    "fbdevHWLeaveVT",
-    "fbdevHWLoadPalette",
+    "fbdevHWLeaveVTWeak",
+    "fbdevHWLoadPaletteWeak",
     "fbdevHWMapMMIO",
     "fbdevHWMapVidmem",
     "fbdevHWModeInit",
     "fbdevHWRestore",
     "fbdevHWSave",
-    "fbdevHWSwitchMode",
+    "fbdevHWSwitchModeWeak",
     "fbdevHWUnmapMMIO",
     "fbdevHWUnmapVidmem",
     "fbdevHWUseBuildinMode",
-    "fbdevHWValidMode",
+    "fbdevHWValidModeWeak",
     NULL
 };
 
