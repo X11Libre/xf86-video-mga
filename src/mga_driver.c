@@ -708,10 +708,6 @@ MGAReadBios(ScrnInfoPtr pScrn)
 	pBios = &pMga->Bios;
 	pBios2 = &pMga->Bios2;
         
-	/* Get the output mode set by the BIOS */
-	xf86ReadDomainMemory(pMga->PciTag, pMga->BiosAddress + 0x7ff1u,
-			     sizeof(CARD8), &pMga->BiosOutputMode); 
-
 	/*
 	 * If the BIOS address was probed, it was found from the PCI config
 	 * space.  If it was given in the config file, try to guess when it
@@ -735,6 +731,9 @@ MGAReadBios(ScrnInfoPtr pScrn)
 		return;
 	}
         
+	/* Get the output mode set by the BIOS */
+	pMga->BiosOutputMode = BIOS[0x7ff1];
+
         /* Get the video BIOS info block */
 	if (strncmp((char *)(&BIOS[45]), "MATROX", 6)) {
 		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
