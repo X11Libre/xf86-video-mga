@@ -1076,8 +1076,8 @@ MGAStormSync(ScrnInfoPtr pScrn)
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    /* This reportedly causes a freeze for the Mystique. */
-    if (pMga->Chipset != PCI_CHIP_MGA1064)
+    /* MGAISBUSY() reportedly causes a freeze for Mystique revision 2 and older */
+    if (!(pMga->Chipset == PCI_CHIP_MGA1064 && (pMga->ChipRev >= 0 && pMga->ChipRev <= 2)))
 	while(MGAISBUSY());
     /* flush cache before a read (mga-1064g 5.1.6) */
     OUTREG8(MGAREG_CRTC_INDEX, 0);
