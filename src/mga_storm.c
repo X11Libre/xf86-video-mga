@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.98 2003/01/16 16:09:10 eich Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99tsi Exp $ */
 
 
 /* All drivers should typically include these */
@@ -745,7 +745,7 @@ MGANAME(AccelInit)(ScreenPtr pScreen)
 	infoPtr->SubsequentScreenToScreenColorExpandFill =
 		MGANAME(SubsequentPlanarScreenToScreenColorExpandFill);
 	infoPtr->CacheColorExpandDensity = PSZ;
-	infoPtr->CacheMonoStipple = XAACachePlanarMonoStipple;
+	infoPtr->CacheMonoStipple = LoaderSymbol("XAACachePlanarMonoStipple");
 	/* It's faster to blit the stipples if you have fastbilt */
 	if(pMga->HasFBitBlt)
 	    infoPtr->ScreenToScreenColorExpandFillFlags = TRANSPARENCY_ONLY;
@@ -1076,7 +1076,9 @@ MGAStormSync(ScrnInfoPtr pScrn)
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    while(MGAISBUSY());
+    /* This reportedly causes a freeze for the Mystique. */
+    if (pMga->Chipset != PCI_CHIP_MGA1064)
+	while(MGAISBUSY());
     /* flush cache before a read (mga-1064g 5.1.6) */
     OUTREG8(MGAREG_CRTC_INDEX, 0);
     if(pMga->AccelFlags & CLIPPER_ON) {
@@ -2359,16 +2361,18 @@ MGAPolyPoint (
     BoxPtr pbox;
     MGAPtr pMga;
     int xorg, yorg;
+    ScrnInfoPtr pScrn;
 
     if(!numRects) return;
 
     if(numRects != 1) {
-	XAAFallbackOps.PolyPoint(pDraw, pGC, mode, npt, ppt);
+	XAAGetFallbackOps()->PolyPoint(pDraw, pGC, mode, npt, ppt);
 	return;
     }
 
     infoRec = GET_XAAINFORECPTR_FROM_GC(pGC);
-    pMga = MGAPTR(infoRec->pScrn);
+    pScrn = infoRec->pScrn;
+    pMga = MGAPTR(pScrn);
     xorg = pDraw->x;
     yorg = pDraw->y;
 
@@ -2415,7 +2419,7 @@ MGAValidatePolyPoint(
    MGAPtr pMga = MGAPTR(pScrn);
    Bool fullPlanemask = TRUE;
 
-   pGC->ops->PolyPoint = XAAFallbackOps.PolyPoint;
+   pGC->ops->PolyPoint = XAAGetFallbackOps()->PolyPoint;
 
    if((pGC->planemask & pMga->AccelInfoRec->FullPlanemask) !=
 	pMga->AccelInfoRec->FullPlanemask)

@@ -1331,7 +1331,7 @@ void MGAGSetupFuncs(ScrnInfoPtr pScrn)
     pMga->ModeInit = MGAGInit;
     pMga->ddc1Read = MGAG_ddc1Read;
     /* vgaHWddc1SetSpeed will only work if the card is in VGA mode */
-    pMga->DDC1SetSpeed = vgaHWddc1SetSpeed;
+    pMga->DDC1SetSpeed = LoaderSymbol("vgaHWddc1SetSpeed");
     pMga->i2cInit = MGAG_i2cInit;
 }
 
