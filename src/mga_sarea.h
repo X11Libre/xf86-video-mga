@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_sarea.h,v 1.1 2001/03/21 17:11:47 dawes Exp $ */
+/* $XFree86$ */
 
 /*
  * Copyright 2000 Gareth Hughes
