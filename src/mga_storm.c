@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99 2004/01/29 03:28:25 dawes Exp $ */
 
 
 /* All drivers should typically include these */
