@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99 2004/01/29 03:28:25 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99tsi Exp $ */
 
 
 /* All drivers should typically include these */
@@ -2361,6 +2361,7 @@ MGAPolyPoint (
     BoxPtr pbox;
     MGAPtr pMga;
     int xorg, yorg;
+    ScrnInfoPtr pScrn;
 
     if(!numRects) return;
 
@@ -2370,7 +2371,8 @@ MGAPolyPoint (
     }
 
     infoRec = GET_XAAINFORECPTR_FROM_GC(pGC);
-    pMga = MGAPTR(infoRec->pScrn);
+    pScrn = infoRec->pScrn;
+    pMga = MGAPTR(pScrn);
     xorg = pDraw->x;
     yorg = pDraw->y;
 
