@@ -2,7 +2,7 @@
 
     clientlx.c
 
-    Copyright © 1997, Matrox Graphics Inc.
+    Copyright Â© 1997, Matrox Graphics Inc.
 
     All Rights Reserved.
 

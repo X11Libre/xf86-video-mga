@@ -3,7 +3,7 @@
  @doc MGA MGA_STRUCT
 
  @module MGA Structures | Structure of The MGA Layer
- @normal Copyright © 1997, Matrox Graphics Inc.
+ @normal Copyright Â© 1997, Matrox Graphics Inc.
 
  All Rights Reserved.
 
@@ -13,7 +13,7 @@
  @end
 
 ***************************************************************************************/
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/HALlib/binding.h,v 1.5 2000/12/06 20:39:52 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/HALlib/binding.h,v 1.3 2000/10/24 22:45:08 dawes Exp $ */
 
 #ifndef _BINDING
 #define _BINDING
