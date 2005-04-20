@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_video.c,v 1.30 2003/04/23 21:51:39 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_video.c,v 1.33tsi Exp $ */
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -15,7 +15,7 @@
 #include "mga.h"
 #include "mga_macros.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xaa.h"
 #include "xaalocal.h"
 #include "dixstruct.h"
@@ -268,7 +268,7 @@ MGASetupImageVideoOverlay(ScreenPtr pScreen)
     adapt->QueryImageAttributes = MGAQueryImageAttributes;
 
     /* gotta uninit this someplace */
-    REGION_INIT(pScreen, &(pMga->portPrivate->clip), NullBox, 0); 
+    REGION_NULL(pScreen, &(pMga->portPrivate->clip));
 
     MGAResetVideoOverlay(pScrn);
 
@@ -460,6 +460,7 @@ MGACopyData(
 ){
     w <<= 1;
     while(h--) {
+	/* XXX Maybe this one needs big-endian fixes, too? -ReneR */
 	memcpy(dst, src, w);
 	src += srcPitch;
 	dst += dstPitch;
@@ -489,16 +490,27 @@ MGACopyMungedData(
         s1 = src1;  s2 = src2;  s3 = src3;
         i = w;
         while(i > 4) {
+#if X_BYTE_ORDER == X_LITTLE_ENDIAN
            dst[0] = s1[0] | (s1[1] << 16) | (s3[0] << 8) | (s2[0] << 24);
            dst[1] = s1[2] | (s1[3] << 16) | (s3[1] << 8) | (s2[1] << 24);
            dst[2] = s1[4] | (s1[5] << 16) | (s3[2] << 8) | (s2[2] << 24);
            dst[3] = s1[6] | (s1[7] << 16) | (s3[3] << 8) | (s2[3] << 24);
+#else
+           dst[0] = (s1[0] << 16) | s1[1] | (s3[0] << 24) | (s2[0] << 8);
+           dst[1] = (s1[2] << 16) | s1[3] | (s3[1] << 24) | (s2[1] << 8);
+           dst[2] = (s1[4] << 16) | s1[5] | (s3[2] << 24) | (s2[2] << 8);
+           dst[3] = (s1[6] << 16) | s1[7] | (s3[3] << 24) | (s2[3] << 8);
+#endif
            dst += 4; s2 += 4; s3 += 4; s1 += 8;
            i -= 4;
         }
 
         while(i--) {
+#if X_BYTE_ORDER == X_LITTLE_ENDIAN
            dst[0] = s1[0] | (s1[1] << 16) | (s3[0] << 8) | (s2[0] << 24);
+#else
+           dst[0] = (s1[0] << 16) | s1[1] | (s3[0] << 24) | (s2[0] << 8);
+#endif
            dst++; s2++; s3++;
            s1 += 2;
         }
@@ -568,6 +580,7 @@ MGADisplayVideoOverlay(
 ){
     MGAPtr pMga = MGAPTR(pScrn);
     int tmp, hzoom, intrep;
+    int maxOverlayClock;
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
@@ -581,7 +594,15 @@ MGADisplayVideoOverlay(
 
     tmp = pScrn->currentMode->VDisplay +1;
     /* enable accelerated 2x horizontal zoom when pixelclock >135MHz */
-    hzoom = (pScrn->currentMode->Clock > 135000) ? 1 : 0;
+
+    if ((pMga->ChipRev >= 0x80) || (pMga->Chipset == PCI_CHIP_MGAG550)) {
+	/* G450, G550 */
+	maxOverlayClock = 234000;
+    } else {
+	maxOverlayClock = 135000;
+    }
+
+    hzoom = (pScrn->currentMode->Clock > maxOverlayClock) ? 1 : 0;
 
     switch(id) {
     case FOURCC_UYVY:
@@ -729,7 +750,7 @@ MGAPutImage(
    MGAPortPrivPtr pPriv = pMga->portPrivate;
    INT32 x1, x2, y1, y2;
    unsigned char *dst_start;
-   int pitch, new_size, offset, offset2 = 0, offset3 = 0;
+   int new_size, offset, offset2 = 0, offset3 = 0;
    int srcPitch, srcPitch2 = 0, dstPitch;
    int top, left, npixels, nlines, bpp;
    BoxRec dstBox;
@@ -758,7 +779,6 @@ MGAPutImage(
    }
 
    bpp = pScrn->bitsPerPixel >> 3;
-   pitch = bpp * pScrn->displayWidth;
 
    dstPitch = ((width << 1) + 15) & ~15;
    new_size = ((dstPitch * height) + bpp - 1) / bpp;
@@ -948,7 +968,7 @@ MGAAllocateSurface(
     XF86SurfacePtr surface
 ){
     FBLinearPtr linear;
-    int pitch, fbpitch, size, bpp;
+    int pitch, size, bpp;
     OffscreenPrivPtr pPriv;
 
     if((w > 1024) || (h > 1024))
@@ -957,7 +977,6 @@ MGAAllocateSurface(
     w = (w + 1) & ~1;
     pitch = ((w << 1) + 15) & ~15;
     bpp = pScrn->bitsPerPixel >> 3;
-    fbpitch = bpp * pScrn->displayWidth;
     size = ((pitch * h) + bpp - 1) / bpp;
 
     if(!(linear = MGAAllocateMemory(pScrn, NULL, size)))
@@ -1001,7 +1020,8 @@ MGAStopSurface(
     OffscreenPrivPtr pPriv = (OffscreenPrivPtr)surface->devPrivate.ptr;
 
     if(pPriv->isOn) {
-	MGAPtr pMga = MGAPTR(surface->pScrn);
+	ScrnInfoPtr pScrn = surface->pScrn;
+	MGAPtr pMga = MGAPTR(pScrn);
 	OUTREG(MGAREG_BESCTL, 0);
 	pPriv->isOn = FALSE;
     }
