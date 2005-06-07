@@ -41,15 +41,6 @@
 #define MGA_BUFFER_ALIGN	0x00000fff
 
 typedef struct {
-   int reserved_map_agpstart;
-   int reserved_map_idx;
-   int buffer_map_idx;
-   int sarea_priv_offset;
-   int primary_size;
-   int warp_ucode_size;
-   int chipset;
-   int sgram;
-
    unsigned int frontOffset;
    unsigned int frontPitch;
 
@@ -79,11 +70,25 @@ typedef struct {
 
 } MGADRIServerPrivateRec, *MGADRIServerPrivatePtr;
 
+#ifdef __GNUC__
+# define DEPRECATED  __attribute__ ((deprecated))
+#else
+# define DEPRECATED
+#endif
+
+/**
+ * Hardware information sent from server to client-side DRI driver.
+ *
+ * \todo
+ * Several of these fields are no longer used (and will never be used
+ * again) on the client-side.  At some point when it is safe to do so
+ * (probably for the X.org 6.9 / 7.0 release), these fields should be removed.
+ */
 typedef struct {
    int chipset;
    int width;
    int height;
-   int mem;
+   int mem DEPRECATED;           /**< Unused client-side since forever. */
    int cpp;
 
    int agpMode;
@@ -99,22 +104,26 @@ typedef struct {
 
    unsigned int textureOffset;
    unsigned int textureSize;
-   int logTextureGranularity;
+   int logTextureGranularity;    /**< Unused client-side since 2003-Aug-06 */
 
-   /* Allow calculation of setup dma addresses.
-    */
-   unsigned int agpBufferOffset;
+   unsigned int agpBufferOffset DEPRECATED; /**< Unused client-side since forever. */
 
    unsigned int agpTextureOffset;
    unsigned int agpTextureSize;
-   int logAgpTextureGranularity;
+   int logAgpTextureGranularity; /**< Unused client-side since 2003-Aug-06 */
 
-   unsigned int mAccess;
+   unsigned int mAccess DEPRECATED; /**< Unused client-side since forever. */
 
-   drmRegion registers;
-   drmRegion status;
-   drmRegion primary;
-   drmRegion buffers;
+   /**
+    * \name DRM memory regions.
+    */
+   /*@{*/
+   drmRegion registers;            /**< MMIO registers. */
+   drmRegion status;               /**< Unused client-side since forever. */
+   drmRegion primary;              /**< Primary DMA region. */
+   drmRegion buffers;              /**< Unused client-side since forever. */
+   /*@}*/
+
    unsigned int sarea_priv_offset;
 } MGADRIRec, *MGADRIPtr;
 
