@@ -68,6 +68,8 @@ typedef struct {
 
    drmBufMapPtr drmBuffers;
 
+   int drm_version_major;
+   int drm_version_minor;
 } MGADRIServerPrivateRec, *MGADRIServerPrivatePtr;
 
 #ifdef __GNUC__

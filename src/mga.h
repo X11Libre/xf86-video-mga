@@ -87,7 +87,9 @@ typedef enum {
     OPTION_HSYNC2,
     OPTION_VREFRESH2,
     OPTION_MONITOR2POS,
-    OPTION_METAMODES
+    OPTION_METAMODES,
+    OPTION_OLDDMA,
+    OPTION_PCIDMA
 } MGAOpts;
 
 
@@ -417,6 +419,9 @@ typedef struct {
 
     int                 irq;
     CARD32              reg_ien;
+    
+    Bool                useOldDmaInit;
+    Bool                forcePciDma;
 #endif
     XF86VideoAdaptorPtr adaptor;
     Bool		DualHeadEnabled;

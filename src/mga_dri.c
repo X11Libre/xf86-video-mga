@@ -46,6 +46,7 @@
 
 
 
+#include <inttypes.h>
 #include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
@@ -589,220 +590,260 @@ static unsigned int mylog2( unsigned int n )
  * \todo
  * The sizes used for the primary DMA buffer and the bin size and count for
  * the secondary DMA buffers should be configurable from the xorg.conf.
- *
- * \todo
- * Add support for PCI cards.
  */
 static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-   MGAPtr pMga = MGAPTR(pScrn);
-   MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
-   unsigned long mode;
-   unsigned int vendor, device;
-   int ret, count, i;
-
-   if(pMga->agpSize < 12)pMga->agpSize = 12;
-   if(pMga->agpSize > 64)pMga->agpSize = 64; /* cap */
-
-   /* FIXME: Make these configurable...
-    */
-   pMGADRIServer->agp.size = pMga->agpSize * 1024 * 1024;
-
-   pMGADRIServer->warp.offset = 0;
-   pMGADRIServer->warp.size = MGA_WARP_UCODE_SIZE;
-
-   pMGADRIServer->primary.offset = (pMGADRIServer->warp.offset +
-				    pMGADRIServer->warp.size);
-   pMGADRIServer->primary.size = 1024 * 1024;
-
-   pMGADRIServer->buffers.offset = (pMGADRIServer->primary.offset +
-				    pMGADRIServer->primary.size);
-   pMGADRIServer->buffers.size = MGA_NUM_BUFFERS * MGA_BUFFER_SIZE;
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    MGAPtr pMga = MGAPTR(pScrn);
+    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
+    int ret;
+    int requested_agp_mode;
+    int count;
 
 
-   pMGADRIServer->agpTextures.offset = (pMGADRIServer->buffers.offset +
-                                    pMGADRIServer->buffers.size);
+    if(pMga->agpSize < 12)pMga->agpSize = 12;
+    if(pMga->agpSize > 64)pMga->agpSize = 64; /* cap */
 
-   pMGADRIServer->agpTextures.size = pMGADRIServer->agp.size -
-                                     pMGADRIServer->agpTextures.offset;
 
-   if ( drmAgpAcquire( pMga->drmFD ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not available\n" );
-      return FALSE;
-   }
+    requested_agp_mode = 0;
+    switch ( pMga->agpMode ) {
+    case 4:
+	requested_agp_mode |= MGA_AGP_4X_MODE;
+    case 2:
+	requested_agp_mode |= MGA_AGP_2X_MODE;
+    case 1:
+    default:
+	requested_agp_mode |= MGA_AGP_1X_MODE;
+    }
 
-   mode   = drmAgpGetMode( pMga->drmFD );        /* Default mode */
-   vendor = drmAgpVendorId( pMga->drmFD );
-   device = drmAgpDeviceId( pMga->drmFD );
 
-   mode &= ~MGA_AGP_MODE_MASK;
-   switch ( pMga->agpMode ) {
-   case 4:
-      mode |= MGA_AGP_4X_MODE;
-   case 2:
-      mode |= MGA_AGP_2X_MODE;
-   case 1:
-   default:
-      mode |= MGA_AGP_1X_MODE;
-   }
+    if ( (pMGADRIServer->drm_version_minor >= 2) && !pMga->useOldDmaInit ) {
+	drm_mga_dma_bootstrap_t dma_bs;
 
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] Mode 0x%08lx [AGP 0x%04x/0x%04x; Card 0x%04x/0x%04x]\n",
-	       mode, vendor, device,
-	       pMga->PciInfo->vendor,
-	       pMga->PciInfo->chipType );
 
-   if ( drmAgpEnable( pMga->drmFD, mode ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not enabled\n" );
-      drmAgpRelease( pMga->drmFD );
-      return FALSE;
-   }
+	(void) memset( & dma_bs, 0, sizeof( dma_bs ) );
+	dma_bs.primary_size = 1024 * 1024;
+	dma_bs.secondary_bin_count = MGA_NUM_BUFFERS;
+	dma_bs.secondary_bin_size = MGA_BUFFER_SIZE;
+	dma_bs.agp_size = pMga->agpSize;
+	dma_bs.agp_mode = (pMga->forcePciDma) ? 0 : requested_agp_mode;
 
-   if ( pMga->Chipset == PCI_CHIP_MGAG200 ) {
-      switch ( pMga->agpMode ) {
-      case 2:
-	 xf86DrvMsg( pScreen->myNum, X_INFO,
-		     "[drm] Enabling AGP 2x PLL encoding\n" );
-	 OUTREG( MGAREG_AGP_PLL, MGA_AGP2XPLL_ENABLE );
-	 break;
+	ret = drmCommandWriteRead( pMga->drmFD, DRM_MGA_DMA_BOOTSTRAP,
+				   & dma_bs, sizeof( dma_bs ) );
+	if ( ret ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[drm] Could not boot-strap DMA (%d)\n", ret );
+	    return FALSE;
+	}
 
-      case 1:
-      default:
-	 xf86DrvMsg( pScreen->myNum, X_INFO,
-		     "[drm] Disabling AGP 2x PLL encoding\n" );
-	 OUTREG( MGAREG_AGP_PLL, MGA_AGP2XPLL_DISABLE );
-	 pMga->agpMode = 1;
-	 break;
-      }
-   }
+	pMga->agpMode = dma_bs.agp_mode;
+	pMGADRIServer->agp.size = dma_bs.agp_size;
 
-   ret = drmAgpAlloc( pMga->drmFD, pMGADRIServer->agp.size,
-		      0, NULL, &pMGADRIServer->agp.handle );
-   if ( ret < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] Out of memory (%d)\n", ret );
-      drmAgpRelease( pMga->drmFD );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] %d kB allocated with handle 0x%08lx\n",
-	       pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
+	pMGADRIServer->agpTextures.handle = dma_bs.texture_handle;
+	pMGADRIServer->agpTextures.size   = dma_bs.texture_size;
+    }
+    else {
+	unsigned long mode;
+	unsigned int vendor, device;
+	int i;
 
-   if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] Could not bind memory\n" );
-      drmAgpFree( pMga->drmFD, pMGADRIServer->agp.handle );
-      drmAgpRelease( pMga->drmFD );
-      return FALSE;
-   }
 
-   /* WARP microcode space
-    */
-   if ( drmAddMap( pMga->drmFD,
-		   pMGADRIServer->warp.offset,
-		   pMGADRIServer->warp.size,
-		   DRM_AGP, DRM_READ_ONLY,
-		   &pMGADRIServer->warp.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-		  "[agp] Could not add WARP microcode mapping\n" );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] WARP microcode handle = 0x%08lx\n",
-	       pMGADRIServer->warp.handle );
+	if ( pMga->forcePciDma ) {
+	    const char * const msg = (pMGADRIServer->drm_version_minor < 2)
+	      ? "DRM version is too old (3.2 or later required)"
+	      : "old DMA init path was requested";
 
-   /* Primary DMA space
-    */
-   if ( drmAddMap( pMga->drmFD,
-		   pMGADRIServer->primary.offset,
-		   pMGADRIServer->primary.size,
-		   DRM_AGP, DRM_READ_ONLY,
-		   &pMGADRIServer->primary.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-		  "[agp] Could not add primary DMA mapping\n" );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] Primary DMA handle = 0x%08lx\n",
-	       pMGADRIServer->primary.handle );
+	    xf86DrvMsg( pScreen->myNum, X_WARNING,
+			"[agp] Cannot force PCI DMA because %s\n", msg );
+	}
 
-   /* DMA buffers
-    */
-   if ( drmAddMap( pMga->drmFD,
-		   pMGADRIServer->buffers.offset,
-		   pMGADRIServer->buffers.size,
-		   DRM_AGP, 0,
-		   &pMGADRIServer->buffers.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-		  "[agp] Could not add DMA buffers mapping\n" );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] DMA buffers handle = 0x%08lx\n",
-	       pMGADRIServer->buffers.handle );
+	if ( drmAgpAcquire( pMga->drmFD ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not available\n" );
+	    return FALSE;
+	}
+       
+	mode   = drmAgpGetMode( pMga->drmFD );        /* Default mode */
+	vendor = drmAgpVendorId( pMga->drmFD );
+	device = drmAgpDeviceId( pMga->drmFD );
 
-   count = drmAddBufs( pMga->drmFD,
-		       MGA_NUM_BUFFERS, MGA_BUFFER_SIZE,
-		       DRM_AGP_BUFFER, pMGADRIServer->buffers.offset );
-   if ( count <= 0 ) {
-      xf86DrvMsg( pScrn->scrnIndex, X_INFO,
-		  "[drm] failure adding %d %d byte DMA buffers\n",
-		  MGA_NUM_BUFFERS, MGA_BUFFER_SIZE );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[drm] Added %d %d byte DMA buffers\n",
-	       count, MGA_BUFFER_SIZE );
+	mode = (mode & ~MGA_AGP_MODE_MASK) | requested_agp_mode;
 
-   i = mylog2(pMGADRIServer->agpTextures.size / MGA_NR_TEX_REGIONS);
-   if(i < MGA_LOG_MIN_TEX_REGION_SIZE)
-      i = MGA_LOG_MIN_TEX_REGION_SIZE;
-   pMGADRIServer->agpTextures.size = (pMGADRIServer->agpTextures.size >> i) << i;
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] Mode 0x%08lx [AGP 0x%04x/0x%04x; Card 0x%04x/0x%04x]\n",
+		    mode, vendor, device,
+		    pMga->PciInfo->vendor,
+		    pMga->PciInfo->chipType );
 
-   if ( drmAddMap( pMga->drmFD,
-                   pMGADRIServer->agpTextures.offset,
-                   pMGADRIServer->agpTextures.size,
-                   DRM_AGP, 0,
-                   &pMGADRIServer->agpTextures.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-                  "[agp] Could not add agpTexture mapping\n" );
-      return FALSE;
-   }
+	if ( drmAgpEnable( pMga->drmFD, mode ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not enabled\n" );
+	    drmAgpRelease( pMga->drmFD );
+	    return FALSE;
+	}
 
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-               "[agp] agpTexture handle = 0x%08lx\n",
-               pMGADRIServer->agpTextures.handle );
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-               "[agp] agpTexture size: %d kb\n", pMGADRIServer->agpTextures.size/1024 );
+	if ( pMga->Chipset == PCI_CHIP_MGAG200 ) {
+	    switch ( pMga->agpMode ) {
+	    case 2:
+		xf86DrvMsg( pScreen->myNum, X_INFO,
+			    "[drm] Enabling AGP 2x PLL encoding\n" );
+		OUTREG( MGAREG_AGP_PLL, MGA_AGP2XPLL_ENABLE );
+		break;
+		
+	    case 1:
+	    default:
+		xf86DrvMsg( pScreen->myNum, X_INFO,
+			    "[drm] Disabling AGP 2x PLL encoding\n" );
+		OUTREG( MGAREG_AGP_PLL, MGA_AGP2XPLL_DISABLE );
+		pMga->agpMode = 1;
+		break;
+	    }
+	}
 
-   pMGADRIServer->registers.size = MGAIOMAPSIZE;
+	pMGADRIServer->agp.size = pMga->agpSize * 1024 * 1024;
 
-   if ( drmAddMap( pMga->drmFD,
-		   (drm_handle_t)pMga->IOAddress,
-		   pMGADRIServer->registers.size,
-		   DRM_REGISTERS, DRM_READ_ONLY,
-		   &pMGADRIServer->registers.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-		  "[drm] Could not add MMIO registers mapping\n" );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[drm] Registers handle = 0x%08lx\n",
-	       pMGADRIServer->registers.handle );
+	pMGADRIServer->warp.offset = 0;
+	pMGADRIServer->warp.size = MGA_WARP_UCODE_SIZE;
 
-   pMGADRIServer->status.size = SAREA_MAX;
+	pMGADRIServer->primary.offset = (pMGADRIServer->warp.offset +
+					 pMGADRIServer->warp.size);
+	pMGADRIServer->primary.size = 1024 * 1024;
 
-   if ( drmAddMap( pMga->drmFD, 0, pMGADRIServer->status.size,
-		   DRM_SHM, DRM_READ_ONLY | DRM_LOCKED | DRM_KERNEL,
-		   &pMGADRIServer->status.handle ) < 0 ) {
-      xf86DrvMsg( pScreen->myNum, X_ERROR,
-		  "[drm] Could not add status page mapping\n" );
-      return FALSE;
-   }
-   xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[drm] Status handle = 0x%08lx\n",
-	       pMGADRIServer->status.handle );
+	pMGADRIServer->buffers.offset = (pMGADRIServer->primary.offset +
+					 pMGADRIServer->primary.size);
+	pMGADRIServer->buffers.size = MGA_NUM_BUFFERS * MGA_BUFFER_SIZE;
 
-   return TRUE;
+
+	pMGADRIServer->agpTextures.offset = (pMGADRIServer->buffers.offset +
+					     pMGADRIServer->buffers.size);
+
+	pMGADRIServer->agpTextures.size = (pMGADRIServer->agp.size -
+					   pMGADRIServer->agpTextures.offset);
+
+	ret = drmAgpAlloc( pMga->drmFD, pMGADRIServer->agp.size,
+			   0, NULL, &pMGADRIServer->agp.handle );
+	if ( ret < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] Out of memory (%d)\n", ret );
+	    drmAgpRelease( pMga->drmFD );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] %d kB allocated with handle 0x%08lx\n",
+		    pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
+
+	if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] Could not bind memory\n" );
+	    drmAgpFree( pMga->drmFD, pMGADRIServer->agp.handle );
+	    drmAgpRelease( pMga->drmFD );
+	    return FALSE;
+	}
+
+	/* WARP microcode space
+	 */
+	if ( drmAddMap( pMga->drmFD,
+			pMGADRIServer->warp.offset,
+			pMGADRIServer->warp.size,
+			DRM_AGP, DRM_READ_ONLY,
+			&pMGADRIServer->warp.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[agp] Could not add WARP microcode mapping\n" );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] WARP microcode handle = 0x%08lx\n",
+		    pMGADRIServer->warp.handle );
+
+	/* Primary DMA space
+	 */
+	if ( drmAddMap( pMga->drmFD,
+			pMGADRIServer->primary.offset,
+			pMGADRIServer->primary.size,
+			DRM_AGP, DRM_READ_ONLY,
+			&pMGADRIServer->primary.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[agp] Could not add primary DMA mapping\n" );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] Primary DMA handle = 0x%08lx\n",
+		    pMGADRIServer->primary.handle );
+
+	/* DMA buffers
+	 */
+	if ( drmAddMap( pMga->drmFD,
+			pMGADRIServer->buffers.offset,
+			pMGADRIServer->buffers.size,
+			DRM_AGP, 0,
+			&pMGADRIServer->buffers.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[agp] Could not add DMA buffers mapping\n" );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] DMA buffers handle = 0x%08lx\n",
+		    pMGADRIServer->buffers.handle );
+
+	count = drmAddBufs( pMga->drmFD,
+			    MGA_NUM_BUFFERS, MGA_BUFFER_SIZE,
+			    DRM_AGP_BUFFER, pMGADRIServer->buffers.offset );
+	if ( count <= 0 ) {
+	    xf86DrvMsg( pScrn->scrnIndex, X_INFO,
+			"[drm] failure adding %d %d byte DMA buffers\n",
+			MGA_NUM_BUFFERS, MGA_BUFFER_SIZE );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[drm] Added %d %d byte DMA buffers\n",
+		    count, MGA_BUFFER_SIZE );
+
+	i = mylog2(pMGADRIServer->agpTextures.size / MGA_NR_TEX_REGIONS);
+	if(i < MGA_LOG_MIN_TEX_REGION_SIZE)
+	  i = MGA_LOG_MIN_TEX_REGION_SIZE;
+	pMGADRIServer->agpTextures.size = (pMGADRIServer->agpTextures.size >> i) << i;
+
+	if ( drmAddMap( pMga->drmFD,
+			pMGADRIServer->agpTextures.offset,
+			pMGADRIServer->agpTextures.size,
+			DRM_AGP, 0,
+			&pMGADRIServer->agpTextures.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[agp] Could not add agpTexture mapping\n" );
+	    return FALSE;
+	}
+
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] agpTexture handle = 0x%08lx\n",
+		    pMGADRIServer->agpTextures.handle );
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[agp] agpTexture size: %d kb\n", pMGADRIServer->agpTextures.size/1024 );
+
+	pMGADRIServer->registers.size = MGAIOMAPSIZE;
+
+	if ( drmAddMap( pMga->drmFD,
+			(drm_handle_t)pMga->IOAddress,
+			pMGADRIServer->registers.size,
+			DRM_REGISTERS, DRM_READ_ONLY,
+			&pMGADRIServer->registers.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[drm] Could not add MMIO registers mapping\n" );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[drm] Registers handle = 0x%08lx\n",
+		    pMGADRIServer->registers.handle );
+
+	pMGADRIServer->status.size = SAREA_MAX;
+
+	if ( drmAddMap( pMga->drmFD, 0, pMGADRIServer->status.size,
+			DRM_SHM, DRM_READ_ONLY | DRM_LOCKED | DRM_KERNEL,
+			&pMGADRIServer->status.handle ) < 0 ) {
+	    xf86DrvMsg( pScreen->myNum, X_ERROR,
+			"[drm] Could not add status page mapping\n" );
+	    return FALSE;
+	}
+	xf86DrvMsg( pScreen->myNum, X_INFO,
+		    "[drm] Status handle = 0x%08lx\n",
+		    pMGADRIServer->status.handle );
+    }
+
+    return TRUE;
 }
 
 static Bool MGADRIKernelInit( ScreenPtr pScreen )
@@ -934,13 +975,23 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    case PCI_CHIP_MGAG550:
    case PCI_CHIP_MGAG400:
    case PCI_CHIP_MGAG200:
-#if 0
+       break;
    case PCI_CHIP_MGAG200_PCI:
-#endif
-      break;
+       /* PCI cards are supported if the DRM version is at least 3.2 and the
+	* user has not explicitly disabled the new DMA init path (i.e., to
+	* support old version of the client-side driver that don't use the
+	* new features of the 3.2 DRM).
+	*/
+       if ( (pMGADRIServer->drm_version_minor >= 2) && !pMga->useOldDmaInit ) {
+	   break;
+       }
+       /*FALLTHROUGH*/
    default:
-      xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[drm] Direct rendering only supported with G200/G400/G550 AGP\n");
-      return FALSE;
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+		  "[drm] Direct rendering only supported with G200/G400/G550 AGP.  PCI cards\n"
+		  "[drm] (G450 and G200) are only supported with DRM version 3.2 or higher and\n"
+		  "[drm] a recent client-side driver.\n");
+       return FALSE;
    }
 
    /* Check that the GLX, DRI, and DRM modules have been loaded by testing
@@ -1158,6 +1209,9 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 	    MGADRICloseScreen( pScreen );		/* FIXME: ??? */
             return FALSE;
          }
+	 pMGADRIServer->drm_version_major = version->version_major;
+	 pMGADRIServer->drm_version_minor = version->version_minor;
+
          drmFreeVersion( version );
       }
    }
@@ -1252,11 +1306,17 @@ Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
    pMGADRI->agpTextureOffset = (unsigned int)pMGADRIServer->agpTextures.handle;
    pMGADRI->agpTextureSize = (unsigned int)pMGADRIServer->agpTextures.size;
 
+   pMGADRI->sarea_priv_offset = sizeof(XF86DRISAREARec);
+
+
+   /* Newer versions of the client-side driver do not need these if the
+    * kernel version is high enough to support interrupt based waiting.
+    */
+
    pMGADRI->registers.handle	= pMGADRIServer->registers.handle;
    pMGADRI->registers.size	= pMGADRIServer->registers.size;
    pMGADRI->primary.handle	= pMGADRIServer->primary.handle;
    pMGADRI->primary.size	= pMGADRIServer->primary.size;
-   pMGADRI->sarea_priv_offset = sizeof(XF86DRISAREARec);
 
 
    /* These are no longer used by the client-side DRI driver.  They should

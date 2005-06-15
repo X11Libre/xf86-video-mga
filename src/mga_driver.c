@@ -219,6 +219,8 @@ static const OptionInfoRec MGAOptions[] = {
     { OPTION_VREFRESH2,	"Monitor2VRefresh",	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_MONITOR2POS,   "Monitor2Position",	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_METAMODES,   "MetaModes",  	OPTV_ANYSTR,	{0}, FALSE },
+    { OPTION_OLDDMA,		"OldDmaInit",	OPTV_BOOLEAN,	{0}, FALSE },
+    { OPTION_PCIDMA,		"ForcePciDma",	OPTV_BOOLEAN,	{0}, FALSE },
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
@@ -1565,6 +1567,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86DrvMsg(pScrn->scrnIndex, from, "Using AGP %dx mode\n",
 	       pMga->agpMode);
+
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_OLDDMA, FALSE)) {
+	pMga->useOldDmaInit = TRUE;
+    }
+
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_PCIDMA, FALSE)) {
+	pMga->forcePciDma = TRUE;
+    }
 #endif
 
     from = X_DEFAULT;
