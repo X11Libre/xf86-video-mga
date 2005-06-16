@@ -72,12 +72,6 @@ typedef struct {
    int drm_version_minor;
 } MGADRIServerPrivateRec, *MGADRIServerPrivatePtr;
 
-#ifdef __GNUC__
-# define DEPRECATED  __attribute__ ((deprecated))
-#else
-# define DEPRECATED
-#endif
-
 /**
  * Hardware information sent from server to client-side DRI driver.
  *
@@ -90,7 +84,7 @@ typedef struct {
    int chipset;
    int width;
    int height;
-   int mem DEPRECATED;           /**< Unused client-side since forever. */
+   int mem _X_DEPRECATED;           /**< Unused client-side since forever. */
    int cpp;
 
    int agpMode;
@@ -108,13 +102,13 @@ typedef struct {
    unsigned int textureSize;
    int logTextureGranularity;    /**< Unused client-side since 2003-Aug-06 */
 
-   unsigned int agpBufferOffset DEPRECATED; /**< Unused client-side since forever. */
+   unsigned int agpBufferOffset _X_DEPRECATED; /**< Unused client-side since forever. */
 
    unsigned int agpTextureOffset;
    unsigned int agpTextureSize;
    int logAgpTextureGranularity; /**< Unused client-side since 2003-Aug-06 */
 
-   unsigned int mAccess DEPRECATED; /**< Unused client-side since forever. */
+   unsigned int mAccess _X_DEPRECATED; /**< Unused client-side since forever. */
 
    /**
     * \name DRM memory regions.
