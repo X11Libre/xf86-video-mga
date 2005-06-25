@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_halmod.c,v 1.1 2000/12/06 15:35:21 eich Exp $ */
+/* $XFree86$ */
 #include "xf86Module.h"
 
 #ifdef XFree86LOADER
@@ -15,7 +15,7 @@ static XF86ModuleVersionInfo halVersRec =
 	MODULEVENDORSTRING,
 	MODINFOSTRING1,
 	MODINFOSTRING2,
-	XF86_VERSION_CURRENT,
+	XORG_VERSION_CURRENT,
 	HAL_MAJOR_VERSION, HAL_MINOR_VERSION, HAL_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,			/* This is a video driver */
 	ABI_VIDEODRV_VERSION,
@@ -27,7 +27,7 @@ static XF86ModuleVersionInfo halVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData mga_halModuleData = { &halVersRec, halSetup, NULL };
+_X_EXPORT XF86ModuleData mga_halModuleData = { &halVersRec, halSetup, NULL };
 
 static pointer
 halSetup(pointer module, pointer opts, int *errmaj, int *errmin)

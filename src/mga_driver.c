@@ -145,7 +145,7 @@ static int MGAEntityIndex = -1;
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec MGA_C_NAME = {
+_X_EXPORT DriverRec MGA_C_NAME = {
     MGA_VERSION,
     MGA_DRIVER_NAME,
     MGAIdentify,
@@ -420,7 +420,7 @@ static XF86ModuleVersionInfo mgaVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData MGA_MODULE_DATA = { &mgaVersRec, mgaSetup, NULL };
+_X_EXPORT XF86ModuleData MGA_MODULE_DATA = { &mgaVersRec, mgaSetup, NULL };
 
 static pointer
 mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
