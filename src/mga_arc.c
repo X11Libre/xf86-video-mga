@@ -44,7 +44,6 @@ in this Software without prior written authorization from The Open Group.
 
 #include "xf86Pci.h"
 
-#include "mga_bios.h"
 #include "mga.h"
 #include "mga_reg.h"
 #include "mga_macros.h"

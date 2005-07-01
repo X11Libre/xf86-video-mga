@@ -10,7 +10,6 @@
 #include "xf86fbman.h"
 #include "regionstr.h"
 
-#include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
 #include "mga_macros.h"

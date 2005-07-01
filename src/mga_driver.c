@@ -666,169 +666,6 @@ MGAProbe(DriverPtr drv, int flags)
 
 
 /*
- * Should aim towards not relying on this.
- */
-
-/*
- * MGAReadBios - Read the video BIOS info block.
- *
- * DESCRIPTION
- *   Warning! This code currently does not detect a video BIOS.
- *   In the future, support for motherboards with the mga2064w
- *   will be added (no video BIOS) - this is not a huge concern
- *   for me today though.  (XXX)
- *
- * EXTERNAL REFERENCES
- *   vga256InfoRec.BIOSbase	IN	Physical address of video BIOS.
- *   MGABios			OUT	The video BIOS info block.
- *
- * HISTORY
- *   August  31, 1997 - [ajv] Andrew van der Stock
- *   Fixed to understand Mystique and Millennium II
- *
- *   January 11, 1997 - [aem] Andrew E. Mileski
- *   Set default values for GCLK (= MCLK / pre-scale ).
- *
- *   October 7, 1996 - [aem] Andrew E. Mileski
- *   Written and tested.
- */
-
-void
-MGAReadBios(ScrnInfoPtr pScrn)
-{
-	CARD8  BIOS[0x10000];
-	CARD16 offset;
-	CARD8	chksum;
-	CARD8	*pPINSInfo;
-	MGAPtr pMga;
-	MGABiosInfo *pBios;
-	MGABios2Info *pBios2;
-	Bool pciBIOS = TRUE;
-	int rlen;
-
-	pMga = MGAPTR(pScrn);
-	pBios = &pMga->Bios;
-	pBios2 = &pMga->Bios2;
-        
-	/*
-	 * If the BIOS address was probed, it was found from the PCI config
-	 * space.  If it was given in the config file, try to guess when it
-	 * looks like it might be controlled by the PCI config space.
-	 */
-	if (pMga->BiosFrom == X_DEFAULT)
-	    pciBIOS = FALSE;
-	else if (pMga->BiosFrom == X_CONFIG && pMga->BiosAddress < 0x100000)
-	    pciBIOS = TRUE;
-
-	if (pciBIOS)
-	    rlen = xf86ReadPciBIOS(0, pMga->PciTag, pMga->FbBaseReg,
-				   BIOS, sizeof(BIOS));
-	else
-	    rlen = xf86ReadDomainMemory(pMga->PciTag, pMga->BiosAddress,
-					sizeof(BIOS), BIOS);
-
-	if (rlen < (BIOS[2] << 9)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			   "Could not retrieve video BIOS!\n");
-		return;
-	}
-        
-	/* Get the output mode set by the BIOS */
-	pMga->BiosOutputMode = BIOS[0x7ff1];
-
-        /* Get the video BIOS info block */
-	if (strncmp((char *)(&BIOS[45]), "MATROX", 6)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			       "Video BIOS info block not detected!\n");
-		return;
-	}
-
-	/* Get the info block offset */
-	offset = (BIOS[0x7ffd] << 8) | BIOS[0x7ffc];
-
-	/* Let the world know what we are up to */
-	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		   "Video BIOS info block at offset 0x%05lX\n",
-		   (long)(offset));
-
-#define MGADoBIOSRead(offset, buf, len) memcpy(buf, &BIOS[offset], len)
-
-	/* Copy the info block */
-	/* XXX What about big-endianness? */
-	switch (pMga->Chipset){
-	   case PCI_CHIP_MGA2064:
-		MGADoBIOSRead(offset,
-			( CARD8 * ) & pBios->StructLen, sizeof( MGABiosInfo ));
-		break;
-	   default:
-		MGADoBIOSRead(offset,
-			( CARD8 * ) & pBios2->PinID, sizeof( MGABios2Info ));
-                break;
-	}
-
-	/* matrox millennium-2 and mystique pins info */
-	if ( pBios2->PinID == 0x412e ) {
-	    int i;
-	    /* check that the pins info is correct */
-	    if ( pBios2->StructLen != 0x40 ) {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			"Video BIOS info block not detected!\n");
-		pBios2->PinID = 0;
-		return;
-	    }
-	    /* check that the chksum is correct */
-	    chksum = 0;
-	    pPINSInfo = (CARD8 *) &pBios2->PinID;
-
-	    for (i=0; i < pBios2->StructLen; i++) {
-		chksum += *pPINSInfo;
-		pPINSInfo++;
-	    }
-
-	    if ( chksum ) {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			"Video BIOS info block did not checksum!\n");
-		pBios2->PinID = 0;
-		return;
-	    }
-
-	    /* last check */
-	    if ( pBios2->StructRev == 0 ) {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-		  "Video BIOS info block does not have a valid revision!\n");
-		pBios2->PinID = 0;
-		return;
-	    }
-
-	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		"Found and verified enhanced Video BIOS info block\n");
-
-	   /* Set default MCLK values (scaled by 100 kHz) */
-	   if ( pBios2->ClkMem == 0 )
-		pBios2->ClkMem = 50;
-	   if ( pBios2->Clk4MB == 0 )
-		pBios2->Clk4MB = pBios->ClkBase;
-	   if ( pBios2->Clk8MB == 0 )
-		pBios2->Clk8MB = pBios->Clk4MB;
-	   pBios->StructLen = 0; /* not in use */
-#ifdef DEBUG
-	   for (i = 0; i < 0x40; i++)
-	      ErrorF("Pins[0x%02x] is 0x%02x\n", i,
-			((unsigned char *)pBios2)[i]);
-#endif
-	} else {
-	  /* Set default MCLK values (scaled by 10 kHz) */
-	  if ( pBios->ClkBase == 0 )
-		pBios->ClkBase = 4500;
-  	  if ( pBios->Clk4MB == 0 )
-		pBios->Clk4MB = pBios->ClkBase;
-	  if ( pBios->Clk8MB == 0 )
-		pBios->Clk8MB = pBios->Clk4MB;
-	  pBios2->PinID = 0; /* not in use */
-	}
-}
-
-/*
  * MGASoftReset --
  *
  * Resets drawing engine
@@ -1063,7 +900,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	/* Its the first head... */ 
 	  if (pMga->DDC_Bus1) {
 	    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->DDC_Bus1);
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", MonInfo);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", (void *) MonInfo);
 	    xf86PrintEDID(MonInfo);
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
 	  }
@@ -1074,7 +911,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
 						 pMga->DDC1SetSpeed,
 						 pMga->ddc1Read ) ;
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", MonInfo);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", (void *) MonInfo);
 	    xf86PrintEDID( MonInfo );
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
 	  }
@@ -1086,7 +923,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	      vbeFree(pVbe);
 	
 	      if (MonInfo){
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", MonInfo);
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", (void *) MonInfo);
 		xf86PrintEDID( MonInfo );
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
 	      }
@@ -1833,7 +1670,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    }
     }
 
-#if !defined(__powerpc__)
+
     /*
      * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
      * use the VGA default.  Allow the config file to override this.
@@ -1883,7 +1720,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
                    "BIOS not found, skipping read\n");
     else
 #endif
-    MGAReadBios(pScrn);
+    mga_read_and_process_bios( pScrn );
+
 
     /* Since the BIOS can swap DACs during the initialisation of G550, we need to
      * store which DAC this instance of the driver is taking care of. This is done
@@ -1902,9 +1740,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         }
     }
 
-    xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2,
-		   "MGABios.RamdacType = 0x%x\n", pMga->Bios.RamdacType);
-#endif /* !__powerpc__ */
 
     /* HW bpp matches reported bpp */
     pMga->HwBpp = pScrn->bitsPerPixel;

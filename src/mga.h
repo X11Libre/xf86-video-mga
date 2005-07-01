@@ -288,6 +288,61 @@ typedef struct {
     ScrnInfoPtr 	pScrn_2;
 } MGAEntRec, *MGAEntPtr;
 
+/**
+ * Track the range of a voltage controlled osciliator (VCO).
+ */
+struct mga_VCO {
+    /**
+     * Minimum selectable frequency for this VCO, measured in kHz.
+     */
+    unsigned min_freq;
+    
+    /**
+     * Maximum selectable frequency for this VCO, measured in kHz.
+     * 
+     * If this value is zero, then the VCO is not available.
+     */
+    unsigned max_freq;
+};
+
+/**
+ * Card information derrived from BIOS PInS data.
+ */
+struct mga_bios_values {
+    /**
+     * \name Voltage Controlled Oscilators
+     * \brief Track information about the various VCOs.
+     *
+     * MGA cards have between one and three VCOs that can be used to drive the
+     * various clocks.  On older cards, only \c mga_bios_values::pixel VCO is
+     * available.  On newer cards, such as the G450 and G550, all three are
+     * available.  If \c mga_VCO::max_freq is zero, the VCO is not available.
+     */
+    /*@{*/
+    struct mga_VCO   system;    /**< System VCO. */
+    struct mga_VCO   pixel;     /**< Pixel VCO. */
+    struct mga_VCO   video;     /**< Video VCO. */
+    /*@}*/
+    
+    /**
+     * Memory clock speed, measured in kHz.
+     */
+    unsigned mem_clock;
+
+    /**
+     * PLL reference frequency value.  On older cards this is ~14MHz, and on
+     * newer cards it is ~27MHz.
+     */
+    unsigned pll_ref_freq;
+
+    /**
+     * Some older MGA cards have a "fast bitblt" mode.  This is determined
+     * by a capability bit stored in the PInS data.
+     */
+    Bool fast_bitblt;
+};
+
+
 typedef struct {
 #ifdef USEMGAHAL
     LPCLIENTDATA	pClientStruct;
@@ -296,8 +351,7 @@ typedef struct {
     LPMGAHWINFO		pMgaHwInfo;
 #endif
     EntityInfoPtr	pEnt;
-    MGABiosInfo		Bios;
-    MGABios2Info	Bios2;
+    struct mga_bios_values bios;
     CARD8               BiosOutputMode;
     pciVideoPtr		PciInfo;
     PCITAG		PciTag;
@@ -497,7 +551,7 @@ Bool MGAGetRec(ScrnInfoPtr pScrn);
 void MGAProbeDDC(ScrnInfoPtr pScrn, int index);
 void MGASoftReset(ScrnInfoPtr pScrn);
 void MGAFreeRec(ScrnInfoPtr pScrn);
-void MGAReadBios(ScrnInfoPtr pScrn);
+Bool mga_read_and_process_bios(ScrnInfoPtr pScrn);
 void MGADisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
 				  int flags);
 void MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags);

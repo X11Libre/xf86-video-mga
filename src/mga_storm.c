@@ -27,7 +27,6 @@
 #include "GL/glxtokens.h"
 #endif
 
-#include "mga_bios.h"
 #include "mga.h"
 #include "mga_reg.h"
 #include "mga_map.h"
