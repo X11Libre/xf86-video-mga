@@ -50,7 +50,6 @@
 #ifdef USEMGAHAL
 #include "client.h"
 #endif
-#include "mga_bios.h"
 
 typedef enum {
     OPTION_SW_CURSOR,
