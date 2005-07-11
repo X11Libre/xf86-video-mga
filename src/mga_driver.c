@@ -47,6 +47,9 @@
  
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_driver.c,v 1.244tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /* All drivers should typically include these */
 #include "xf86.h"

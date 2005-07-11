@@ -1,3 +1,4 @@
+/* $XFree86$ */
 /****************************************************************************
 * mga_esc.c
 *
@@ -5,6 +6,10 @@
 *
 * (C) Matrox Graphics, Inc.
 *****************************************************************************/
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #ifdef USEMGAHAL
 
@@ -216,23 +221,23 @@ static void  EscRead(ScrnInfoPtr pScrn, unsigned long *param, char *sResult, Dis
         break;
     case 1:
         ucIndex = INREG8(0x3c00);
-        OUTREG(0x3c00, (UCHAR)ulAddr);
+        OUTREG8(0x3c00, (UCHAR)ulAddr);
         ulData = (ULONG)INREG8(0x3c0a);
-        OUTREG(0x3c00, ucIndex);
+        OUTREG8(0x3c00, ucIndex);
         sprintf(sResult, "DAC[%02X] = 0x%02X", ulAddr, ulData);
         break;
     case 2:
         ucIndex = INREG8(0x1fd4);
-        OUTREG(0x1fd4, (UCHAR)ulAddr);
+        OUTREG8(0x1fd4, (UCHAR)ulAddr);
         ulData = (ULONG)INREG8(0x1fd5);
-        OUTREG(0x1fd4, ucIndex);
+        OUTREG8(0x1fd4, ucIndex);
         sprintf(sResult, "CRTC[%02X] = 0x%02X", ulAddr, ulData);
         break;
     case 3:
         ucIndex = INREG8(0x1fde);
-        OUTREG(0x1fde, (UCHAR)ulAddr);
+        OUTREG8(0x1fde, (UCHAR)ulAddr);
         ulData = (ULONG)INREG8(0x1fdf);
-        OUTREG(0x1fde, ucIndex);
+        OUTREG8(0x1fde, ucIndex);
         sprintf(sResult, "CRTCEXT[%02X] = 0x%02X", ulAddr, ulData);
         break;
     default:
@@ -266,23 +271,23 @@ static void  EscWrite(ScrnInfoPtr pScrn, unsigned long *param, char *sResult, Di
         break;
     case 1:
         ucIndex = INREG8(0x3c00);
-        OUTREG(0x3c00, (UCHAR)ulAddr);
-        OUTREG(0x3c0a, (UCHAR)ulData);
-        OUTREG(0x3c00, ucIndex);
+        OUTREG8(0x3c00, (UCHAR)ulAddr);
+        OUTREG8(0x3c0a, (UCHAR)ulData);
+        OUTREG8(0x3c00, ucIndex);
         strcpy(sResult, "OK");
         break;
     case 2:
         ucIndex = INREG8(0x1fd4);
-        OUTREG(0x1fd4, (UCHAR)ulAddr);
-        OUTREG(0x1fd5, (UCHAR)ulData);
-        OUTREG(0x1fd4, ucIndex);
+        OUTREG8(0x1fd4, (UCHAR)ulAddr);
+        OUTREG8(0x1fd5, (UCHAR)ulData);
+        OUTREG8(0x1fd4, ucIndex);
         strcpy(sResult, "OK");
         break;
     case 3:
         ucIndex = INREG8(0x1fde);
-        OUTREG(0x1fde, (UCHAR)ulAddr);
-        OUTREG(0x1fdf, (UCHAR)ulData);
-        OUTREG(0x1fde, ucIndex);
+        OUTREG8(0x1fde, (UCHAR)ulAddr);
+        OUTREG8(0x1fdf, (UCHAR)ulData);
+        OUTREG8(0x1fde, ucIndex);
         strcpy(sResult, "OK");
         break;
     default:
@@ -752,13 +757,13 @@ void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, DisplayM
 
     if (pMga->SecondCrtc)
     {
-     	ulScreen = 1;
+	ulScreen = 1;
     }
     else
     {
 	ulScreen = 0;
     }
-	
+
 
     if (FunctionTable[0].function &&  GetEscCommand(cmdline,  &EscCmd) )
     {
@@ -773,7 +778,7 @@ void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, DisplayM
         {
 	    EscCmd.parameters[0] &= 0xffff;
 	    EscCmd.parameters[0] |= ulScreen << 16;
-            
+
             FunctionTable[i].funcptr(pScrn, EscCmd.parameters, sResult, pMode);
         }
         else

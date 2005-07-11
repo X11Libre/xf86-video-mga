@@ -30,6 +30,9 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * This is a first cut at a non-accelerated version to work with the

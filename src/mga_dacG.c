@@ -9,6 +9,10 @@
  * new server design (DHD).
  */                     
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "colormapst.h"
 
 /* All drivers should typically include these */
