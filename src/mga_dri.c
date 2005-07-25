@@ -592,6 +592,10 @@ static unsigned int mylog2( unsigned int n )
  * \todo
  * The sizes used for the primary DMA buffer and the bin size and count for
  * the secondary DMA buffers should be configurable from the xorg.conf.
+ * 
+ * \todo
+ * This routine should use \c mga_bios_values::host_interface to limit the
+ * AGP mode.  It the card is PCI, \c MGARec::agpSize should be forced to 0.
  */
 static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 {
@@ -977,22 +981,10 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    case PCI_CHIP_MGAG550:
    case PCI_CHIP_MGAG400:
    case PCI_CHIP_MGAG200:
-       break;
    case PCI_CHIP_MGAG200_PCI:
-       /* PCI cards are supported if the DRM version is at least 3.2 and the
-	* user has not explicitly disabled the new DMA init path (i.e., to
-	* support old version of the client-side driver that don't use the
-	* new features of the 3.2 DRM).
-	*/
-       if ( (pMGADRIServer->drm_version_minor >= 2) && !pMga->useOldDmaInit ) {
-	   break;
-       }
-       /*FALLTHROUGH*/
+       break;
    default:
-       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
-		  "[drm] Direct rendering only supported with G200/G400/G550 AGP.  PCI cards\n"
-		  "[drm] (G450 and G200) are only supported with DRM version 3.2 or higher and\n"
-		  "[drm] a recent client-side driver.\n");
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[drm] Direct rendering only supported with G200/G400/G450/G550.\n");
        return FALSE;
    }
 
@@ -1217,6 +1209,23 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
          drmFreeVersion( version );
       }
    }
+
+   if ( (pMga->bios.host_interface == MGA_HOST_PCI) &&
+	((pMGADRIServer->drm_version_minor < 2) || pMga->useOldDmaInit) ) {
+       /* PCI cards are supported if the DRM version is at least 3.2 and the
+	* user has not explicitly disabled the new DMA init path (i.e., to
+	* support old version of the client-side driver that don't use the
+	* new features of the 3.2 DRM).
+	*/
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+		  "[drm] Direct rendering on PCI cards requires DRM version 3.2 or higher\n"
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+		  "[drm] and a recent client-side driver.  Also make sure that 'OldDmaInit'\n"
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+		  "[drm] is not selected in xorg.conf.'\n");
+       return FALSE;
+   }
+
 
    if ( !MGADRIBootstrapDMA( pScreen ) ) {
       DRICloseScreen( pScreen );

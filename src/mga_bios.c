@@ -58,6 +58,9 @@
 
 #include "mga.h"
 
+#if defined(DEBUG)
+#define BIOS_DEBUG
+#endif
 
 /**
  * Read a little-endian, unaligned data value and return as 16-bit.
@@ -125,6 +128,9 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 14318;
 	bios->mem_clock = 50000;
+
+	bios->host_interface = (pMga->Chipset == PCI_CHIP_MGA2164_AGP) 
+	  ? MGA_HOST_AGP_1x : MGA_HOST_PCI;
 	break;
 
     case PCI_CHIP_MGA1064:
@@ -138,6 +144,7 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 14318;
 	bios->mem_clock = 50000;
+	bios->host_interface = MGA_HOST_PCI;
 	break;
 
     case PCI_CHIP_MGAG100_PCI:
@@ -151,6 +158,16 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 27050;
 	bios->mem_clock = 50000;
+
+	if ( pMga->Chipset == PCI_CHIP_MGAG100 ) {
+	    bios->host_interface = MGA_HOST_AGP_1x;
+	}
+	else if ( pMga->Chipset == PCI_CHIP_MGAG200 ) {
+	    bios->host_interface = MGA_HOST_AGP_2x;
+	}
+	else {
+	    bios->host_interface = MGA_HOST_PCI;
+	}
 	break;
 
     case PCI_CHIP_MGAG400:
@@ -161,6 +178,7 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 27050;
 	bios->mem_clock = 200000;
+	bios->host_interface = MGA_HOST_AGP_4x;
 	break;
 
     case PCI_CHIP_MGAG550:
@@ -173,6 +191,7 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 27050;
 	bios->mem_clock = 284000;
+	bios->host_interface = MGA_HOST_AGP_4x;
 	break;
     }
 }
@@ -263,7 +282,7 @@ static void mga_parse_bios_ver_3( struct mga_bios_values * bios,
 	bios->system.max_freq = maxdac;
     }
 
-    if ( (bios_data[52] & 0x01) != 0 ) {
+    if ( (bios_data[52] & 0x20) != 0 ) {
 	bios->pll_ref_freq = 14318;
     }
 }
@@ -293,6 +312,8 @@ static void mga_parse_bios_ver_4( struct mga_bios_values * bios,
     if ( (bios_data[92] & 0x01) != 0 ) {
 	bios->pll_ref_freq = 14318;
     }
+
+    bios->host_interface = (bios_data[95] >> 3) & 0x07;
 
     if ( bios_data[65] != 0xff ) {
 	const unsigned system_pll = bios_data[65] * 4 * 1000;
@@ -365,6 +386,8 @@ static void mga_parse_bios_ver_5( struct mga_bios_values * bios,
     if ( (bios_data[110] & 0x01) != 0 ) {
 	bios->pll_ref_freq = 14318;
     }
+
+    bios->host_interface = (bios_data[113] >> 3) & 0x07;
 }
 
 
@@ -383,6 +406,18 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     unsigned version;
     unsigned pins_len;
     const CARD8 * pins_data;
+#ifdef BIOS_DEBUG
+    static const char * const host_interface_strings[8] = {
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Hybrid (AGP 4x on data transfers only)",
+	"PCI",
+	"AGP 1x",
+	"AGP 2x",
+	"AGP 4x"
+    };
+#endif
 
 
     /* Initialize the stored BIOS data to some reasonable values for the
@@ -501,7 +536,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     case 5:  mga_parse_bios_ver_5( & pMga->bios, pins_data ); break;
     }
     
-#ifdef DEBUG
+#ifdef BIOS_DEBUG
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "system VCO = [%u, %u]\n",
 	       pMga->bios.system.min_freq, pMga->bios.system.max_freq);
@@ -519,6 +554,10 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "%s fast bitblt\n",
 	       (pMga->bios.fast_bitblt) ? "Has" : "Does not have");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Host interface: %s (%u)\n",
+	       host_interface_strings[ pMga->bios.host_interface ],
+	       pMga->bios.host_interface);
 #endif
 
     return TRUE;

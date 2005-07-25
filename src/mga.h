@@ -305,6 +305,26 @@ struct mga_VCO {
 };
 
 /**
+ * Host interface types that can be set by the card's BIOS.
+ */
+typedef enum {
+    MGA_HOST_UNKNOWN0 = 0,  /**< Meaning unknown. */
+    MGA_HOST_UNKNOWN1 = 1,  /**< Meaning unknown. */
+    MGA_HOST_UNKNOWN2 = 2,  /**< Meaning unknown. */
+    MGA_HOST_HYBRID = 3,    /**< AGP 4x for data xfers only. */
+
+    /**
+     * PCI interface.  Either native or via a universal PCI-to-PCI bridge
+     * chip.  The PCI G450 and PCI G550 cards are examples.
+     */
+    MGA_HOST_PCI = 4,
+
+    MGA_HOST_AGP_1x = 5,    /**< AGP 1x capable. */
+    MGA_HOST_AGP_2x = 6,    /**< AGP 2x capable. */
+    MGA_HOST_AGP_4x = 7     /**< AGP 4x capable. */
+} mga_host_t;
+
+/**
  * Card information derrived from BIOS PInS data.
  */
 struct mga_bios_values {
@@ -339,6 +359,11 @@ struct mga_bios_values {
      * by a capability bit stored in the PInS data.
      */
     Bool fast_bitblt;
+
+    /**
+     * Type of physical interface used for the card.
+     */
+    mga_host_t host_interface;
 };
 
 

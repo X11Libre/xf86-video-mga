@@ -170,8 +170,9 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 		*s = 3;	
 
 #ifdef DEBUG
-	ErrorF( "f_out_requ =%ld f_pll_real=%.1f f_vco=%.1f n=0x%x m=0x%x p=0x%x s=0x%x\n",
-		f_out, f_pll, f_vco, *best_n, *best_m, *p, *s );
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "f_out_requ =%ld f_pll_real=%.1f f_vco=%.1f n=0x%x m=0x%x p=0x%x s=0x%x\n",
+		   f_out, (f_vco / (*p + 1)), f_vco, *best_n, *best_m, *p, *s );
 #endif
 }
 
