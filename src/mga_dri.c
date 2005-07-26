@@ -1218,9 +1218,9 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 	* new features of the 3.2 DRM).
 	*/
        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
-		  "[drm] Direct rendering on PCI cards requires DRM version 3.2 or higher\n"
+		  "[drm] Direct rendering on PCI cards requires DRM version 3.2 or higher\n");
        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
-		  "[drm] and a recent client-side driver.  Also make sure that 'OldDmaInit'\n"
+		  "[drm] and a recent client-side driver.  Also make sure that 'OldDmaInit'\n");
        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
 		  "[drm] is not selected in xorg.conf.'\n");
        return FALSE;
