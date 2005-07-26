@@ -80,7 +80,6 @@
 #include "vbe.h"
 
 #include "fb.h"
-#include "cfb8_32.h"
 #include "dixstruct.h"
 
 #include "mga_reg.h"
