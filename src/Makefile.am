@@ -72,7 +72,7 @@ mga_drv_la_SOURCES = \
          mga_video.c
 
 if DRI
-mga_drv_la_SOURCES += 
+mga_drv_la_SOURCES += \
 	mga_dri.c \
         mga_dri.h \
         mga_dripriv.h
