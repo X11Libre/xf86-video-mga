@@ -31,6 +31,7 @@
 #ifndef __MGA_DRI_H__
 #define __MGA_DRI_H__
 
+#include <X11/Xfuncproto.h>
 #include "xf86drm.h"
 
 #define MGA_DEFAULT_AGP_MODE     1

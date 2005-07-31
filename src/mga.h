@@ -36,7 +36,6 @@
 
 
 
-#include "xf86dri.h"
 #include "dri.h"
 
 
