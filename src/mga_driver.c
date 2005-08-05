@@ -3336,9 +3336,9 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
        pMga->directRenderingEnabled = MGADRIFinishScreenInit(pScreen);
     }
     if (pMga->directRenderingEnabled) {
-        xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering enabled\n");
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Direct rendering enabled\n");
     } else {
-        xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering disabled\n");
+        xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Direct rendering disabled\n");
     }
     if (pMga->DualHeadEnabled && pMga->SecondCrtc == FALSE)
 	pMgaEnt->directRenderingEnabled = pMga->directRenderingEnabled;
