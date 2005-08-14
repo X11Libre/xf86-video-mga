@@ -48,6 +48,7 @@ mga_drv_la_SOURCES = \
          client.h \
          clientlx.c \
          mga_arc.c \
+         mga_bios.c \
          mga_common.h \
          mga_dac3026.c \
          mga_dacG.c \
