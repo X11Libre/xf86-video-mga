@@ -731,7 +731,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[agp] %d kB allocated with handle 0x%08lx\n",
+ 		    "[agp] %d kB allocated with handle 0x%08x\n",
 		    pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
 
 	if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
@@ -753,7 +753,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[agp] WARP microcode handle = 0x%08lx\n",
+ 		    "[agp] WARP microcode handle = 0x%08x\n",
 		    pMGADRIServer->warp.handle );
 
 	/* Primary DMA space
@@ -768,7 +768,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[agp] Primary DMA handle = 0x%08lx\n",
+ 		    "[agp] Primary DMA handle = 0x%08x\n",
 		    pMGADRIServer->primary.handle );
 
 	/* DMA buffers
@@ -783,7 +783,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[agp] DMA buffers handle = 0x%08lx\n",
+ 		    "[agp] DMA buffers handle = 0x%08x\n",
 		    pMGADRIServer->buffers.handle );
 
 	count = drmAddBufs( pMga->drmFD,
@@ -815,7 +815,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[agp] agpTexture handle = 0x%08lx\n",
+ 		    "[agp] agpTexture handle = 0x%08x\n",
 		    pMGADRIServer->agpTextures.handle );
 	xf86DrvMsg( pScreen->myNum, X_INFO,
 		    "[agp] agpTexture size: %d kb\n", pMGADRIServer->agpTextures.size/1024 );
@@ -832,7 +832,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[drm] Registers handle = 0x%08lx\n",
+ 		    "[drm] Registers handle = 0x%08x\n",
 		    pMGADRIServer->registers.handle );
 
 	pMGADRIServer->status.size = SAREA_MAX;
@@ -845,7 +845,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    return FALSE;
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
-		    "[drm] Status handle = 0x%08lx\n",
+ 		    "[drm] Status handle = 0x%08x\n",
 		    pMGADRIServer->status.handle );
     }
 
