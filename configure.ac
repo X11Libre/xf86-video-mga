@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-mga],
-        1.1.2.1,
+        1.1.2.2,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-mga)
 
@@ -59,7 +59,7 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for header files.
 AC_HEADER_STDC
 
-if test "$DRI" != no; then
+if test "x$DRI" != xno; then
         AC_CHECK_FILE([${sdkdir}/dri.h],
                       [have_dri_h="yes"], [have_dri_h="no"])
         AC_CHECK_FILE([${sdkdir}/sarea.h],
@@ -69,10 +69,10 @@ if test "$DRI" != no; then
 fi
 
 AC_MSG_CHECKING([whether to include DRI support])
-if test x$DRI = xauto; then
-        if test "$ac_cv_header_dri_h" = yes -a \
-                "$ac_cv_header_sarea_h" = yes -a \
-                "$ac_cv_header_dristruct_h" = yes; then
+if test "x$DRI" = xauto; then
+        if test "x$have_dri_h" = xyes && \
+           test "x$have_sarea_h" = xyes && \
+           test "x$have_dristruct_h" = xyes; then
                 DRI="yes"
         else
                 DRI="no"
@@ -80,8 +80,8 @@ if test x$DRI = xauto; then
 fi
 AC_MSG_RESULT([$DRI])
 
-AM_CONDITIONAL(DRI, test x$DRI = xyes)
-if test "$DRI" = yes; then
+AM_CONDITIONAL(DRI, test "x$DRI" = xyes)
+if test "x$DRI" = xyes; then
         PKG_CHECK_MODULES(DRI, [libdrm xf86driproto])
         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
