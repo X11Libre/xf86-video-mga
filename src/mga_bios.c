@@ -54,7 +54,7 @@
 /* Drivers that need to access the PCI config space directly need this */
 #include "xf86Pci.h"
 
-#include "Xmd.h"
+#include <X11/Xmd.h>
 
 #include "mga.h"
 
