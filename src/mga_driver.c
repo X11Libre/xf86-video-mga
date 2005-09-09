@@ -92,6 +92,8 @@
 #include "shadowfb.h"
 #include "fbdevhw.h"
 
+#include "cfb8_32.h"
+
 #ifdef XF86DRI
 #include "dri.h"
 #endif
@@ -1222,11 +1224,11 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     pMga->DualHeadEnabled = FALSE;
     if (xf86IsEntityShared(pScrn->entityList[0])) {/* dual-head mode requested*/
+	if (
 #ifdef USEMGAHAL
-	if (pMga->HALLoaded || !MGA_DH_NEEDS_HAL(pMga)) {
-#else
-	if (!MGA_DH_NEEDS_HAL(pMga)) {
+	    pMga->HALLoaded ||
 #endif
+	    !MGA_DH_NEEDS_HAL(pMga)) {
 	    pMga->DualHeadEnabled = TRUE;
 	} else if (xf86IsPrimInitDone(pScrn->entityList[0])) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -2102,11 +2104,11 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * Can we trust HALlib to set the memory configuration
      * registers correctly?
      */
+    else if ((pMga->softbooted || pMga->Primary
 #ifdef USEMGAHAL
-    else if ((pMga->softbooted || pMga->Primary /*|| pMga->HALLoaded*/ ) &&
-#else
-    else if ((pMga->softbooted || pMga->Primary) &&
+	      /*|| pMga->HALLoaded*/
 #endif
+	      ) &&
 	     (pMga->Chipset != PCI_CHIP_MGA2064) &&
 	     (pMga->Chipset != PCI_CHIP_MGA2164) &&
 	     (pMga->Chipset != PCI_CHIP_MGA2164_AGP)) {

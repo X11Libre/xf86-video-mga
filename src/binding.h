@@ -243,6 +243,7 @@ ULONG MGAOpenLibrary(LPBOARDHANDLE pBoard, LPVOID lpClient, ULONG ulClientSize);
 ULONG MGAGetBOARDHANDLESize(void);
 ULONG MGASetTVStandard(LPBOARDHANDLE pBoard, ULONG ulTVStandard);
 ULONG MGASetTVCableType(LPBOARDHANDLE pBoard, ULONG ulCableType);
+ULONG HALSetDisplayStart(LPBOARDHANDLE pBoard, ULONG x, ULONG y, ULONG crtc);
 
 #if defined(__cplusplus)
     }

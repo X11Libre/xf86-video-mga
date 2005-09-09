@@ -732,7 +732,8 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] %d kB allocated with handle 0x%08x\n",
-		    pMGADRIServer->agp.size/1024, pMGADRIServer->agp.handle );
+		    pMGADRIServer->agp.size/1024, 
+		    (unsigned int) pMGADRIServer->agp.handle );
 
 	if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
 	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] Could not bind memory\n" );
@@ -754,7 +755,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] WARP microcode handle = 0x%08x\n",
-		    pMGADRIServer->warp.handle );
+		    (unsigned int) pMGADRIServer->warp.handle );
 
 	/* Primary DMA space
 	 */
@@ -769,7 +770,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] Primary DMA handle = 0x%08x\n",
-		    pMGADRIServer->primary.handle );
+		    (unsigned int) pMGADRIServer->primary.handle );
 
 	/* DMA buffers
 	 */
@@ -784,7 +785,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] DMA buffers handle = 0x%08x\n",
-		    pMGADRIServer->buffers.handle );
+		    (unsigned int) pMGADRIServer->buffers.handle );
 
 	count = drmAddBufs( pMga->drmFD,
 			    MGA_NUM_BUFFERS, MGA_BUFFER_SIZE,
@@ -816,7 +817,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] agpTexture handle = 0x%08x\n",
-		    pMGADRIServer->agpTextures.handle );
+		    (unsigned int) pMGADRIServer->agpTextures.handle );
 	xf86DrvMsg( pScreen->myNum, X_INFO,
 		    "[agp] agpTexture size: %d kb\n", pMGADRIServer->agpTextures.size/1024 );
 
@@ -833,7 +834,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[drm] Registers handle = 0x%08x\n",
-		    pMGADRIServer->registers.handle );
+		    (unsigned int) pMGADRIServer->registers.handle );
 
 	pMGADRIServer->status.size = SAREA_MAX;
 
@@ -846,7 +847,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[drm] Status handle = 0x%08x\n",
-		    pMGADRIServer->status.handle );
+		    (unsigned int) pMGADRIServer->status.handle );
     }
 
     return TRUE;
