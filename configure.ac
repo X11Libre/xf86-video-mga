@@ -97,4 +97,5 @@ AC_OUTPUT([
 	Makefile
 	src/Makefile
 	man/Makefile
+	util/Makefile
 ])
