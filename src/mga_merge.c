@@ -151,6 +151,8 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
             case 0:
             case '-':
             case ' ':
+	    case ',':
+	    case ';':
                 if((strmode != str)) {/*we got a mode */
                     /* read new entry */
                     strncpy(modename,strmode,str - strmode);
@@ -174,11 +176,11 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
                                 "Mode: \"%s\" is not a supported mode for monitor 1\n",modename);
                             /* find if a monitor2 mode follows */
                             gotdash = FALSE;
-                            while(*tmps == ' ') tmps++;
-                            if(*tmps == '-') { /* skip the next mode */
+                            while(*tmps == ' ' || *tmps == ';') tmps++;
+                            if(*tmps == '-' || *tmps == ',') { /* skip the next mode */
                                 tmps++;
-                                while((*tmps == ' ') && (*tmps != 0)) tmps++; /*skip spaces */
-                                while((*tmps != ' ') && (*tmps != '-') && (*tmps != 0)) tmps++; /*skip modename */
+                                while(*tmps == ' ' || *tmps == ';') tmps++; /*skip spaces */
+                                while(*tmps && *tmps != ' ' && *tmps != ';' && *tmps != '-' && *tmps != ',') tmps++; /*skip modename */
                                 /* for error message */
                                 strncpy(modename,strmode,tmps - strmode);
                                 modename[tmps - strmode] = 0;
@@ -192,7 +194,7 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
                     gotdash = FALSE;
                 }
                 strmode = str+1; /* number starts on next char */
-                gotdash |= (*str == '-');
+                gotdash |= (*str == '-' || *str == ',');
                 
                 if(*str != 0) break; /* if end of string, we wont get a chance to catch a char and run the
                                         default case. do it now */
