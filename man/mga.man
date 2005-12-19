@@ -162,7 +162,7 @@ Default: off.
 .TP
 .BI "Option \*qForcePciDma\*q \*q" boolean \*q
 This forces the use of PCI DMA even if AGP DMA could be used.  This
-option is primarilly intended for testing purposes, but it could also
+option is primarily intended for testing purposes, but it could also
 be used on systems with a buggy or poorly function AGP implementation.
 Default: off.
 .SH "SEE ALSO"
