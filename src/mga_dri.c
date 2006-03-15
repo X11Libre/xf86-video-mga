@@ -150,7 +150,6 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
       }
 
       i = 0;
-      depth = 1;
       for ( accum = 0 ; accum <= 1 ; accum++ ) {
          for ( stencil = 0 ; stencil <= 1 ; stencil++ ) {
             for ( db = 1 ; db >= 0 ; db-- ) {
@@ -183,11 +182,7 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
 	       }
                pConfigs[i].stereo		= FALSE;
                pConfigs[i].bufferSize		= 16;
-               if ( depth ) {
-                  pConfigs[i].depthSize		= 16;
-               } else {
-                  pConfigs[i].depthSize		= 0;
-	       }
+               pConfigs[i].depthSize		= 16;
                if ( stencil ) {
                   pConfigs[i].stencilSize	= 8;
                } else {
