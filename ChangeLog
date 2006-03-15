@@ -2,6 +2,7 @@
 
 	* src/mga_dri.c:
 	Coverity #92: Eliminate a dead code path.
+	Coverity #1009: Check for NULL first before assigning to pMGADRI.
 
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 

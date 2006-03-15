@@ -1252,11 +1252,13 @@ Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
-   MGADRIPtr pMGADRI = (MGADRIPtr)pMga->pDRIInfo->devPrivate;
+   MGADRIPtr pMGADRI;
    int i;
 
    if ( !pMga->pDRIInfo )
       return FALSE;
+
+   pMGADRI = (MGADRIPtr)pMga->pDRIInfo->devPrivate;
 
    pMga->pDRIInfo->driverSwapMethod = DRI_HIDE_X_CONTEXT;
 
