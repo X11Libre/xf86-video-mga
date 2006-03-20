@@ -650,6 +650,14 @@ MGADisplayVideoOverlay(
 
 }
 
+
+/**
+ * \todo
+ * Starting with at least the G200, the chip can handle non-mipmapped
+ * non-power-of-two textures.  However, the code in this routine forces the
+ * texture dimensions to be powers of two.  That should simplify the code and
+ * may improve performance slightly.
+ */
 static void
 MGADisplayVideoTexture(
     ScrnInfoPtr pScrn,
@@ -694,9 +702,8 @@ MGADisplayVideoTexture(
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
     if(pMga->Overlay8Plus24) {
-	i = 0x00ffffff;
 	WAITFIFO(1);
-	SET_PLANEMASK(i);
+	SET_PLANEMASK_REPLICATED( 0x00ffffff, 0xffffffff, 32 );
     }
 
     WAITFIFO(15);

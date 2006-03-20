@@ -592,15 +592,7 @@ void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
 Bool MGAHWCursorInit(ScreenPtr pScreen);
 
-Bool Mga8AccelInit(ScreenPtr pScreen);
-Bool Mga16AccelInit(ScreenPtr pScreen);
-Bool Mga24AccelInit(ScreenPtr pScreen);
-Bool Mga32AccelInit(ScreenPtr pScreen);
-
-void Mga8InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga16InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga24InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga32InitSolidFillRectFuncs(MGAPtr pMga);
+Bool mgaAccelInit(ScreenPtr pScreen);
 
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
 
@@ -612,27 +604,11 @@ void MGARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 void MGARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 void MGARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 
-void Mga8SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga16SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga24SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga32SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
+void mgaDoSetupForScreenToScreenCopy( ScrnInfoPtr pScrn, int xdir,
+    int ydir, int rop, unsigned int planemask, int trans, unsigned int bpp );
 
-void Mga8SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga16SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga24SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga32SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
+void mgaDoSetupForSolidFill( ScrnInfoPtr pScrn, int color, int rop,
+    unsigned int planemask, unsigned int bpp );
 
 void MGAPointerMoved(int index, int x, int y);
 

@@ -80,25 +80,9 @@ static char MGAClientDriverName[] = "mga";
 
 /* DRI buffer management
  */
-extern void Mga8DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				CARD32 index );
-extern void Mga8DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga16DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga16DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga24DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga24DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga32DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga32DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
+extern void mgaDRIInitBuffers( WindowPtr pWin, RegionPtr prgn, CARD32 index );
+extern void mgaDRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
+    RegionPtr prgnSrc, CARD32 index );
 
 
 /* Initialize the visual configs that are supported by the hardware.
@@ -1112,20 +1096,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
       pDRIInfo->SwapContext = MGADRISwapContext;
    }
 
-   switch( pScrn->bitsPerPixel ) {
-   case 8:
-       pDRIInfo->InitBuffers = Mga8DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga8DRIMoveBuffers;
-   case 16:
-       pDRIInfo->InitBuffers = Mga16DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga16DRIMoveBuffers;
-   case 24:
-       pDRIInfo->InitBuffers = Mga24DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga24DRIMoveBuffers;
-   case 32:
-       pDRIInfo->InitBuffers = Mga32DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga32DRIMoveBuffers;
-   }
+   pDRIInfo->InitBuffers = mgaDRIInitBuffers;
+   pDRIInfo->MoveBuffers = mgaDRIMoveBuffers;
 
    pDRIInfo->bufferRequests = DRI_ALL_WINDOWS;
 

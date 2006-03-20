@@ -1,3 +1,16 @@
+2006-03-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Makefile.am:
+	* src/mga.h:
+	* src/mga_dga.c:
+	* src/mga_dri.c:
+	* src/mga_macros.h:
+	* src/mga_map.h:
+	* src/mga_storm.c:
+	* src/mga_video.c:
+	Bug #5587: Refactor mga_storm.c to only build once for all color
+	depths.  (Ian Romanick)
+
 2006-03-15  Adam Jackson  <ajax@freedesktop.org>
 
 	* src/mga_dri.c:
