@@ -65,6 +65,8 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 #ifdef USEMGAHAL
 #define HAL_CHIPSETS ((pMga->Chipset == PCI_CHIP_MGAG200_PCI) || \
 		  (pMga->Chipset == PCI_CHIP_MGAG200) || \
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) || \
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI) || \
 		  (pMga->Chipset == PCI_CHIP_MGAG400) || \
 		  (pMga->Chipset == PCI_CHIP_MGAG550))
     

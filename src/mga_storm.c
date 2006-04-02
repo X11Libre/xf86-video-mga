@@ -645,6 +645,11 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 			   TRANSC_SOLID_FILL |
  			   USE_RECTS_FOR_LINES;
         break;
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+	doRender = FALSE;
+	pMga->AccelFlags = TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND;
+	break;
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
         if(pMga->SecondCrtc == TRUE) {
@@ -853,8 +858,17 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 	pMga->MaxFastBlitY = maxFastBlitMem / (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
     }
 
-    maxlines = (min(pMga->FbUsableSize, 16*1024*1024)) /
-      (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+    switch (pMga->Chipset) {
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+	maxlines = (min(pMga->FbUsableSize, 1*1024*1024)) /
+		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+	break;
+    default:
+	maxlines = (min(pMga->FbUsableSize, 16*1024*1024)) /
+		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+	break;
+    }
 
 #ifdef XF86DRI
     if ( pMga->directRenderingEnabled ) {
@@ -1190,6 +1204,8 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
 	pMga->SrcOrg = 0;
 	OUTREG(MGAREG_SRCORG, pMga->realSrcOrg);
 	OUTREG(MGAREG_DSTORG, pMga->DstOrg);

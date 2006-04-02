@@ -1,3 +1,18 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/Makefile.am:
+	* src/mga.h:
+	* src/mga_bios.c:
+	* src/mga_dacG.c:
+	* src/mga_dga.c:
+	* src/mga_driver.c:
+	* src/mga_macros.h:
+	* src/mga_merge.c:
+	* src/mga_storm.c:
+	* src/mga_vga.c:
+	Bug #6328:  Add support for Matrox G200SE chips. (Matrox)
+
 2006-03-20  Adam Jackson  <ajax@freedesktop.org>
 
 	* src/Makefile.am:

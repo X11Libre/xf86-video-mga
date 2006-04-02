@@ -56,6 +56,7 @@ mga_drv_la_SOURCES = \
          mga_shadow.c \
          mga_storm.c \
          mga_ucode.h \
+	 mga_vga.c \
          mga_video.c
 
 if DRI

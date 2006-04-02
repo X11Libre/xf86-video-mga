@@ -118,6 +118,14 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define OUTREG(addr,val) MGAdbg_outreg32(pScrn, addr, val, __FUNCTION__)
 #endif /* EXTRADEBUG */
 
+#ifndef PCI_CHIP_MGAG200_SE_A_PCI
+#define PCI_CHIP_MGAG200_SE_A_PCI 0x0522
+#endif
+
+#ifndef PCI_CHIP_MGAG200_SE_B_PCI
+#define PCI_CHIP_MGAG200_SE_B_PCI 0x0524
+#endif
+
 /*
  * Read/write to the DAC via MMIO 
  */
@@ -152,8 +160,8 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define MGA_MODULE_DATA mgaModuleData
 #define MGA_DRIVER_NAME "mga"
 #define MGA_MAJOR_VERSION 1
-#define MGA_MINOR_VERSION 2
-#define MGA_PATCHLEVEL 1
+#define MGA_MINOR_VERSION 3
+#define MGA_PATCHLEVEL 0
 
 typedef struct {
     unsigned char	ExtVga[6];
@@ -658,6 +666,8 @@ void MGAG450PrintPLL(ScrnInfoPtr pScrn);
 #endif
 long MGAG450SavePLLFreq(ScrnInfoPtr pScrn);
 void MGAprintDac(ScrnInfoPtr pScrn);
+void MGAG200SESaveFonts(ScrnInfoPtr, vgaRegPtr);
+void MGAG200SERestoreFonts(ScrnInfoPtr, vgaRegPtr);
 
 #ifdef USEMGAHAL
 /************ ESC Call Definition ***************/

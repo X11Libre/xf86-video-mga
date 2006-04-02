@@ -154,8 +154,16 @@ SECOND_PASS:
 	    mode->imageWidth = pitch;
 	    mode->imageHeight =  pMga->FbUsableSize / mode->bytesPerScanline; 
 	    mode->pixmapWidth = pitch;
-	    mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) / 
-					mode->bytesPerScanline;
+	    switch (pMga->Chipset) {
+	    case PCI_CHIP_MGAG200_SE_A_PCI:
+	    case PCI_CHIP_MGAG200_SE_B_PCI:
+		mode->pixmapHeight = (min(pMga->FbUsableSize, 1*1024*1024)) /
+				     mode->bytesPerScanline;
+		break;
+	    default:
+		mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) / 
+				     mode->bytesPerScanline;
+	    }
 	    mode->maxViewportX = mode->imageWidth - mode->viewportWidth;
 	    mode->maxViewportY = (pMga->FbUsableSize / mode->bytesPerScanline) -
 				 	mode->viewportHeight;
