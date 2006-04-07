@@ -1,3 +1,25 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/clientlx.c:
+	* src/mga.h:
+	* src/mga_arc.c:
+	* src/mga_bios.c:
+	* src/mga_dac3026.c:
+	* src/mga_dacG.c:
+	* src/mga_dga.c:
+	* src/mga_dh.c:
+	* src/mga_dri.c:
+	* src/mga_driver.c:
+	* src/mga_esc.c:
+	* src/mga_g450pll.c:
+	* src/mga_hwcurs.c:
+	* src/mga_merge.c:
+	* src/mga_shadow.c:
+	* src/mga_storm.c:
+	* src/mga_video.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.4.0.
+
 2006-04-01  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

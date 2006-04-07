@@ -14,6 +14,9 @@
 #ifndef MGA_H
 #define MGA_H
 
+#include <string.h>
+#include <stdio.h>
+
 #include "compiler.h"
 #include "xaa.h"
 #include "xf86Cursor.h"
@@ -22,29 +25,19 @@
 #include "xf86DDC.h"
 #include "xf86xv.h"
 
-
-
 #ifdef XF86DRI
 #include "xf86drm.h"
-
 
 #define _XF86DRI_SERVER_
 #include "mga_dripriv.h"
 #include "dri.h"
 #include "GL/glxint.h"
 
-
-
-
 #include "dri.h"
-
-
 
 #include "GL/glxint.h"
 #include "mga_dri.h"
 #endif
-
-
 
 #ifdef USEMGAHAL
 #include "client.h"
@@ -160,7 +153,7 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define MGA_MODULE_DATA mgaModuleData
 #define MGA_DRIVER_NAME "mga"
 #define MGA_MAJOR_VERSION 1
-#define MGA_MINOR_VERSION 3
+#define MGA_MINOR_VERSION 4
 #define MGA_PATCHLEVEL 0
 
 typedef struct {

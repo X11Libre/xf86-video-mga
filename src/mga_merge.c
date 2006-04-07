@@ -10,7 +10,6 @@
 #include "xf86Resources.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 #include "compiler.h"
 
