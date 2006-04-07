@@ -49,7 +49,7 @@ static void MGAQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			unsigned int *, unsigned int *, pointer);
 static int  MGAPutImage(ScrnInfoPtr, short, short, short, short, short, 
 			short, short, short, int, unsigned char*, short, 
-			short, Bool, RegionPtr, pointer);
+			short, Bool, RegionPtr, pointer, DrawablePtr);
 static int  MGAQueryImageAttributes(ScrnInfoPtr, int, unsigned short *, 
 			unsigned short *,  int *, int *);
 
@@ -753,7 +753,8 @@ MGAPutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool Sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    MGAPtr pMga = MGAPTR(pScrn);
    MGAPortPrivPtr pPriv = pMga->portPrivate;

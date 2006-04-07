@@ -1,3 +1,9 @@
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/mga_video.c: (MGAPutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:
