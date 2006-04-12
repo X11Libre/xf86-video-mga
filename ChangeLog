@@ -1,3 +1,8 @@
+2006-04-12  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/mga_arc.c:
+	Bug #6562: s/MAXSHORT/SHRT_MAX/ for POSIX.  (Matthieu Herrb)
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:
