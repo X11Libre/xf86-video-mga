@@ -202,64 +202,20 @@ common_replicate_colors_and_mask( unsigned int fg, unsigned int bg,
 
 #ifdef RENDER
 
-extern Bool
-MGASetupForCPUToScreenAlphaTexture (
-	ScrnInfoPtr	pScrn,
-	int		op,
-	CARD16		red,
-	CARD16		green,
-	CARD16		blue,
-	CARD16		alpha,
-	int		alphaType,
-	CARD8		*alphaPtr,
-	int		alphaPitch,
-	int		width,
-	int		height,
-	int		flags
-);
+static Bool MGASetupForCPUToScreenAlphaTexture(ScrnInfoPtr pScrn, int op,
+    CARD16 red, CARD16 green, CARD16 blue, CARD16 alpha, int alphaType,
+    CARD8 *alphaPtr, int alphaPitch, int width, int height, int flags);
 
-extern Bool
-MGASetupForCPUToScreenAlphaTextureFaked (
-	ScrnInfoPtr	pScrn,
-	int		op,
-	CARD16		red,
-	CARD16		green,
-	CARD16		blue,
-	CARD16		alpha,
-	int		alphaType,
-	CARD8		*alphaPtr,
-	int		alphaPitch,
-	int		width,
-	int		height,
-	int		flags
-);
+static Bool MGASetupForCPUToScreenAlphaTextureFaked(ScrnInfoPtr Scrn, int op,
+    CARD16 red, CARD16 green, CARD16 blue, CARD16 alpha, int alphaType,
+    CARD8 *alphaPtr, int alphaPitch, int width, int height, int flags);
 
+static Bool MGASetupForCPUToScreenTexture(ScrnInfoPtr pScrn, int op,
+    int texType, CARD8 *texPtr, int texPitch, int width, int height,
+    int flags);
 
-extern Bool
-MGASetupForCPUToScreenTexture (
-	ScrnInfoPtr	pScrn,
-	int		op,
-	int		texType,
-	CARD8		*texPtr,
-	int		texPitch,
-	int		width,
-	int		height,
-	int		flags
-);
-
-extern void
-MGASubsequentCPUToScreenTexture (
-	ScrnInfoPtr	pScrn,
-	int		dstx,
-	int		dsty,
-	int		srcx,
-	int		srcy,
-	int		width,
-	int		height
-);
-
-extern CARD32 MGAAlphaTextureFormats[2];
-extern CARD32 MGATextureFormats[2];
+static void MGASubsequentCPUToScreenTexture(ScrnInfoPtr pScrn, int dstx,
+    int dsty, int srcx, int srcy, int width, int height);
 
 #include "mipict.h"
 #include "dixstruct.h"
@@ -621,6 +577,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     int maxFastBlitMem, maxlines;
     Bool doRender = FALSE;
     BoxRec AvailFBArea;
+    int i;
 
     pMga->ScratchBuffer = xalloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
     if(!pMga->ScratchBuffer) return FALSE;
@@ -646,26 +603,12 @@ Bool mgaAccelInit( ScreenPtr pScreen )
         break;
     case PCI_CHIP_MGAG200_SE_A_PCI:
     case PCI_CHIP_MGAG200_SE_B_PCI:
-	doRender = FALSE;
-	pMga->AccelFlags = TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND;
-	break;
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
-        if(pMga->SecondCrtc == TRUE) {
-	    pMga->HasFBitBlt = FALSE;
-	}
-        pMga->MaxBlitDWORDS = 0x400000 >> 5;
-	/* fallthrough */
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
-	doRender = FALSE;
         pMga->AccelFlags = TRANSC_SOLID_FILL |
 			   TWO_PASS_COLOR_EXPAND;
-
-#if 1
-	if((pMga->FbMapSize > 8*1024*1024) && (pScrn->depth == 8))
-	   pMga->AccelFlags |= LARGE_ADDRESSES;
-#endif
         break;
     case PCI_CHIP_MGA1064:
 	pMga->AccelFlags = 0;
@@ -680,8 +623,16 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     /* all should be able to use this now with the bug fixes */
     pMga->AccelFlags |= USE_LINEAR_EXPANSION;
 
-    if ( pMga->CurrentLayout.bitsPerPixel == 24 ) {
+    if ((pMga->FbMapSize > 8*1024*1024) && (pScrn->depth == 8)) {
+	pMga->AccelFlags |= LARGE_ADDRESSES;
+    }
+
+    if (pMga->CurrentLayout.bitsPerPixel == 24) {
 	pMga->AccelFlags |= MGA_NO_PLANEMASK;
+    }
+
+    if (pMga->SecondCrtc) {
+	pMga->HasFBitBlt = FALSE;
     }
 
     if(pMga->HasSDRAM) {
@@ -992,16 +943,11 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 
     }
 
-    {
-	Bool shared_accel = FALSE;
-	int i;
-
-	for(i = 0; i < pScrn->numEntities; i++) {
-	    if(xf86IsEntityShared(pScrn->entityList[i]))
-		shared_accel = TRUE;
-	}
-	if(shared_accel == TRUE)
+    for (i = 0; i < pScrn->numEntities; i++) {
+	if (xf86IsEntityShared(pScrn->entityList[i])) {
 	    infoPtr->RestoreAccelState = mgaRestoreAccelState;
+	    break;
+	}
     }
 
 #ifdef RENDER
