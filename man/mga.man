@@ -74,7 +74,7 @@ section, and will override the auto\-detection:
 .PP
 The G450 is Chipset "mgag400" with ChipRev 0x80.
 .PP
-The driver will aut\o-detect the amount of video memory present for all
+The driver will auto\-detect the amount of video memory present for all
 chips except the Millennium II.  In the Millennium II case it defaults
 to 4096\ kBytes.  When using a Millennium II, the actual amount of video
 memory should be specified with a
