@@ -97,6 +97,8 @@
 #include "dri.h"
 #endif
 
+#include <unistd.h>
+
 /*
  * Forward definitions for the functions that make up the driver.
  */

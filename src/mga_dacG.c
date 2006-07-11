@@ -32,6 +32,8 @@
 
 #include "xf86DDC.h"
 
+#include <stdlib.h>
+#include <unistd.h>
 
 /*
  * implementation
