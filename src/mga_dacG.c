@@ -130,26 +130,23 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	double f_vco;
 	double m_err, calc_f;
 	const double ref_freq = (double) pMga->bios.pll_ref_freq;
-	int feed_div_min, feed_div_max;
-	int in_div_min, in_div_max;
-	int post_div_max;
-	
+	const int feed_div_max = 127;
+	const int in_div_min = 1;
+	const int post_div_max = 7;
+	int feed_div_min;
+	int in_div_max;
+
+
 	switch( pMga->Chipset )
 	{
 	case PCI_CHIP_MGA1064:
 		feed_div_min = 100;
-		feed_div_max = 127;
-		in_div_min   = 1;
 		in_div_max   = 31;
-		post_div_max = 7;
 		break;
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
 		feed_div_min = 7;
-		feed_div_max = 127;
-		in_div_min   = 1;
 		in_div_max   = 31;
-		post_div_max = 7;
 		break;
 	case PCI_CHIP_MGAG200_SE_A_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
@@ -159,10 +156,7 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	case PCI_CHIP_MGAG200_PCI:
 	default:
 		feed_div_min = 7;
-		feed_div_max = 127;
-		in_div_min   = 1;
 		in_div_max   = 6;
-		post_div_max = 7;
 		break;
 	}
 
@@ -769,15 +763,21 @@ MGA_NOT_HAL(
 	   }
 	   
 	   if (!MGAISGx50(pMga)) {
-	      /* restore pci_option register */
-	      pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, optionMask,
-			     mgaReg->Option);
-	      if (pMga->Chipset != PCI_CHIP_MGA1064)
-		 pciSetBitsLong(pMga->PciTag, PCI_MGA_OPTION2, OPTION2_MASK,
-				mgaReg->Option2);
-	      if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
-		 pciSetBitsLong(pMga->PciTag, PCI_MGA_OPTION3, OPTION3_MASK,
-				mgaReg->Option3);
+	       /* restore pci_option register */
+	       pci_device_cfg_write_bits(pMga->PciInfo, optionMask, 
+					 mgaReg->Option, PCI_OPTION_REG);
+
+	      if (pMga->Chipset != PCI_CHIP_MGA1064) {
+		  pci_device_cfg_write_bits(pMga->PciInfo, OPTION2_MASK,
+					    mgaReg->Option2, PCI_MGA_OPTION2);
+
+		  if (pMga->Chipset == PCI_CHIP_MGAG400 
+		      || pMga->Chipset == PCI_CHIP_MGAG550) {
+		      pci_device_cfg_write_bits(pMga->PciInfo, OPTION3_MASK,
+						mgaReg->Option3,
+						PCI_MGA_OPTION3);
+		  }
+	      }
 	   }
 );	/* MGA_NOT_HAL */
 #ifdef USEMGAHAL
@@ -943,11 +943,14 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
         mgaReg->PIXPLLCSaved = TRUE;
 
-	mgaReg->Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
+	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option,
+				PCI_OPTION_REG);
+	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option2,
+				PCI_MGA_OPTION2);
 
-	mgaReg->Option2 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION2);
 	if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
-	    mgaReg->Option3 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION3);
+		    pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option3,
+					    PCI_MGA_OPTION3);
 	);	/* MGA_NOT_HAL */
 
 	for (i = 0; i < 6; i++)

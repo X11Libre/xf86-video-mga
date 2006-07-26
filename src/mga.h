@@ -14,6 +14,7 @@
 #ifndef MGA_H
 #define MGA_H
 
+#include <pciaccess.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -254,7 +255,7 @@ typedef struct {
 
 #ifdef DISABLE_VGA_IO
 typedef struct mgaSave {
-    pciVideoPtr pvp;
+    struct pci_device * pvp;
     Bool enable;
 } MgaSave, *MgaSavePtr;
 #endif
@@ -367,6 +368,31 @@ struct mga_bios_values {
 };
 
 
+/**
+ * Attributes that of an MGA device that can be derrived purely from its
+ * PCI ID.
+ */
+struct mga_device_attributes {
+    unsigned has_sdram:1;
+    unsigned probe_for_sdram:1;
+    unsigned dual_head_possible:1;
+    unsigned fb_4mb_quirk:1;
+    unsigned hwcursor_1064:1;
+
+    unsigned dri_capable:1;
+    unsigned dri_chipset:3;
+    
+    unsigned HAL_chipset:1;
+
+    enum {
+	old_BARs = 0,
+	probe_BARs,
+	new_BARs
+    } BARs:2;
+    
+    uint32_t accel_flags;
+};
+
 typedef struct {
 #ifdef USEMGAHAL
     LPCLIENTDATA	pClientStruct;
@@ -377,8 +403,8 @@ typedef struct {
     EntityInfoPtr	pEnt;
     struct mga_bios_values bios;
     CARD8               BiosOutputMode;
-    pciVideoPtr		PciInfo;
-    PCITAG		PciTag;
+    struct pci_device *	PciInfo;
+    const struct mga_device_attributes * chip_attribs;
     xf86AccessRec	Access;
     int			Chipset;
     int                 ChipRev;
@@ -392,12 +418,25 @@ typedef struct {
     int			YDstOrg;
     int			DstOrg;
     int			SrcOrg;
-    unsigned long	IOAddress;
+
+    /**
+     * Which BAR corresponds to the framebuffer on this chip?
+     */
+    unsigned            framebuffer_bar;
+
+    /**
+     * Which BAR corresponds to IO space on this chip?
+     */
+    unsigned            io_bar;
+
+    /**
+     * Which BAR corresponds to ILOAD space on this chip?  If the value is
+     * -1, then this chip does not have an ILOAD region.
+     */
+    int                 iload_bar;
+
+
     unsigned long	FbAddress;
-    unsigned long	ILOADAddress;
-    int			FbBaseReg;
-    unsigned long	BiosAddress;
-    MessageType		BiosFrom;
     unsigned char *     IOBase;
     unsigned char *	FbBase;
     unsigned char *	ILOADBase;
@@ -409,7 +448,6 @@ typedef struct {
     Bool		HasSDRAM;
     Bool		NoAccel;
     Bool		SyncOnGreen;
-    Bool		Dac6Bit;
     Bool		HWCursor;
     Bool		UsePCIRetry;
     Bool		ShowCache;

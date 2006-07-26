@@ -272,8 +272,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	return TRUE;
     }
 
-    pMga->PciTag = pMga1->PciTag;
-   
     pMga->Primary = pMga1->Primary;
 
     /* Set pScrn->monitor */
@@ -370,12 +368,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     }
 
     pMga->FbAddress = pMga1->FbAddress;
-    pMga->FbBaseReg = pMga1->FbBaseReg;
     pMga->PciInfo = pMga1->PciInfo;
-    pMga->IOAddress = pMga1->IOAddress;
-    pMga->ILOADAddress = pMga1->ILOADAddress;
-    pMga->BiosFrom = pMga1->BiosFrom;
-    pMga->BiosAddress = pMga1->BiosAddress;
 
     /*
      * Read the BIOS data struct

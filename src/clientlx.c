@@ -67,7 +67,7 @@ ULONG ClientReadConfigSpaceByte(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-    *pucByte = pciReadByte(pMga->PciTag,ulOffset);
+    pci_device_cfg_read_u8(pMga->PciInfo, pucByte, ulOffset);
 
     return 0;
 }
@@ -95,7 +95,7 @@ ULONG ClientReadConfigSpaceDword(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-    *pulDword = pciReadLong(pMga->PciTag,ulOffset);
+    pci_device_cfg_read_u32(pMga->PciInfo, (uint32_t *) pulDword, ulOffset);
 
     return 0;
 }
@@ -123,7 +123,7 @@ ULONG ClientWriteConfigSpaceByte(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-    pciWriteByte(pMga->PciTag,ulOffset, ucByte);
+    pci_device_cfg_write_u8(pMga->PciInfo, & ucByte, ulOffset);
 
     return 0;
 }
@@ -151,7 +151,7 @@ ULONG ClientWriteConfigSpaceDword(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-    pciWriteLong(pMga->PciTag,ulOffset, ulDword);
+    pci_device_cfg_write_u32(pMga->PciInfo, (uint32_t *) & ulDword, ulOffset);
 
     return 0;
 }

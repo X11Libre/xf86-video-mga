@@ -63,20 +63,13 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 #endif
 
 #ifdef USEMGAHAL
-#define HAL_CHIPSETS ((pMga->Chipset == PCI_CHIP_MGAG200_PCI) || \
-		  (pMga->Chipset == PCI_CHIP_MGAG200) || \
-		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) || \
-		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI) || \
-		  (pMga->Chipset == PCI_CHIP_MGAG400) || \
-		  (pMga->Chipset == PCI_CHIP_MGAG550))
-    
 #define MGA_HAL(x) { \
 	MGAPtr pMga = MGAPTR(pScrn); \
-	if (pMga->HALLoaded && HAL_CHIPSETS) { x; } \
+	if (pMga->HALLoaded && pMga->chip_attribs->HAL_chipset) { x; } \
 }
 #define MGA_NOT_HAL(x) { \
 	MGAPtr pMga = MGAPTR(pScrn); \
-	if (!pMga->HALLoaded || !HAL_CHIPSETS) { x; } \
+	if (!pMga->HALLoaded || !pMga->chip_attribs->HAL_chipset) { x; } \
 }
 #else
 #define MGA_NOT_HAL(x) { x; }

@@ -591,37 +591,10 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     pMga->MaxFastBlitY = 0;
     pMga->MaxBlitDWORDS = 0x40000 >> 5;
 
-    switch (pMga->Chipset) {
-    case PCI_CHIP_MGA2064:
-    	pMga->AccelFlags = BLK_OPAQUE_EXPANSION | FASTBLT_BUG;
-	break;
-    case PCI_CHIP_MGA2164:
-    case PCI_CHIP_MGA2164_AGP:
-    	pMga->AccelFlags = BLK_OPAQUE_EXPANSION |
-			   TRANSC_SOLID_FILL |
- 			   USE_RECTS_FOR_LINES;
-        break;
-    case PCI_CHIP_MGAG200_SE_A_PCI:
-    case PCI_CHIP_MGAG200_SE_B_PCI:
-    case PCI_CHIP_MGAG400:
-    case PCI_CHIP_MGAG550:
-    case PCI_CHIP_MGAG200:
-    case PCI_CHIP_MGAG200_PCI:
-        pMga->AccelFlags = TRANSC_SOLID_FILL |
-			   TWO_PASS_COLOR_EXPAND;
-        break;
-    case PCI_CHIP_MGA1064:
-	pMga->AccelFlags = 0;
-        break;
-    case PCI_CHIP_MGAG100:
-    case PCI_CHIP_MGAG100_PCI:
-    default:
-	pMga->AccelFlags = MGA_NO_PLANEMASK;
-        break;
-    }
 
-    /* all should be able to use this now with the bug fixes */
-    pMga->AccelFlags |= USE_LINEAR_EXPANSION;
+    /* Set initial acceleration flags.
+     */
+    pMga->AccelFlags = pMga->chip_attribs->accel_flags;
 
     if ((pMga->FbMapSize > 8*1024*1024) && (pScrn->depth == 8)) {
 	pMga->AccelFlags |= LARGE_ADDRESSES;

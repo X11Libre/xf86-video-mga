@@ -67,7 +67,7 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for header files.
 AC_HEADER_STDC
 
-if test "x$DRI" != xno; then
+if test "x$DRI" = xauto; then
         AC_CHECK_FILE([${sdkdir}/dri.h],
                       [have_dri_h="yes"], [have_dri_h="no"])
         AC_CHECK_FILE([${sdkdir}/sarea.h],
@@ -90,7 +90,7 @@ AC_MSG_RESULT([$DRI])
 
 AM_CONDITIONAL(DRI, test "x$DRI" = xyes)
 if test "x$DRI" = xyes; then
-        PKG_CHECK_MODULES(DRI, [libdrm >= 2.0 xf86driproto])
+        PKG_CHECK_MODULES(DRI, [libdrm >= 2.0 xf86driproto glproto])
         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
 fi

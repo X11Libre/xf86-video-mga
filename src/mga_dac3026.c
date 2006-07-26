@@ -746,8 +746,8 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	for (i = 0; i < 6; i++)
 		OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
 
-	pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, OPTION_MASK,
-		       mgaReg->Option);
+	pci_device_cfg_write_bits(pMga, OPTION_MASK, mgaReg->Option,
+				  PCI_OPTION_REG);
 
 	MGA_NOT_HAL(
 	/* select pixel clock PLL as clock source */
@@ -866,7 +866,8 @@ MGA3026Save(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	for (i = 0; i < DACREGSIZE; i++)
 		mgaReg->DacRegs[i]	 = inTi3026(MGADACregs[i]);
 	
-	mgaReg->Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
+	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option, 
+				PCI_OPTION_REG);
 	
 #ifdef DEBUG		
 	ErrorF("read: %02X %02X %02X	%02X %02X %02X	%08lX\n",
