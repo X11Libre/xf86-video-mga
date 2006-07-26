@@ -1012,7 +1012,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    pDRIInfo->ddxDriverMajorVersion = MGA_MAJOR_VERSION;
    pDRIInfo->ddxDriverMinorVersion = MGA_MINOR_VERSION;
    pDRIInfo->ddxDriverPatchVersion = MGA_PATCHLEVEL;
-   pDRIInfo->frameBufferPhysicalAddress = pMga->FbAddress;
+   pDRIInfo->frameBufferPhysicalAddress = (void *) pMga->FbAddress;
    pDRIInfo->frameBufferSize = pMga->FbMapSize;
    pDRIInfo->frameBufferStride = pScrn->displayWidth*(pScrn->bitsPerPixel/8);
    pDRIInfo->ddxDrawableTableEntry = MGA_MAX_DRAWABLES;
