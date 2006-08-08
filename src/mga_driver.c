@@ -637,6 +637,7 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 
 	pMga = MGAPTR(pScrn);
 	pMga->chip_attribs = & attribs[ match_data ];
+	pMga->PciInfo = dev;
 
 
 	/*
@@ -1189,9 +1190,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!vgaHWGetHWRec(pScrn))
 	return FALSE;
 
-    /* Find the PCI info for this screen */
-    pMga->PciInfo = xf86GetPciInfoForEntity(pMga->pEnt->index);
-
     pMga->Primary = xf86IsPrimaryPci(pMga->PciInfo);
 
 #ifndef DISABLE_VGA_IO
@@ -1229,6 +1227,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->Chipset = pMga->PciInfo->device_id;
 	pScrn->chipset = (char *)xf86TokenToString(MGAChipsets, pMga->Chipset);
     }
+
     if (pMga->device->chipRev >= 0) {
 	pMga->ChipRev = pMga->device->chipRev;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ChipRev override: %d\n",
