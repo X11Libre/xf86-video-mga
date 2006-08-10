@@ -61,6 +61,12 @@
 #define BLIT_LEFT   1
 #define BLIT_UP        4
 
+/* stolen from kdrive's mga.h. needs to go into mga_reg.h */
+#define MGA_PW8 0
+#define MGA_PW16 1
+#define MGA_PW24 2
+#define MGA_PW32 3
+
 static const CARD32 mgaRop[16] = {
     /* GXclear        */  MGADWG_RPL  | 0x00000000,    /* 0 */
     /* GXand          */  MGADWG_RSTR | 0x00080000,    /* src AND dst */
@@ -142,6 +148,35 @@ mgaGetPixmapPitch(PixmapPtr pPix)
     return exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel >> 3);
 }
 
+static Bool
+mgaSetup(ScreenPtr pScreen, int dest_bpp, int wait)
+{
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    MGAPtr pMga = pScrn->driverPrivate;
+
+    WAITFIFO(wait + 4);
+
+    /* Set the format of the destination pixmap */
+    switch (dest_bpp) {
+    case 8:
+        OUTREG(MGAREG_MACCESS, MGA_PW8);
+        break;
+    case 16:
+        OUTREG(MGAREG_MACCESS, MGA_PW16);
+        break;
+    case 24:
+    case 32:
+        OUTREG(MGAREG_MACCESS, MGA_PW24);
+        break;
+    }
+
+    OUTREG(MGAREG_CXBNDRY, 0xffff0000);
+    OUTREG(MGAREG_YTOP, 0x00000000);
+    OUTREG(MGAREG_YBOT, 0x007fffff);
+
+    return TRUE;
+}
+
 static void
 mgaNoopDone(PixmapPtr pPixmap)
 {
@@ -156,7 +191,8 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
     pMga->FilledRectCMD = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
                           MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
 
-    WAITFIFO(5);
+    mgaSetup(pPixmap->drawable.pScreen, pPixmap->drawable.bitsPerPixel, 5);
+
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pPixmap));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pPixmap));
     OUTREG(MGAREG_FCOL, fg);
@@ -202,7 +238,7 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     dwgctl = mgaRop[alu] | MGADWG_SHIFTZERO | MGADWG_BITBLT | MGADWG_BFCOL;
     pMga->src_pitch = mgaGetPixmapPitch(pSrc);
 
-    WAITFIFO(7);
+    mgaSetup(pSrc->drawable.pScreen, pDst->drawable.bitsPerPixel, 7);
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
     OUTREG(MGAREG_SRCORG, exaGetPixmapOffset(pSrc));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
@@ -484,6 +520,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     PMGA(pDst);
     CARD32 ds0 = 0, ds1 = 0, cmd, blendcntl;
 
+    /* FIXME needs mgaSetup magic */
     WAITFIFO(3);
     OUTREG(MGAREG_FCOL, 0xff000000);
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
