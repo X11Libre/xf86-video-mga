@@ -61,12 +61,6 @@
 #define BLIT_LEFT   1
 #define BLIT_UP        4
 
-/* stolen from kdrive's mga.h. needs to go into mga_reg.h */
-#define MGA_PW8 0
-#define MGA_PW16 1
-#define MGA_PW24 2
-#define MGA_PW32 3
-
 static const CARD32 mgaRop[16] = {
     /* GXclear        */  MGADWG_RPL  | 0x00000000,    /* 0 */
     /* GXand          */  MGADWG_RSTR | 0x00080000,    /* src AND dst */
@@ -153,22 +147,22 @@ mgaSetup(ScreenPtr pScreen, int dest_bpp, int wait)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     MGAPtr pMga = pScrn->driverPrivate;
+    unsigned int maccess = 0;
+    static const unsigned int maccess_table[5] = {
+        0, /* dummy */
+        0, /*  8 bpp, PW8 */
+        1, /* 16 bpp, PW16 */
+        3, /* 24 bpp, PW24 */
+        2, /* 32 bpp, PW32 */
+    };
 
     WAITFIFO(wait + 4);
 
-    /* Set the format of the destination pixmap */
-    switch (dest_bpp) {
-    case 8:
-        OUTREG(MGAREG_MACCESS, MGA_PW8);
-        break;
-    case 16:
-        OUTREG(MGAREG_MACCESS, MGA_PW16);
-        break;
-    case 24:
-    case 32:
-        OUTREG(MGAREG_MACCESS, MGA_PW24);
-        break;
-    }
+    /* Set the format of the destination pixmap.
+     * Taken from MGAStormEngineInit().
+     */
+    maccess |= maccess_table[dest_bpp / 8];
+    OUTREG(MGAREG_MACCESS, maccess);
 
     OUTREG(MGAREG_CXBNDRY, 0xffff0000);
     OUTREG(MGAREG_YTOP, 0x00000000);
