@@ -722,7 +722,7 @@ mgaExaInit(ScreenPtr pScreen)
     /* FIXME
      * if (pMga->Chipset >= PCI_CHIP_MGAG400) {
      */
-    if (1) {
+    if (0) {
         pExa->CheckComposite = mgaCheckComposite;
         pExa->PrepareComposite = mgaPrepareComposite;
         pExa->Composite = mgaComposite;
