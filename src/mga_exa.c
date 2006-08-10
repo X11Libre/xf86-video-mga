@@ -188,6 +188,23 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
     PMGA(pPixmap);
     QUIESCE_DMA(pPixmap);
 
+    /* FIXME: taken from kdrive. Is this needed? Doesn't seem to affect
+     * rendering...
+     *
+     * We must pad planemask and fg depending on the format of the
+     * destination pixmap
+     */
+    switch (pPixmap->drawable.bitsPerPixel) {
+    case 16:
+        fg |= fg << 16;
+        planemask |= planemask << 16;
+        break;
+    case 8:
+        fg |= (fg << 8) | (fg << 16) | (fg << 24);
+        planemask |= (planemask << 8) | (planemask << 16) | (planemask << 24);
+        break;
+    }
+
     pMga->FilledRectCMD = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
                           MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
 
