@@ -370,6 +370,9 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
 
       MGAWaitForIdleDMA( pScrn );
 
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec) {
       WAITFIFO( 11 );
       OUTREG( MGAREG_MACCESS, pMga->MAccess );
       OUTREG( MGAREG_PITCH, pLayout->displayWidth );
@@ -390,10 +393,8 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
       OUTREG( MGAREG_YTOP, 0x00000000 );    /* minPixelPointer */
       OUTREG( MGAREG_YBOT, 0x007FFFFF );    /* maxPixelPointer */
 
-        /* FIXME what about EXA? */
-#ifdef USE_XAA
-        if (!pMga->Exa && pMga->AccelInfoRec)
             pMga->AccelFlags &= ~CLIPPER_ON;
+        }
 #endif
    }
 }
