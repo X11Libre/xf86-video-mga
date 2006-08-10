@@ -390,7 +390,11 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
       OUTREG( MGAREG_YTOP, 0x00000000 );    /* minPixelPointer */
       OUTREG( MGAREG_YBOT, 0x007FFFFF );    /* maxPixelPointer */
 
-      pMga->AccelFlags &= ~CLIPPER_ON;
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec)
+            pMga->AccelFlags &= ~CLIPPER_ON;
+#endif
    }
 }
 
@@ -406,7 +410,12 @@ void MGAGetQuiescenceShared( ScrnInfoPtr pScrn )
 
    if ( pMGAEnt->directRenderingEnabled ) {
       MGAWaitForIdleDMA( pMGAEnt->pScrn_1 );
-      pMga->RestoreAccelState( pScrn );
+
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec)
+            pMga->RestoreAccelState( pScrn );
+#endif
       xf86SetLastScrnFlag( pScrn->entityList[0], pScrn->scrnIndex );
    }
 }
@@ -420,7 +429,12 @@ static void MGASwapContext( ScreenPtr pScreen )
     * appropriate.
     */
    pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+
+   /* FIXME what about EXA? */
+#ifdef USE_XAA
+    if (!pMga->Exa && pMga->AccelInfoRec)
+        pMga->AccelInfoRec->NeedToSync = TRUE;
+#endif
 }
 
 static void MGASwapContextShared( ScreenPtr pScreen )
@@ -432,11 +446,16 @@ static void MGASwapContextShared( ScreenPtr pScreen )
 
    pMga = MGAPTR(pMGAEnt->pScrn_1);
 
-   pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+   pMga->haveQuiescense = pMGA2->haveQuiescense = 0;
 
-   pMGA2->haveQuiescense = 0;
-   pMGA2->AccelInfoRec->NeedToSync = TRUE;
+   /* FIXME what about EXA? */
+#ifdef USE_XAA
+    if (!pMga->Exa && pMga->AccelInfoRec)
+        pMga->AccelInfoRec->NeedToSync = TRUE;
+
+    if (!pMGA2->Exa && pMGA2->AccelInfoRec)
+        pMGA2->AccelInfoRec->NeedToSync = TRUE;
+#endif
 }
 
 /* FIXME: This comment is out of date, since we aren't overriding

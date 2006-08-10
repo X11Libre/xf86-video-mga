@@ -19,6 +19,7 @@
 
 #include "compiler.h"
 #include "xaa.h"
+#include "exa.h"
 #include "xf86Cursor.h"
 #include "vgaHW.h"
 #include "colormapst.h"
@@ -80,7 +81,8 @@ typedef enum {
     OPTION_MONITOR2POS,
     OPTION_METAMODES,
     OPTION_OLDDMA,
-    OPTION_PCIDMA
+    OPTION_PCIDMA,
+    OPTION_ACCELMETHOD
 } MGAOpts;
 
 
@@ -408,6 +410,8 @@ typedef struct {
     MGARamdacRec	Dac;
     Bool		HasSDRAM;
     Bool		NoAccel;
+    Bool		Exa;
+    ExaDriverPtr 	ExaDriver;
     Bool		SyncOnGreen;
     Bool		Dac6Bit;
     Bool		HWCursor;
@@ -528,6 +532,18 @@ typedef struct {
     Bool                HALLoaded;
 #endif
     OptionInfoPtr	Options;
+
+    /* Exa */
+    PicturePtr currentSrcPicture;
+    PicturePtr currentMaskPicture;
+    PixmapPtr currentSrc;
+    PixmapPtr currentMask;
+    int src_w2;
+    int src_h2;
+    int mask_w2;
+    int mask_h2;
+    CARD32 src_pitch; /* FIXME kill me */
+
 /* Merged Framebuffer data */
     Bool                MergedFB;
 
@@ -588,12 +604,19 @@ void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);
 void MGAGSetupFuncs(ScrnInfoPtr pScrn);
 
+#ifdef USE_XAA
 void MGAStormSync(ScrnInfoPtr pScrn);
 void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
+Bool mgaAccelInit(ScreenPtr pScreen);
+#endif
+
+#ifdef USE_EXA
+Bool mgaExaInit(ScreenPtr pScreen);
+#endif
+
 Bool MGAHWCursorInit(ScreenPtr pScreen);
 
-Bool mgaAccelInit(ScreenPtr pScreen);
 
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
 

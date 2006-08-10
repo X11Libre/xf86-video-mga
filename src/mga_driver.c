@@ -86,7 +86,10 @@
 #include "mga_macros.h"
 #include "mga_maven.h"
 
+#ifdef USE_XAA
 #include "xaa.h"
+#endif
+
 #include "xf86cmap.h"
 #include "shadowfb.h"
 #include "fbdevhw.h"
@@ -232,6 +235,7 @@ static const OptionInfoRec MGAOptions[] = {
     { OPTION_METAMODES,   "MetaModes",  	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_OLDDMA,		"OldDmaInit",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_PCIDMA,		"ForcePciDma",	OPTV_BOOLEAN,	{0}, FALSE },
+    { OPTION_ACCELMETHOD,	"AccelMethod",	OPTV_ANYSTR,	{0}, FALSE },
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
@@ -276,6 +280,17 @@ static const char *xf8_32bppSymbols[] = {
     NULL
 };
 
+#ifdef USE_EXA
+static const char *exaSymbols[] = {
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaGetPixmapOffset",
+    "exaGetVersion",
+    NULL
+};
+#endif
+
+#ifdef USE_XAA
 static const char *xaaSymbols[] = {
     "XAACachePlanarMonoStipple",
     "XAACreateInfoRec",
@@ -286,6 +301,7 @@ static const char *xaaSymbols[] = {
     "XAA_888_plus_PICT_a8_to_8888",
     NULL
 };
+#endif
 
 static const char *ramdacSymbols[] = {
     "xf86CreateCursorInfoRec",
@@ -453,7 +469,13 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	 * Tell the loader about symbols from other modules that this module
 	 * might refer to.
 	 */
-	LoaderRefSymLists(vgahwSymbols, xaaSymbols,
+	LoaderRefSymLists(vgahwSymbols,
+#ifdef USE_XAA
+                          xaaSymbols,
+#endif
+#ifdef USE_EXA
+                          exaSymbols,
+#endif
 			  xf8_32bppSymbols, ramdacSymbols,
 			  ddcSymbols, i2cSymbols, shadowSymbols,
 			  fbdevHWSymbols, vbeSymbols,
@@ -1497,6 +1519,19 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86ReturnOptValBool(pMga->Options, OPTION_NOACCEL, FALSE)) {
 	pMga->NoAccel = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
+    } else {
+	int from = X_DEFAULT;
+	char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
+	pMga->NoAccel = FALSE;
+	pMga->Exa = FALSE;
+#ifdef USE_EXA
+	if (!xf86NameCmp(s, "EXA")) {
+	    pMga->Exa = TRUE;
+	    from = X_CONFIG;
+	}
+#endif
+	xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration\n",
+		   pMga->Exa ? "EXA" : "XAA");
     }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_PCI_RETRY, FALSE)) {
 	pMga->UsePCIRetry = TRUE;
@@ -2326,11 +2361,21 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Load XAA if needed */
     if (!pMga->NoAccel) {
-	if (!xf86LoadSubModule(pScrn, "xaa")) {
-	    MGAFreeRec(pScrn);
-	    return FALSE;
+#ifdef USE_EXA
+	if (pMga->Exa) {
+	    if (!xf86LoadSubModule(pScrn, "exa")) {
+		MGAFreeRec(pScrn);
+		return FALSE;
+	    } else xf86LoaderReqSymLists(exaSymbols, NULL);
+	} else {
+#endif
+#ifdef USE_XAA
+	    if (!xf86LoadSubModule(pScrn, "xaa")) {
+		MGAFreeRec(pScrn);
+		return FALSE;
+	    } else xf86LoaderReqSymLists(xaaSymbols, NULL);
+#endif
 	}
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
     }
 
     /* Load ramdac if needed */
@@ -3337,8 +3382,16 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if(!pMga->ShadowFB) /* hardware cursor needs to wrap this layer */
 	MGADGAInit(pScreen);
 
-    if (!pMga->NoAccel)
-	MGAStormAccelInit(pScreen);
+    if (!pMga->NoAccel) {
+#ifdef USE_EXA
+	if (pMga->Exa)
+	    mgaExaInit(pScreen);
+	else
+#endif
+#ifdef USE_XAA
+	    MGAStormAccelInit(pScreen);
+#endif
+    }
 
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
@@ -3843,8 +3896,16 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
    );	/* MGA_HAL */
 #endif
 
+#ifdef USE_XAA
     if (pMga->AccelInfoRec)
 	XAADestroyInfoRec(pMga->AccelInfoRec);
+#endif
+#ifdef USE_EXA
+    if (pMga->ExaDriver) {
+	exaDriverFini(pScreen);
+	xfree(pMga->ExaDriver);
+    }
+#endif
     if (pMga->CursorInfoRec)
     	xf86DestroyCursorInfoRec(pMga->CursorInfoRec);
     if (pMga->ShadowPtr)
