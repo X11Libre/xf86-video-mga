@@ -671,6 +671,10 @@ mgaDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h, char *dst,
 static void
 mgaWaitMarker(ScreenPtr pScreen, int marker)
 {
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+
+    /* FIXME: is this correct? */
+    CHECK_DMA_QUIESCENT(MGAPTR(pScrn), pScrn);
 }
 
 Bool
