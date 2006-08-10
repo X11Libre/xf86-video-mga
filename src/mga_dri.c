@@ -431,10 +431,13 @@ static void MGASwapContext( ScreenPtr pScreen )
     */
    pMga->haveQuiescense = 0;
 
-   /* FIXME what about EXA? */
 #ifdef USE_XAA
     if (!pMga->Exa && pMga->AccelInfoRec)
         pMga->AccelInfoRec->NeedToSync = TRUE;
+#endif
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaMarkSync(pScreen);
 #endif
 }
 
@@ -449,13 +452,19 @@ static void MGASwapContextShared( ScreenPtr pScreen )
 
    pMga->haveQuiescense = pMGA2->haveQuiescense = 0;
 
-   /* FIXME what about EXA? */
 #ifdef USE_XAA
     if (!pMga->Exa && pMga->AccelInfoRec)
         pMga->AccelInfoRec->NeedToSync = TRUE;
 
     if (!pMGA2->Exa && pMGA2->AccelInfoRec)
         pMGA2->AccelInfoRec->NeedToSync = TRUE;
+#endif
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaMarkSync(pScrn->pScreen);
+
+    if (pMGA2->Exa)
+        exaMarkSync(pMGAEnt->pScrn_2->pScreen);
 #endif
 }
 
