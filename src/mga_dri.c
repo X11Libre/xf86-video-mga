@@ -515,6 +515,7 @@ MGADRISwapContextShared( ScreenPtr pScreen, DRISyncType syncType,
    }
 }
 
+#ifdef USE_XAA
 void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
 {
    MGAPtr pMga = MGAPTR(pScrn);
@@ -536,6 +537,7 @@ void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
       break;
    }
 }
+#endif
 
 
 static unsigned int mylog2( unsigned int n )
