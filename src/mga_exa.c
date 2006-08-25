@@ -720,9 +720,14 @@ static void
 mgaWaitMarker(ScreenPtr pScreen, int marker)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    MGAPtr pMga = pScrn->driverPrivate;
 
-    /* FIXME: is this correct? */
-    CHECK_DMA_QUIESCENT(MGAPTR(pScrn), pScrn);
+    WAITFIFO(1);
+
+    OUTREG(MGAREG_CACHEFLUSH, 0);
+
+    /* wait until the "drawing engine busy" bit is unset */
+    while (INREG (MGAREG_Status) & 0x10000);
 }
 
 Bool
