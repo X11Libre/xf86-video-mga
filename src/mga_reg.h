@@ -144,7 +144,7 @@
 
 /* Trapezoids */
 #define MGADWG_TRAP		0x04
-#define MGADWG_TEXTURE_TRAP	0x05
+#define MGADWG_TEXTURE_TRAP	0x06
 
 /* BitBlts */
 
