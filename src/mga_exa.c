@@ -253,14 +253,11 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     OUTREG(MGAREG_DWGCTL, dwgctl);
     OUTREG(MGAREG_SGN, blit_direction);
     OUTREG(MGAREG_PLNWT, planemask);
-
-    /* this is crap */
     OUTREG(MGAREG_AR5, (ydir < -0 ? -1 : 1) * pMga->src_pitch);
 
     return TRUE;
 }
 
-/* this whole thing is bogus. */
 static void
 mgaCopy(PixmapPtr pDst, int srcx, int srcy, int dstx, int dsty, int w, int h)
 {
