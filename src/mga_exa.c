@@ -525,8 +525,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     PMGA(pDst);
     CARD32 ds0 = 0, ds1 = 0, cmd, blendcntl;
 
-    /* FIXME needs mgaSetup magic */
-    WAITFIFO(3);
+    mgaSetup(pSrc->drawable.pScreen, pDst->drawable.bitsPerPixel, 3);
     OUTREG(MGAREG_FCOL, 0xff000000);
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
