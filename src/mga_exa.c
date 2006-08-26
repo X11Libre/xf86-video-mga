@@ -347,7 +347,7 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
                   PicturePtr pDstPict)
 {
     if (op >= sizeof(mgaBlendOp) / sizeof(mgaBlendOp[0])) {
-        DEBUG_MSG(("unsupported op %x", op));
+        DEBUG_MSG(("unsupported op %x\n", op));
         return FALSE;
     }
 
@@ -356,7 +356,7 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
 
     if (pMaskPict) {
         if (PICT_FORMAT_A(pMaskPict->format) == 0) {
-            DEBUG_MSG(("Mask without alpha unsupported"));
+            DEBUG_MSG(("Mask without alpha unsupported\n"));
             return FALSE;
         }
 
@@ -364,14 +364,14 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
             return FALSE;
 
         if (pMaskPict->componentAlpha) {
-            DEBUG_MSG(("Component alpha unsupported"));
+            DEBUG_MSG(("Component alpha unsupported\n"));
             return FALSE;
         }
     }
 
     switch (pDstPict->format) {
     case PICT_a8:
-        DEBUG_MSG(("render to A8 unsupported"));
+        DEBUG_MSG(("render to A8 unsupported\n"));
         return FALSE;
     default:
         break;
