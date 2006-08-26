@@ -759,8 +759,14 @@ mgaExaInit(ScreenPtr pScreen)
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Start at %p, size %x, osb %x\n",
                pExa->memoryBase, pExa->memorySize, pExa->offScreenBase);
 
-    pExa->pixmapOffsetAlign = 64;
-    pExa->pixmapPitchAlign = 64;
+    /* In PW24 mode, we need to align to "3 64-bytes" */
+    pExa->pixmapOffsetAlign = 192;
+
+    /* Pitch alignment is in sets of 32 pixels, and we need to cover
+     * 32bpp, so it's 128 bytes.
+     */
+    pExa->pixmapPitchAlign = 128;
+
     pExa->maxX = 2048;
     pExa->maxY = 2048;
 
