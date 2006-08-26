@@ -44,6 +44,8 @@
 #include "mga_dri.h"
 #endif
 
+#include "xf86PciInfo.h"
+
 #if 0
 #define DEBUG_MSG(x)  ErrorF x
 #else
@@ -771,10 +773,7 @@ mgaExaInit(ScreenPtr pScreen)
     pExa->Copy = mgaCopy;
     pExa->DoneCopy = mgaNoopDone;
 
-    /* FIXME
-     * if (pMga->Chipset >= PCI_CHIP_MGAG400) {
-     */
-    if (0) {
+    if (pMga->Chipset >= PCI_CHIP_MGAG400) {
         pExa->CheckComposite = mgaCheckComposite;
         pExa->PrepareComposite = mgaPrepareComposite;
         pExa->Composite = mgaComposite;
