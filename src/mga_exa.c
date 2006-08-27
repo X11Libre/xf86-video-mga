@@ -158,10 +158,8 @@ mgaGetPixmapPitch(PixmapPtr pPix)
 }
 
 static Bool
-mgaSetup(ScreenPtr pScreen, int dest_bpp, int wait)
+mgaSetup(MGAPtr pMga, int dest_bpp, int wait)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    MGAPtr pMga = pScrn->driverPrivate;
     unsigned int maccess = 0;
     static const unsigned int maccess_table[5] = {
         0, /* dummy */
@@ -214,7 +212,7 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
     pMga->FilledRectCMD = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
                           MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
 
-    mgaSetup(pPixmap->drawable.pScreen, pPixmap->drawable.bitsPerPixel, 5);
+    mgaSetup(pMga, pPixmap->drawable.bitsPerPixel, 5);
 
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pPixmap));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pPixmap));
@@ -261,7 +259,7 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     dwgctl = mgaRop[alu] | MGADWG_SHIFTZERO | MGADWG_BITBLT | MGADWG_BFCOL;
     pMga->src_pitch = mgaGetPixmapPitch(pSrc);
 
-    mgaSetup(pSrc->drawable.pScreen, pDst->drawable.bitsPerPixel, 7);
+    mgaSetup(pMga, pDst->drawable.bitsPerPixel, 7);
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
     OUTREG(MGAREG_SRCORG, exaGetPixmapOffset(pSrc));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
@@ -540,7 +538,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     PMGA(pDst);
     CARD32 ds0 = 0, ds1 = 0, cmd, blendcntl;
 
-    mgaSetup(pSrc->drawable.pScreen, pDst->drawable.bitsPerPixel, 3);
+    mgaSetup(pMga, pDst->drawable.bitsPerPixel, 3);
     OUTREG(MGAREG_FCOL, 0xff000000);
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
