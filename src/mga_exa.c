@@ -647,7 +647,7 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
 
     if (pMga->currentMask) {
         maskx %= pMga->currentMask->drawable.width;
-        maskx %= pMga->currentMask->drawable.height;
+        masky %= pMga->currentMask->drawable.height;
     }
 
     t = pMga->currentSrcPicture->transform;
