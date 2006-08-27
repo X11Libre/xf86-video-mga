@@ -109,19 +109,32 @@ static const struct {
     Bool src_alpha;
     CARD32 blend_cntl;
 } mgaBlendOp[] = {
-    {0, 0, MGA_SRC_ZERO                     | MGA_DST_ZERO},
-    {0, 0, MGA_SRC_ONE                      | MGA_DST_ZERO},
-    {0, 0, MGA_SRC_ZERO                     | MGA_DST_ONE},
-    {0, 1, MGA_SRC_ONE                      | MGA_DST_ONE_MINUS_SRC_ALPHA},
-    {1, 0, MGA_SRC_ONE_MINUS_DST_ALPHA      | MGA_DST_ONE},
-    {1, 0, MGA_SRC_DST_ALPHA                | MGA_DST_ZERO},
-    {0, 1, MGA_SRC_ZERO                     | MGA_DST_SRC_ALPHA},
-    {1, 0, MGA_SRC_ONE_MINUS_DST_ALPHA      | MGA_DST_ZERO},
-    {0, 1, MGA_SRC_ZERO                     | MGA_DST_ONE_MINUS_SRC_ALPHA},
-    {1, 1, MGA_SRC_DST_ALPHA                | MGA_DST_ONE_MINUS_SRC_ALPHA},
-    {1, 1, MGA_SRC_ONE_MINUS_DST_ALPHA      | MGA_DST_SRC_ALPHA},
-    {1, 1, MGA_SRC_ONE_MINUS_DST_ALPHA      | MGA_DST_ONE_MINUS_SRC_ALPHA},
-    {0, 0, MGA_SRC_ONE                      | MGA_DST_ONE},
+    /* Clear */
+    {0, 0, MGA_SRC_ZERO                | MGA_DST_ZERO},
+    /* Src */
+    {0, 0, MGA_SRC_ONE                 | MGA_DST_ZERO},
+    /* Dst */
+    {0, 0, MGA_SRC_ZERO                | MGA_DST_ONE},
+    /* Over */
+    {0, 1, MGA_SRC_ONE                 | MGA_DST_ONE_MINUS_SRC_ALPHA},
+    /* OverReverse */
+    {1, 0, MGA_SRC_ONE_MINUS_DST_ALPHA | MGA_DST_ONE},
+    /* In */
+    {1, 0, MGA_SRC_DST_ALPHA           | MGA_DST_ZERO},
+    /* InReverse */
+    {0, 1, MGA_SRC_ZERO                | MGA_DST_SRC_ALPHA},
+    /* Out */
+    {1, 0, MGA_SRC_ONE_MINUS_DST_ALPHA | MGA_DST_ZERO},
+    /* OutReverse */
+    {0, 1, MGA_SRC_ZERO                | MGA_DST_ONE_MINUS_SRC_ALPHA},
+    /* Atop */
+    {1, 1, MGA_SRC_DST_ALPHA           | MGA_DST_ONE_MINUS_SRC_ALPHA},
+    /* AtopReverse */
+    {1, 1, MGA_SRC_ONE_MINUS_DST_ALPHA | MGA_DST_SRC_ALPHA},
+    /* Xor */
+    {1, 1, MGA_SRC_ONE_MINUS_DST_ALPHA | MGA_DST_ONE_MINUS_SRC_ALPHA},
+    /* Add */
+    {0, 0, MGA_SRC_ONE                 | MGA_DST_ONE},
 };
 
 static const struct {
