@@ -481,6 +481,7 @@
 #    define MGA_TAKEY                           (0x02000000)
 #    define MGA_TAMASK                          (0x04000000)
 #    define MGA_CLAMPUV                         (0x18000000)
+#    define MGA_TEXMODULATE                     (0x20000000)
 #define MGAREG_TEXCTL2		0x2c3c
 #    define MGA_G400_TC2_MAGIC                  (0x00008000)
 #    define MGA_TC2_DECALBLEND                  (0x00000001)

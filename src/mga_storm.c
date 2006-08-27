@@ -304,6 +304,7 @@ Bool MGASetupForCPUToScreenAlphaTextureFaked( ScrnInfoPtr pScrn, int op,
 					      int height, int flags )
 {
     int log2w, log2h, pitch, sizeNeeded, offset;
+    unsigned int texctl, dwgctl, alphactrl;
     MGAPtr pMga = MGAPTR(pScrn);
 
     if(op != PictOpOver)  /* only one tested */
@@ -358,11 +359,19 @@ Bool MGASetupForCPUToScreenAlphaTextureFaked( ScrnInfoPtr pScrn, int op,
                                 ((width - 1) << 18));
     OUTREG(MGAREG_TEXHEIGHT, log2h | (((8 - log2h) & 63) << 9) |
                                 ((height - 1) << 18));
-    OUTREG(MGAREG_TEXCTL, 0x1A000106 | ((pitch & 0x07FF) << 9));
-    OUTREG(MGAREG_TEXCTL2, 0x00000014);
-    OUTREG(MGAREG_DWGCTL, 0x000c7076);
-    OUTREG(MGAREG_TEXFILTER, 0x01e00020);
-    OUTREG(MGAREG_ALPHACTRL, 0x00000154);
+
+    texctl = MGA_TW32 | MGA_PITCHLIN | MGA_TAKEY | MGA_CLAMPUV |
+             ((pitch & 0x07FF) << 9);
+    dwgctl = MGADWG_TEXTURE_TRAP | MGADWG_I | MGADWG_ARZERO |
+             MGADWG_SGNZERO | MGADWG_SHIFTZERO | 0xc0000;
+    alphactrl = MGA_SRC_ALPHA | MGA_DST_ONE_MINUS_SRC_ALPHA |
+                MGA_ALPHACHANNEL;
+
+    OUTREG(MGAREG_TEXCTL, texctl);
+    OUTREG(MGAREG_TEXCTL2, MGA_TC2_DECALDIS | MGA_TC2_CKSTRANSDIS);
+    OUTREG(MGAREG_DWGCTL, dwgctl);
+    OUTREG(MGAREG_TEXFILTER, ((0x1e << 20) | MGA_MAG_BILIN));
+    OUTREG(MGAREG_ALPHACTRL, alphactrl);
 
     return TRUE;
 }
@@ -383,6 +392,7 @@ MGASetupForCPUToScreenAlphaTexture (
    int		flags
 ){
     int log2w, log2h, i, pitch, sizeNeeded, offset;
+    unsigned int texctl, dwgctl, alphactrl;
     CARD8 *dst;
     MGAPtr pMga = MGAPTR(pScrn);
 
@@ -456,11 +466,20 @@ MGASetupForCPUToScreenAlphaTexture (
                                 ((width - 1) << 18));
     OUTREG(MGAREG_TEXHEIGHT, log2h | (((8 - log2h) & 63) << 9) |
                                 ((height - 1) << 18));
-    OUTREG(MGAREG_TEXCTL, 0x3A000107 | ((pitch & 0x07FF) << 9));
-    OUTREG(MGAREG_TEXCTL2, 0x00000014);
-    OUTREG(MGAREG_DWGCTL, 0x000c7076);
-    OUTREG(MGAREG_TEXFILTER, 0x01e00020);
-    OUTREG(MGAREG_ALPHACTRL, 0x02000151);
+
+    texctl = MGA_TW8A | MGA_PITCHLIN | MGA_TAKEY | MGA_CLAMPUV |
+             MGA_TEXMODULATE |
+             ((pitch & 0x07FF) << 9);
+    dwgctl = MGADWG_TEXTURE_TRAP | MGADWG_I | MGADWG_ARZERO |
+             MGADWG_SGNZERO | MGADWG_SHIFTZERO | 0xc0000;
+    alphactrl = MGA_SRC_ONE | MGA_DST_ONE_MINUS_SRC_ALPHA |
+                MGA_ALPHACHANNEL | MGA_MODULATEDALPHA;
+
+    OUTREG(MGAREG_TEXCTL, texctl);
+    OUTREG(MGAREG_TEXCTL2, MGA_TC2_DECALDIS | MGA_TC2_CKSTRANSDIS);
+    OUTREG(MGAREG_DWGCTL, dwgctl);
+    OUTREG(MGAREG_TEXFILTER, ((0x1e << 20) | MGA_MAG_BILIN));
+    OUTREG(MGAREG_ALPHACTRL, alphactrl);
 
     return TRUE;
 }
@@ -478,6 +497,7 @@ MGASetupForCPUToScreenTexture (
    int		flags
 ){
     int log2w, log2h, i, pitch, sizeNeeded, offset;
+    unsigned int texctl, dwgctl, alphactrl;
     MGAPtr pMga = MGAPTR(pScrn);
 
     if(op != PictOpOver)  /* only one tested */
@@ -537,11 +557,19 @@ MGASetupForCPUToScreenTexture (
                                 ((width - 1) << 18));
     OUTREG(MGAREG_TEXHEIGHT, log2h | (((8 - log2h) & 63) << 9) |
                                 ((height - 1) << 18));
-    OUTREG(MGAREG_TEXCTL, 0x1A000106 | ((pitch & 0x07FF) << 9));
-    OUTREG(MGAREG_TEXCTL2, 0x00000014);
-    OUTREG(MGAREG_DWGCTL, 0x000c7076);
-    OUTREG(MGAREG_TEXFILTER, 0x01e00020);
-    OUTREG(MGAREG_ALPHACTRL, 0x00000151);
+
+    texctl = MGA_TW32 | MGA_PITCHLIN | MGA_TAKEY | MGA_CLAMPUV |
+             ((pitch & 0x07FF) << 9);
+    dwgctl = MGADWG_TEXTURE_TRAP | MGADWG_I | MGADWG_ARZERO |
+             MGADWG_SGNZERO | MGADWG_SHIFTZERO | 0xc0000;
+    alphactrl = MGA_SRC_ONE | MGA_DST_ONE_MINUS_SRC_ALPHA |
+                MGA_ALPHACHANNEL;
+
+    OUTREG(MGAREG_TEXCTL, texctl);
+    OUTREG(MGAREG_TEXCTL2, MGA_TC2_DECALDIS | MGA_TC2_CKSTRANSDIS);
+    OUTREG(MGAREG_DWGCTL, dwgctl);
+    OUTREG(MGAREG_TEXFILTER, ((0x1e << 20) | MGA_MAG_BILIN));
+    OUTREG(MGAREG_ALPHACTRL, alphactrl);
 
     return TRUE;
 }
