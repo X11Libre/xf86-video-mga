@@ -667,7 +667,7 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
         setTMIncrementsRegs(pMga->currentSrc,
                             1 << 16, 0, srcx << 16,
                             0, 1 << 16, srcy << 16,
-                            0, 0, 0x10000,
+                            0, 0, 1 << 16,
                             20 - pMga->src_w2,
                             20 - pMga->src_h2);
 
@@ -695,7 +695,7 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
             setTMIncrementsRegs(pMga->currentMask,
                                 1 << 16, 0, maskx << 16,
                                 0, 1 << 16, masky << 16,
-                                0, 0, 0x10000,
+                                0, 0, 1 << 16,
                                 20 - pMga->mask_w2,
                                 20 - pMga->mask_h2);
 
