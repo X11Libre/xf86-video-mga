@@ -1521,7 +1521,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
     } else {
 	int from = X_DEFAULT;
+#ifdef USE_EXA
 	char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
+#endif
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
 #ifdef USE_EXA
@@ -2375,7 +2377,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 		return FALSE;
 	    } else xf86LoaderReqSymLists(xaaSymbols, NULL);
 #endif
+#ifdef USE_EXA
 	}
+#endif
     }
 
     /* Load ramdac if needed */
