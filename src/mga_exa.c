@@ -406,8 +406,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
 
     int texctl = MGA_PITCHLIN | ((pitch & (2048 - 1)) << 9) |
                  MGA_CLAMPUV | MGA_NOPERSPECTIVE;
-    int flags = 0;
-    int texctl2 = MGA_G400_TC2_MAGIC | flags;
+    int texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS;
 
     for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
         if (texformats[i].fmt == pSrcPicture->format) {
@@ -427,7 +426,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     }
 
     if (tmu == 1)
-        texctl2 |= MGA_TC2_DUALTEX | MGA_TC2_SELECT_TMU1 | flags;
+        texctl2 |= MGA_TC2_DUALTEX | MGA_TC2_SELECT_TMU1;
 
     WAITFIFO(6);
     OUTREG(MGAREG_TEXCTL2, texctl2);
@@ -444,7 +443,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
 
     if (tmu == 1) {
         WAITFIFO(1);
-        OUTREG(MGAREG_TEXCTL2, MGA_G400_TC2_MAGIC | MGA_TC2_DUALTEX | flags);
+        OUTREG(MGAREG_TEXCTL2, texctl2 & ~MGA_TC2_SELECT_TMU1);
     }
 
     return TRUE;
@@ -639,6 +638,7 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
 {
     PMGA(pDst);
     PictTransformPtr t;
+    int texctl2;
 
     srcx %= pMga->currentSrc->drawable.width;
     srcy %= pMga->currentSrc->drawable.height;
@@ -672,9 +672,10 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
                             20 - pMga->src_h2);
 
     if (pMga->currentMask) {
+        texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS | MGA_TC2_DUALTEX;
+
         WAITFIFO(1);
-        OUTREG(MGAREG_TEXCTL2,
-        MGA_G400_TC2_MAGIC | MGA_TC2_DUALTEX | MGA_TC2_SELECT_TMU1);
+        OUTREG(MGAREG_TEXCTL2, texctl2 | MGA_TC2_SELECT_TMU1);
 
         t = pMga->currentMaskPicture->transform;
 
@@ -700,7 +701,7 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
                                 20 - pMga->mask_h2);
 
         WAITFIFO(1);
-        OUTREG(MGAREG_TEXCTL2, MGA_G400_TC2_MAGIC | MGA_TC2_DUALTEX);
+        OUTREG(MGAREG_TEXCTL2, texctl2 & ~MGA_TC2_SELECT_TMU1);
     }
 
     WAITFIFO(2);
