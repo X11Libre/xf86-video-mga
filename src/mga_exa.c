@@ -410,7 +410,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     int h_log2 = MGA_LOG2(h);
 
     int texctl = MGA_PITCHLIN | ((pitch & (2048 - 1)) << 9) |
-                 MGA_CLAMPUV | MGA_NOPERSPECTIVE | MGA_TAKEY;
+                 MGA_NOPERSPECTIVE | MGA_TAKEY;
     int texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS;
 
     for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
@@ -420,9 +420,8 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
         }
     }
 
-    if (pSrcPicture->repeat) {
-        texctl &= ~MGA_CLAMPUV;
-    }
+    if (!pSrcPicture->repeat)
+        texctl |= MGA_CLAMPUV;
 
     if (tmu == 1)
         texctl2 |= MGA_TC2_DUALTEX | MGA_TC2_SELECT_TMU1;
@@ -432,13 +431,13 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     OUTREG(MGAREG_TEXCTL, texctl);
     /* Source (texture) address + pitch */
     OUTREG(MGAREG_TEXORG, exaGetPixmapOffset(pSrc));
-    OUTREG(MGAREG_TEXWIDTH, (w-1)<<18 | ((8-w_log2)&63)<<9 | w_log2);
-    OUTREG(MGAREG_TEXHEIGHT, (h-1)<<18 | ((8-h_log2)&63)<<9 | h_log2);
+    OUTREG(MGAREG_TEXWIDTH, (w - 1) << 18 | ((8 - w_log2) & 63) << 9 | w_log2);
+    OUTREG(MGAREG_TEXHEIGHT, (h - 1) << 18 | ((8 - h_log2) & 63) << 9 | h_log2);
     /* Set blit filtering flags */
     if (pSrcPicture->filter == PictFilterBilinear)
-        OUTREG(MGAREG_TEXFILTER, (0x10<<21) | MGA_MAG_BILIN | MGA_MIN_BILIN);
+        OUTREG(MGAREG_TEXFILTER, (0x10 << 21) | MGA_MAG_BILIN | MGA_MIN_BILIN);
     else
-        OUTREG(MGAREG_TEXFILTER, (0x10<<21) | MGA_MAG_NRST | MGA_MIN_NRST);
+        OUTREG(MGAREG_TEXFILTER, (0x10 << 21) | MGA_MAG_NRST | MGA_MIN_NRST);
 
     if (tmu == 1) {
         WAITFIFO(1);
@@ -473,26 +472,26 @@ setTMIncrementsRegs(PixmapPtr pPix, int X_incx, int X_incy, int X_init,
 
     /* Convert 16 bits fixpoint -> MGA variable size fixpoint */
     if (decalw >= 0) {
-        X_incx = X_incx << decalw;
-        X_incy = X_incy << decalw;
-        X_init = X_init << decalw;
+        X_incx <<= decalw;
+        X_incy <<= decalw;
+        X_init <<= decalw;
     } else {
-        decalw =- decalw;
-        X_incx = X_incx >> decalw;
-        X_incy = X_incy >> decalw;
-        X_init = X_init >> decalw;
+        decalw = -decalw;
+        X_incx >>= decalw;
+        X_incy >>= decalw;
+        X_init >>= decalw;
     }
 
     /* Convert 16 bits fixpoint -> MGA variable size fixpoint */
     if (decalh >= 0) {
-        Y_incx = Y_incx << decalh;
-        Y_incy = Y_incy << decalh;
-        Y_init = Y_init << decalh;
+        Y_incx <<= decalh;
+        Y_incy <<= decalh;
+        Y_init <<= decalh;
     } else {
-        decalh =- decalh;
-        Y_incx = Y_incx >> decalh;
-        Y_incy = Y_incy >> decalh;
-        Y_init = Y_init >> decalh;
+        decalh = -decalh;
+        Y_incx >>= decalh;
+        Y_incy >>= decalh;
+        Y_init >>= decalh;
     }
 
     /* Set TM registers */
@@ -603,9 +602,11 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     blendcntl = mgaBlendOp[op].blend_cntl;
 
     if (PICT_FORMAT_A(pDstPict->format) == 0 && mgaBlendOp[op].dst_alpha) {
-        if ((blendcntl & MGA_SRC_BLEND_MASK) == MGA_SRC_DST_ALPHA)
+        int sblend = blendcntl & MGA_SRC_BLEND_MASK;
+
+        if (sblend == MGA_SRC_DST_ALPHA)
             blendcntl = (blendcntl & ~MGA_SRC_BLEND_MASK) | MGA_SRC_ONE;
-        else if ((blendcntl&MGA_SRC_BLEND_MASK) == MGA_SRC_ONE_MINUS_DST_ALPHA)
+        else if (sblend == MGA_SRC_ONE_MINUS_DST_ALPHA)
             blendcntl = (blendcntl & ~MGA_SRC_BLEND_MASK) | MGA_SRC_ZERO;
     }
 
