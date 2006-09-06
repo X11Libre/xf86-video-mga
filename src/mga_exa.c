@@ -410,7 +410,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     int h_log2 = MGA_LOG2(h);
 
     int texctl = MGA_PITCHLIN | ((pitch & (2048 - 1)) << 9) |
-                 MGA_CLAMPUV | MGA_NOPERSPECTIVE;
+                 MGA_CLAMPUV | MGA_NOPERSPECTIVE | MGA_TAKEY;
     int texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS;
 
     for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
@@ -418,12 +418,6 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
             texctl |= texformats[i].card_fmt;
             break;
         }
-    }
-
-    if (PICT_FORMAT_A(pSrcPicture->format) != 0) {
-        texctl |= MGA_TAKEY;
-    } else {
-        texctl |= MGA_TAMASK | MGA_TAKEY;
     }
 
     if (pSrcPicture->repeat) {
