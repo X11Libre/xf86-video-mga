@@ -412,6 +412,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     int texctl = MGA_PITCHLIN | ((pitch & (2048 - 1)) << 9) |
                  MGA_NOPERSPECTIVE | MGA_TAKEY;
     int texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS;
+    int texfilter = MGA_FILTERALPHA | (0x10 << 21);
 
     for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
         if (texformats[i].fmt == pSrcPicture->format) {
@@ -419,6 +420,11 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
             break;
         }
     }
+
+    if (pSrcPicture->filter == PictFilterBilinear)
+        texfilter |= MGA_MAG_BILIN | MGA_MIN_BILIN;
+    else
+        texfilter |= MGA_MAG_NRST | MGA_MIN_NRST;
 
     if (!pSrcPicture->repeat)
         texctl |= MGA_CLAMPUV;
@@ -429,15 +435,14 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     WAITFIFO(6);
     OUTREG(MGAREG_TEXCTL2, texctl2);
     OUTREG(MGAREG_TEXCTL, texctl);
+
     /* Source (texture) address + pitch */
     OUTREG(MGAREG_TEXORG, exaGetPixmapOffset(pSrc));
     OUTREG(MGAREG_TEXWIDTH, (w - 1) << 18 | ((8 - w_log2) & 63) << 9 | w_log2);
     OUTREG(MGAREG_TEXHEIGHT, (h - 1) << 18 | ((8 - h_log2) & 63) << 9 | h_log2);
+
     /* Set blit filtering flags */
-    if (pSrcPicture->filter == PictFilterBilinear)
-        OUTREG(MGAREG_TEXFILTER, (0x10 << 21) | MGA_MAG_BILIN | MGA_MIN_BILIN);
-    else
-        OUTREG(MGAREG_TEXFILTER, (0x10 << 21) | MGA_MAG_NRST | MGA_MIN_NRST);
+    OUTREG(MGAREG_TEXFILTER, texfilter);
 
     if (tmu == 1) {
         WAITFIFO(1);

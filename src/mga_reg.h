@@ -502,6 +502,7 @@
 #    define MGA_MIN_ANISO                       (0x0000000D)
 #    define MGA_MAG_NRST                        (0x00000000)
 #    define MGA_MAG_BILIN                       (0x00000020)
+#    define MGA_FILTERALPHA                     (0x00100000)
 #define MGAREG_ALPHASTART	0x2c70
 #define MGAREG_ALPHAXINC	0x2c74
 #define MGAREG_ALPHAYINC	0x2c78
