@@ -390,6 +390,11 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         break;
     }
 
+    if (PICT_FORMAT_TYPE(pDstPict->format) == PICT_TYPE_ABGR) {
+        DEBUG_MSG(("render to (A)BGR unsupported\n"));
+        return FALSE;
+    }
+
     return TRUE;
 }
 
