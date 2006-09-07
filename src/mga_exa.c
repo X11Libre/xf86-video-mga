@@ -56,7 +56,6 @@
 #define PMGA(x) \
     MGAPtr pMga = xf86Screens[x->drawable.pScreen->myNum]->driverPrivate;
 
-/* FIXME: is this correct? */
 #define QUIESCE_DMA(x) \
     CHECK_DMA_QUIESCENT(pMga, xf86Screens[x->drawable.pScreen->myNum]);
 
@@ -194,6 +193,10 @@ static Bool
 mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
 {
     PMGA(pPixmap);
+
+    /* FIXME
+     * Is this needed here? We don't use DMA stuff here...
+     */
     QUIESCE_DMA(pPixmap);
 
     /* We must pad planemask and fg depending on the format of the
@@ -242,6 +245,9 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     int blit_direction = 0;
     int dwgctl = 0;
 
+    /* FIXME
+     * Is this needed here? We don't use DMA stuff here...
+     */
     QUIESCE_DMA(pSrc);
 
     DEBUG_MSG(("s: %x@%x d: %x@%x xdir %d ydir %d alu %d pm %d\n",
