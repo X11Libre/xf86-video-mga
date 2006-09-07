@@ -21,6 +21,7 @@
  *
  * Authors:
  *    Adam Jackson <ajax@nwnk.net>
+ *    Tilman Sauerbeck <tilman@code-monkey.de>
  */
 
 /*
