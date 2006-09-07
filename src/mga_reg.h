@@ -133,6 +133,13 @@
 #define MGAOPM_DMA_BLIT		(0x01 << 2)
 #define MGAOPM_DMA_VECTOR	(0x10 << 2)
 
+/* MACCESS register additives */
+#define MGAMAC_PW8               0x00
+#define MGAMAC_PW16              0x01
+#define MGAMAC_PW24              0x03 /* not a typo */
+#define MGAMAC_PW32              0x02 /* not a typo */
+#define MGAMAC_DIT555            0x80000000
+
 /* DWGCTL register additives */
 
 /* Lines */

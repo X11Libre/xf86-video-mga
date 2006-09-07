@@ -157,25 +157,32 @@ mgaGetPixmapPitch(PixmapPtr pPix)
     return exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel >> 3);
 }
 
-static Bool
-mgaSetup(MGAPtr pMga, int dest_bpp, int wait)
+static CARD32
+mgaGetMACCESS(PixmapPtr pixmap, PicturePtr pict)
 {
-    unsigned int maccess = 0;
-    static const unsigned int maccess_table[5] = {
-        0, /* dummy */
-        0, /*  8 bpp, PW8 */
-        1, /* 16 bpp, PW16 */
-        3, /* 24 bpp, PW24 */
-        2, /* 32 bpp, PW32 */
-    };
+    switch (pixmap->drawable.bitsPerPixel) {
+    case 8:
+        return MGAMAC_PW8;
+    case 16:
+        if (pict &&
+            (pict->format == PICT_x1r5g5b5 || pict->format == PICT_a1r5g5b5))
+            return MGAMAC_PW16 | MGAMAC_DIT555;
+        else
+            return MGAMAC_PW16;
+    case 24:
+        return MGAMAC_PW24;
+    default:
+        return MGAMAC_PW32;
+    }
+}
 
+static Bool
+mgaSetup(MGAPtr pMga, PixmapPtr pixmap, PicturePtr pict, int wait)
+{
     WAITFIFO(wait + 4);
 
-    /* Set the format of the destination pixmap.
-     * Taken from MGAStormEngineInit().
-     */
-    maccess |= maccess_table[dest_bpp / 8];
-    OUTREG(MGAREG_MACCESS, maccess);
+    /* Set the format of the destination pixmap */
+    OUTREG(MGAREG_MACCESS, mgaGetMACCESS(pixmap, pict));
 
     OUTREG(MGAREG_CXBNDRY, 0xffff0000);
     OUTREG(MGAREG_YTOP, 0x00000000);
@@ -217,7 +224,7 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
     dwgctl = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
              MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
 
-    mgaSetup(pMga, pPixmap->drawable.bitsPerPixel, 5);
+    mgaSetup(pMga, pPixmap, NULL, 5);
 
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pPixmap));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pPixmap));
@@ -267,7 +274,7 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     dwgctl = mgaRop[alu] | MGADWG_SHIFTZERO | MGADWG_BITBLT | MGADWG_BFCOL;
     pMga->src_pitch = mgaGetPixmapPitch(pSrc);
 
-    mgaSetup(pMga, pDst->drawable.bitsPerPixel, 7);
+    mgaSetup(pMga, pDst, NULL, 7);
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
     OUTREG(MGAREG_SRCORG, exaGetPixmapOffset(pSrc));
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
@@ -549,7 +556,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     PMGA(pDst);
     CARD32 ds0 = 0, ds1 = 0, cmd, blendcntl;
 
-    mgaSetup(pMga, pDst->drawable.bitsPerPixel, 3);
+    mgaSetup(pMga, pDst, pDstPict, 3);
     OUTREG(MGAREG_FCOL, 0xff000000);
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
