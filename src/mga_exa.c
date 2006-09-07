@@ -193,6 +193,7 @@ static Bool
 mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
 {
     PMGA(pPixmap);
+    int dwgctl;
 
     /* FIXME
      * Is this needed here? We don't use DMA stuff here...
@@ -213,8 +214,8 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
         break;
     }
 
-    pMga->FilledRectCMD = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
-                          MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
+    dwgctl = MGADWG_TRAP | MGADWG_SOLID | MGADWG_ARZERO |
+             MGADWG_SGNZERO | MGADWG_SHIFTZERO | mgaRop[alu];
 
     mgaSetup(pMga, pPixmap->drawable.bitsPerPixel, 5);
 
@@ -222,7 +223,7 @@ mgaPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pPixmap));
     OUTREG(MGAREG_FCOL, fg);
     OUTREG(MGAREG_PLNWT, planemask);
-    OUTREG(MGAREG_DWGCTL, pMga->FilledRectCMD);
+    OUTREG(MGAREG_DWGCTL, dwgctl);
 
     return TRUE;
 }
@@ -273,7 +274,7 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
     OUTREG(MGAREG_DWGCTL, dwgctl);
     OUTREG(MGAREG_SGN, blit_direction);
     OUTREG(MGAREG_PLNWT, planemask);
-    OUTREG(MGAREG_AR5, (ydir < -0 ? -1 : 1) * pMga->src_pitch);
+    OUTREG(MGAREG_AR5, (ydir < 0 ? -1 : 1) * pMga->src_pitch);
 
     return TRUE;
 }
@@ -302,6 +303,7 @@ mgaCopy(PixmapPtr pDst, int srcx, int srcy, int dstx, int dsty, int w, int h)
 
     DEBUG_MSG(("        end %d start %d dstx %d dsty %d w %d h %d\n",
               end, start, dstx, dsty, w, h));
+
     WAITFIFO(4);
     OUTREG(MGAREG_AR0, end);
     OUTREG(MGAREG_AR3, start);
@@ -343,7 +345,7 @@ mgaCheckSourceTexture(int tmu, PicturePtr pPict)
         }
     }
 
-    if (texctl == 0) {
+    if (!texctl) {
         DEBUG_MSG(("Unsupported picture format 0x%x\n", pPict->format));
         return FALSE;
     }
@@ -375,7 +377,7 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         return FALSE;
 
     if (pMaskPict) {
-        if (PICT_FORMAT_A(pMaskPict->format) == 0) {
+        if (!PICT_FORMAT_A(pMaskPict->format)) {
             DEBUG_MSG(("Mask without alpha unsupported\n"));
             return FALSE;
         }
@@ -559,12 +561,13 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         return FALSE;
 
     if (pSrcPict->format == PICT_a8) {
-    /* C = 0        A = As */
-    /* MGA HW: A8 format makes RGB white. We use FCOL for the black
-     * If FCOL was not 0, it would have been be premultiplied (RENDER)
-     * color component would have been:
-     *   C_ARG1_ALPHA | C_ARG2_FCOL | COLOR_MUL
-     */
+        /* C = 0        A = As */
+
+        /* MGA HW: A8 format makes RGB white. We use FCOL for the black
+         * If FCOL was not 0, it would have been be premultiplied (RENDER)
+         * color component would have been:
+         *   C_ARG1_ALPHA | C_ARG2_FCOL | COLOR_MUL
+         */
         ds0 = C_ARG2_FCOL | COLOR_ARG2 |
               A_ARG1_CUR | ALPHA_ARG1;
 
@@ -572,6 +575,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         if (!pMask) {
             if (!PrepareSourceTexture(1, pSrcPict, pSrc))
                 return FALSE;
+
             ds1 = C_ARG2_PREV | COLOR_ARG2 |
                   A_ARG2_PREV | ALPHA_ARG2;
         }
@@ -587,7 +591,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
          */
         int color, alpha;
 
-        if (PICT_FORMAT_A(pMaskPict->format) == 0) {
+        if (!PICT_FORMAT_A(pMaskPict->format)) {
             /* C = Cs */
             color = C_ARG2_PREV | COLOR_ARG2;
         } else {
@@ -595,10 +599,10 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
             color = C_ARG1_ALPHA | C_ARG2_PREV | COLOR_MUL;
         }
 
-        if (PICT_FORMAT_A(pMaskPict->format) == 0) {
+        if (!PICT_FORMAT_A(pMaskPict->format)) {
             /* A = As */
             alpha = A_ARG2_PREV | ALPHA_ARG2;
-        } else if (PICT_FORMAT_A(pSrcPict->format) == 0) {
+        } else if (!PICT_FORMAT_A(pSrcPict->format)) {
             /* A = Am */
             alpha = A_ARG1_CUR | ALPHA_ARG1;
         } else {
@@ -613,7 +617,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
           MGADWG_SHIFTZERO | MGADWG_SGNZERO | MGADWG_ARZERO;
     blendcntl = mgaBlendOp[op].blend_cntl;
 
-    if (PICT_FORMAT_A(pDstPict->format) == 0 && mgaBlendOp[op].dst_alpha) {
+    if (!PICT_FORMAT_A(pDstPict->format) && mgaBlendOp[op].dst_alpha) {
         int sblend = blendcntl & MGA_SRC_BLEND_MASK;
 
         if (sblend == MGA_SRC_DST_ALPHA)
@@ -771,7 +775,7 @@ mgaExaInit(ScreenPtr pScreen)
     pExa->memoryBase = pMga->FbStart;
     pExa->memorySize = pMga->FbUsableSize - 4096;
     pExa->offScreenBase = (pScrn->virtualX * pScrn->virtualY *
-                           pScrn->bitsPerPixel/8) + 4096;
+                           pScrn->bitsPerPixel / 8) + 4096;
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "X %d Y %d bpp %d\n",
                pScrn->virtualX, pScrn->virtualY, pScrn->bitsPerPixel);
