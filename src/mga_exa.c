@@ -137,20 +137,6 @@ static const struct {
     {0, 0, MGA_SRC_ONE                 | MGA_DST_ONE},
 };
 
-static const struct {
-    int fmt;
-    CARD32 card_fmt;
-} texformats[] = {
-    { PICT_a8r8g8b8, MGA_TW32 },
-    { PICT_x8r8g8b8, MGA_TW32 },
-    { PICT_r5g6b5, MGA_TW16 },
-    { PICT_a1r5g5b5, MGA_TW15 },
-    { PICT_x1r5g5b5, MGA_TW15 },
-    { PICT_a4r4g4b4, MGA_TW12 },
-    { PICT_x4r4g4b4, MGA_TW12 },
-    { PICT_a8, MGA_TW8A },
-};
-
 static CARD32
 mgaGetPixmapPitch(PixmapPtr pPix)
 {
@@ -332,27 +318,43 @@ MGA_LOG2(int val)
     return ((1 << (ret - 1)) == val) ? (ret - 1) : ret;
 }
 
+static CARD32
+mgaGetTexFormat(PicturePtr pPict)
+{
+    static const struct {
+        int fmt;
+        CARD32 card_fmt;
+    } *ptr, texformats[] = {
+        { PICT_a8r8g8b8, MGA_TW32 },
+        { PICT_x8r8g8b8, MGA_TW32 },
+        { PICT_r5g6b5, MGA_TW16 },
+        { PICT_a1r5g5b5, MGA_TW15 },
+        { PICT_x1r5g5b5, MGA_TW15 },
+        { PICT_a4r4g4b4, MGA_TW12 },
+        { PICT_x4r4g4b4, MGA_TW12 },
+        { PICT_a8, MGA_TW8A },
+        { 0, 0}
+    };
+
+    for (ptr = texformats; ptr->fmt; ptr++)
+        if (ptr->fmt == pPict->format)
+            return ptr->card_fmt;
+
+    return 0;
+}
+
 static Bool
 mgaCheckSourceTexture(int tmu, PicturePtr pPict)
 {
     int w = pPict->pDrawable->width;
     int h = pPict->pDrawable->height;
-    int i;
-    CARD32 texctl = 0;
 
     if ((w > 2047) || (h > 2047)){
         DEBUG_MSG(("Picture w/h too large (%dx%d)\n", w, h));
         return FALSE;
     }
 
-    for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
-        if (texformats[i].fmt == pPict->format) {
-            texctl = texformats[i].card_fmt;
-            break;
-        }
-    }
-
-    if (!texctl) {
+    if (!mgaGetTexFormat(pPict)) {
         DEBUG_MSG(("Unsupported picture format 0x%x\n", pPict->format));
         return FALSE;
     }
@@ -418,7 +420,6 @@ static Bool
 PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
 {
     PMGA(pSrc);
-    int i;
     int pitch = mgaGetPixmapPitch(pSrc);
     int w = pSrc->drawable.width;
     int h = pSrc->drawable.height;
@@ -430,12 +431,7 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
     int texctl2 = MGA_G400_TC2_MAGIC | MGA_TC2_CKSTRANSDIS;
     int texfilter = MGA_FILTERALPHA | (0x10 << 21);
 
-    for (i = 0; i < sizeof(texformats) / sizeof(texformats[0]); i++) {
-        if (texformats[i].fmt == pSrcPicture->format) {
-            texctl |= texformats[i].card_fmt;
-            break;
-        }
-    }
+    texctl |= mgaGetTexFormat(pSrcPicture);
 
     if (pSrcPicture->filter == PictFilterBilinear)
         texfilter |= MGA_MAG_BILIN | MGA_MIN_BILIN;
