@@ -729,10 +729,35 @@ mgaComposite(PixmapPtr pDst, int srcx, int srcy, int maskx, int masky,
 }
 
 static Bool
-mgaUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h, char *src,
-          int src_pitch)
+mgaUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h,
+                  char *src, int src_pitch)
 {
-    return FALSE;
+    PMGA(pDst);
+    int bytes_padded = ((pDst->drawable.bitsPerPixel * w + 31) / 32) * 4;
+
+    QUIESCE_DMA(pDst);
+
+    mgaSetup(pMga, pDst, NULL, 10);
+
+    OUTREG(MGAREG_OPMODE, MGAOPM_DMA_BLIT);
+    OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
+    OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
+    OUTREG(MGAREG_PLNWT, 0xffffffff);
+    OUTREG(MGAREG_DWGCTL, MGADWG_ILOAD | MGADWG_BFCOL |
+           MGADWG_SGNZERO | MGADWG_SHIFTZERO |
+           MGADWG_RSTR | 0x000c0000);
+    OUTREG(MGAREG_AR0, w - 1);
+    OUTREG(MGAREG_AR3, 0);
+    OUTREG(MGAREG_AR5, 0);
+    OUTREG(MGAREG_FXBNDRY, ((x + w - 1) << 16) | (x & 0xffff));
+    OUTREG(MGAREG_YDSTLEN | MGAREG_EXEC, (y << 16) | (h & 0xffff));
+
+    while (h--) {
+        memcpy (pMga->ILOADBase, src, bytes_padded);
+        src += src_pitch;
+    }
+
+    return TRUE;
 }
 
 static Bool
@@ -811,10 +836,8 @@ mgaExaInit(ScreenPtr pScreen)
         pExa->DoneComposite = mgaNoopDone;
     }
 
-    if (0) {
-        pExa->DownloadFromScreen = mgaDownloadFromScreen;
-        pExa->UploadToScreen = mgaUploadToScreen;
-    }
+    /* pExa->DownloadFromScreen = mgaDownloadFromScreen; */
+    pExa->UploadToScreen = mgaUploadToScreen;
 
     /* XXX fill in the XAA setup code here */
 #if 0
