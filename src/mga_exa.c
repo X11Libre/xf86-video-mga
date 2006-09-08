@@ -416,7 +416,7 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     return TRUE;
 }
 
-static Bool
+static void
 PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
 {
     PMGA(pSrc);
@@ -460,8 +460,6 @@ PrepareSourceTexture(int tmu, PicturePtr pSrcPicture, PixmapPtr pSrc)
         WAITFIFO(1);
         OUTREG(MGAREG_TEXCTL2, texctl2 & ~MGA_TC2_SELECT_TMU1);
     }
-
-    return TRUE;
 }
 
 /*
@@ -557,11 +555,10 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
 
-    if (!PrepareSourceTexture(0, pSrcPict, pSrc))
-        return FALSE;
+    PrepareSourceTexture(0, pSrcPict, pSrc);
 
-    if (pMask && !PrepareSourceTexture(1, pMaskPict, pMask))
-        return FALSE;
+    if (pMask)
+        PrepareSourceTexture(1, pMaskPict, pMask);
 
     if (pSrcPict->format == PICT_a8) {
         /* C = 0        A = As */
@@ -576,8 +573,7 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
 
         /* MGA HW: TMU1 must be enabled when DUALSTAGE0 contains something */
         if (!pMask) {
-            if (!PrepareSourceTexture(1, pSrcPict, pSrc))
-                return FALSE;
+            PrepareSourceTexture(1, pSrcPict, pSrc);
 
             ds1 = C_ARG2_PREV | COLOR_ARG2 |
                   A_ARG2_PREV | ALPHA_ARG2;
