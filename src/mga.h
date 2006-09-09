@@ -733,7 +733,7 @@ MGA_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
         exaWaitSync(pScrn->pScreen);
 #endif
 #ifdef USE_XAA
-    if (!pMga->Exa && pMga->AccelInfoRec)
+    if (!pMga->Exa && pMga->AccelInfoRec && pMga->AccelInfoRec->NeedToSync)
         pMga->AccelInfoRec->Sync(pScrn);
 #endif
 }
