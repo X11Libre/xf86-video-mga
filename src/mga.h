@@ -193,13 +193,20 @@ typedef struct {
    int          contrast;
    Bool         doubleBuffer;
    unsigned char currentBuffer;
-   FBLinearPtr	linear;
    RegionRec	clip;
    CARD32	colorKey;
    CARD32	videoStatus;
    Time		offTime;
    Time		freeTime;
    int		lastPort;
+
+#ifdef USE_EXA
+   int              size;
+   ExaOffscreenArea *off_screen;
+#endif
+
+   void         *video_memory;
+   int           video_offset;
 } MGAPortPrivRec, *MGAPortPrivPtr;
 
 typedef struct {
@@ -704,5 +711,31 @@ extern void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, D
 void MGAFillDisplayModeStruct(DisplayModePtr pMode, LPMGAMODEINFO pModeInfo);
 /************************************************/
 #endif
+
+static __inline__ void
+MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaMarkSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!pMga->Exa)
+        SET_SYNC_FLAG(pMga->AccelInfoRec);
+#endif
+}
+
+static __inline__ void
+MGA_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaWaitSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!pMga->Exa && pMga->AccelInfoRec)
+        pMga->AccelInfoRec->Sync(pScrn);
+#endif
+}
 
 #endif
