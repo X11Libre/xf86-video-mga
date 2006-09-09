@@ -909,11 +909,8 @@ MGAPutImage(
         offset += pPriv->currentBuffer * new_size * bpp;
    dst_start = pMga->FbStart + offset + left + (top * dstPitch);
 
-   if(pMga->TexturedVideo && pMga->AccelInfoRec->NeedToSync &&
-	((long)data != pPriv->lastPort)) 
-   {
-	MGAStormSync(pScrn);
-   }
+   if (pMga->TexturedVideo && ((long)data != pPriv->lastPort))
+       MGA_SYNC(pMga, pScrn);
 
    switch(id) {
     case FOURCC_YV12:
