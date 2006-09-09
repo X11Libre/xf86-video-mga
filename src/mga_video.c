@@ -844,7 +844,7 @@ MGAPutImage(
    unsigned char *dst_start;
    int new_size, offset, offset2 = 0, offset3 = 0;
    int srcPitch, srcPitch2 = 0, dstPitch;
-   int top, left, npixels, nlines, bpp;
+   int top, left, npixels, nlines;
    BoxRec dstBox;
    CARD32 tmp;
 
@@ -870,10 +870,8 @@ MGAPutImage(
 	dstBox.y2 -= pScrn->frameY0;
    }
 
-   bpp = pScrn->bitsPerPixel >> 3;
-
    dstPitch = ((width << 1) + 15) & ~15;
-   new_size = ((dstPitch * height) + bpp - 1) / bpp;
+   new_size = dstPitch * height;
    
    switch(id) {
    case FOURCC_YV12:
@@ -906,7 +904,7 @@ MGAPutImage(
 
    offset = pPriv->video_offset;
    if(pPriv->doubleBuffer)
-        offset += pPriv->currentBuffer * new_size * bpp;
+        offset += pPriv->currentBuffer * new_size;
    dst_start = pMga->FbStart + offset + left + (top * dstPitch);
 
    if (pMga->TexturedVideo && ((long)data != pPriv->lastPort))
