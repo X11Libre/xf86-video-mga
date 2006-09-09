@@ -400,14 +400,6 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         }
     }
 
-    switch (pDstPict->format) {
-    case PICT_a8:
-        DEBUG_MSG(("render to A8 unsupported\n"));
-        return FALSE;
-    default:
-        break;
-    }
-
     if (PICT_FORMAT_TYPE(pDstPict->format) == PICT_TYPE_ABGR) {
         DEBUG_MSG(("render to (A)BGR unsupported\n"));
         return FALSE;
@@ -560,16 +552,22 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     if (pMask)
         PrepareSourceTexture(1, pMaskPict, pMask);
 
-    if (pSrcPict->format == PICT_a8) {
-        /* C = 0        A = As */
+    /* C = Cs       A = As */
+    ds0 = C_ARG1_CUR | COLOR_ARG1 |
+          A_ARG1_CUR | ALPHA_ARG1;
 
-        /* MGA HW: A8 format makes RGB white. We use FCOL for the black
-         * If FCOL was not 0, it would have been be premultiplied (RENDER)
-         * color component would have been:
-         *   C_ARG1_ALPHA | C_ARG2_FCOL | COLOR_MUL
-         */
-        ds0 = C_ARG2_FCOL | COLOR_ARG2 |
-              A_ARG1_CUR | ALPHA_ARG1;
+    if (pSrcPict->format == PICT_a8) {
+        if (pDstPict->format != PICT_a8) {
+            /* C = 0        A = As */
+
+            /* MGA HW: A8 format makes RGB white. We use FCOL for the black
+             * If FCOL was not 0, it would have been be premultiplied (RENDER)
+             * color component would have been:
+             *   C_ARG1_ALPHA | C_ARG2_FCOL | COLOR_MUL
+             */
+            ds0 = C_ARG2_FCOL | COLOR_ARG2 |
+                  A_ARG1_CUR | ALPHA_ARG1;
+        }
 
         /* MGA HW: TMU1 must be enabled when DUALSTAGE0 contains something */
         if (!pMask) {
@@ -578,10 +576,6 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
             ds1 = C_ARG2_PREV | COLOR_ARG2 |
                   A_ARG2_PREV | ALPHA_ARG2;
         }
-    } else {
-        /* C = Cs       A = As */
-        ds0 = C_ARG1_CUR | COLOR_ARG1 |
-              A_ARG1_CUR | ALPHA_ARG1;
     }
 
     if (pMask) {
