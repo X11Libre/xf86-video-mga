@@ -904,7 +904,7 @@ MGAPutImage(
    npixels = ((((x2 + 0xffff) >> 16) + 1) & ~1) - left;
    left <<= 1;
 
-   offset = pPriv->video_offset * bpp;
+   offset = pPriv->video_offset;
    if(pPriv->doubleBuffer)
         offset += pPriv->currentBuffer * new_size * bpp;
    dst_start = pMga->FbStart + offset + left + (top * dstPitch);
@@ -1101,7 +1101,7 @@ MGAAllocateSurface(
     surface->pScrn = pScrn;
     surface->id = id;   
     surface->pitches[0] = pitch;
-    surface->offsets[0] = offset * bpp;
+    surface->offsets[0] = offset;
     surface->devPrivate.ptr = (pointer)pPriv;
 
     return Success;
