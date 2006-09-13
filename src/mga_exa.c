@@ -547,9 +547,15 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     if (pMask)
         PrepareSourceTexture(1, pMaskPict, pMask);
 
-    /* C = Cs       A = As */
-    ds0 = C_ARG1_CUR | COLOR_ARG1 |
-          A_ARG1_CUR | ALPHA_ARG1;
+    ds0 = C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
+
+    /* If the source texture has an alpha channel, use it.
+     * Otherwise, set the alpha channel to 0xff (see FCOL setting above).
+     */
+    if (PICT_FORMAT_A(pSrcPict->format))
+        ds0 |= A_ARG1_CUR | ALPHA_ARG1; /* A = As */
+    else
+        ds0 |= A_ARG2_FCOL | ALPHA_ARG2; /* A = 0xff */
 
     if (pSrcPict->format == PICT_a8) {
         if (pDstPict->format != PICT_a8) {
