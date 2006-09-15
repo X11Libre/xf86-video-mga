@@ -535,10 +535,9 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
                     PixmapPtr pDst)
 {
     PMGA(pDst);
-    CARD32 ds0 = 0, ds1 = 0, cmd, blendcntl;
+    CARD32 fcol = 0xff000000, ds0 = 0, ds1 = 0, cmd, blendcntl;
 
-    mgaSetup(pMga, pDst, pDstPict, 3);
-    OUTREG(MGAREG_FCOL, 0xff000000);
+    mgaSetup(pMga, pDst, pDstPict, 2);
     OUTREG(MGAREG_DSTORG, exaGetPixmapOffset(pDst));
     OUTREG(MGAREG_PITCH, mgaGetPixmapPitch(pDst));
 
@@ -549,14 +548,19 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     else
         PrepareSourceTexture(1, pSrcPict, pSrc);
 
-    /* Only use the color channels if they are set up properly.
-     * For A8 writes, replicate the alpha color to the color channels,
-     * otherwise, set the color to black (FCOL).
+    /* For A8 writes, the desired alpha value needs to be replicated
+     * to the color channels - if the source texture doesn't have an
+     * alpha channel, set it to 0xff instead.
+     * Otherwise, use the color channels if available, or set them
+     * to black.
      */
-    if (pSrcPict->format != PICT_a8)
-        ds0 |= C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
-    else if (pDstPict->format == PICT_a8)
+    if (pDstPict->format == PICT_a8 && !PICT_FORMAT_A(pSrcPict->format)) {
+        fcol = 0xffffffff;
+        ds0 |= C_ARG2_FCOL | COLOR_ARG2; /* C = 0xff */
+    } else if (pDstPict->format == PICT_a8)
         ds0 |= C_ARG1_ALPHA | COLOR_ARG1; /* C = As */
+    else if (pSrcPict->format != PICT_a8)
+        ds0 |= C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
     else
         ds0 |= C_ARG2_FCOL | COLOR_ARG2; /* C = 0 */
 
@@ -609,7 +613,8 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
             blendcntl = (blendcntl & ~MGA_DST_BLEND_MASK) | MGA_DST_ZERO;
     }
 
-    WAITFIFO(4);
+    WAITFIFO(5);
+    OUTREG(MGAREG_FCOL, fcol);
     OUTREG(MGAREG_TDUALSTAGE0, ds0);
     OUTREG(MGAREG_TDUALSTAGE1, ds1);
     OUTREG(MGAREG_DWGCTL, cmd);
