@@ -546,8 +546,19 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
 
     if (pMask)
         PrepareSourceTexture(1, pMaskPict, pMask);
+    else
+        PrepareSourceTexture(1, pSrcPict, pSrc);
 
-    ds0 = C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
+    /* Only use the color channels if they are set up properly.
+     * For A8 writes, replicate the alpha color to the color channels,
+     * otherwise, set the color to black (FCOL).
+     */
+    if (pSrcPict->format != PICT_a8)
+        ds0 |= C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
+    else if (pDstPict->format == PICT_a8)
+        ds0 |= C_ARG1_ALPHA | COLOR_ARG1; /* C = As */
+    else
+        ds0 |= C_ARG2_FCOL | COLOR_ARG2; /* C = 0 */
 
     /* If the source texture has an alpha channel, use it.
      * Otherwise, set the alpha channel to 0xff (see FCOL setting above).
@@ -557,54 +568,23 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
     else
         ds0 |= A_ARG2_FCOL | ALPHA_ARG2; /* A = 0xff */
 
-    if (pSrcPict->format == PICT_a8) {
-        if (pDstPict->format != PICT_a8) {
-            /* C = 0        A = As */
-
-            /* MGA HW: A8 format makes RGB white. We use FCOL for the black
-             * If FCOL was not 0, it would have been be premultiplied (RENDER)
-             * color component would have been:
-             *   C_ARG1_ALPHA | C_ARG2_FCOL | COLOR_MUL
-             */
-            ds0 = C_ARG2_FCOL | COLOR_ARG2 |
-                  A_ARG1_CUR | ALPHA_ARG1;
-        }
-
-        /* MGA HW: TMU1 must be enabled when DUALSTAGE0 contains something */
-        if (!pMask) {
-            PrepareSourceTexture(1, pSrcPict, pSrc);
-
-            ds1 = C_ARG2_PREV | COLOR_ARG2 |
-                  A_ARG2_PREV | ALPHA_ARG2;
-        }
-    }
-
-    if (pMask) {
+    if (!pMask)
+        ds1 = ds0;
+    else {
         /* As or Am might be NULL. in this case we don't multiply because,
          * the alpha component holds garbage.
          */
-        int color, alpha;
+        if (!PICT_FORMAT_A(pMaskPict->format))
+            ds1 |= C_ARG2_PREV | COLOR_ARG2; /* C = Cs */
+        else
+            ds1 |= C_ARG1_ALPHA | C_ARG2_PREV | COLOR_MUL; /* C = Am * Cs */
 
-        if (!PICT_FORMAT_A(pMaskPict->format)) {
-            /* C = Cs */
-            color = C_ARG2_PREV | COLOR_ARG2;
-        } else {
-            /* C = Am * Cs */
-            color = C_ARG1_ALPHA | C_ARG2_PREV | COLOR_MUL;
-        }
-
-        if (!PICT_FORMAT_A(pMaskPict->format)) {
-            /* A = As */
-            alpha = A_ARG2_PREV | ALPHA_ARG2;
-        } else if (!PICT_FORMAT_A(pSrcPict->format)) {
-            /* A = Am */
-            alpha = A_ARG1_CUR | ALPHA_ARG1;
-        } else {
-            /* A = Am * As */
-            alpha = A_ARG1_CUR | A_ARG2_PREV | ALPHA_MUL;
-        }
-
-        ds1 = color | alpha;
+        if (!PICT_FORMAT_A(pMaskPict->format))
+            ds1 |= A_ARG2_PREV | ALPHA_ARG2; /* A = As */
+        else if (!PICT_FORMAT_A(pSrcPict->format))
+            ds1 |= A_ARG1_CUR | ALPHA_ARG1; /* A = Am */
+        else
+            ds1 |= A_ARG1_CUR | A_ARG2_PREV | ALPHA_MUL; /* A = Am * As */
     }
 
     cmd = MGADWG_TEXTURE_TRAP | MGADWG_I | 0x000c0000 |
