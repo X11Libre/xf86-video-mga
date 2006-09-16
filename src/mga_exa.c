@@ -148,7 +148,7 @@ mgaGetMACCESS(PixmapPtr pixmap, PicturePtr pict)
 {
     switch (pixmap->drawable.bitsPerPixel) {
     case 8:
-        return MGAMAC_PW8;
+        return MGAMAC_PW8 | MGAMAC_BYPASS332 | MGAMAC_NODITHER;
     case 16:
         if (pict &&
             (pict->format == PICT_x1r5g5b5 || pict->format == PICT_a1r5g5b5))

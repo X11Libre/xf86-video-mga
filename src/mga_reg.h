@@ -138,6 +138,8 @@
 #define MGAMAC_PW16              0x01
 #define MGAMAC_PW24              0x03 /* not a typo */
 #define MGAMAC_PW32              0x02 /* not a typo */
+#define MGAMAC_BYPASS332         0x10000000
+#define MGAMAC_NODITHER          0x40000000
 #define MGAMAC_DIT555            0x80000000
 
 /* DWGCTL register additives */
