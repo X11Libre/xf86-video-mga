@@ -21,4 +21,12 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src man util
 
-EXTRA_DIST = README_HALLIB mga_PInS.txt
+CLEANFILES = ChangeLog
+EXTRA_DIST = README_HALLIB mga_PInS.txt ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	git-log > ChangeLog
+
+dist-hook: ChangeLog
