@@ -63,6 +63,11 @@
 #define BLIT_LEFT   1
 #define BLIT_UP        4
 
+/* FIXME
+ * We could use MGADWG_BLK for GXcopy if HaveSDRAM is FALSE.
+ * That will only work in some situations though (see mga_storm.c
+ * for details).
+ */
 static const CARD32 mgaRop[16] = {
     /* GXclear        */  MGADWG_RPL  | 0x00000000,    /* 0 */
     /* GXand          */  MGADWG_RSTR | 0x00080000,    /* src AND dst */
@@ -80,28 +85,6 @@ static const CARD32 mgaRop[16] = {
     /* GXorInverted   */  MGADWG_RSTR | 0x000b0000,    /* NOT src OR dst */
     /* GXnand         */  MGADWG_RSTR | 0x00070000,    /* NOT src OR NOT dst */
     /* GXset          */  MGADWG_RPL  | 0x000f0000    /* 1 */
-};
-
-static const CARD32 atype[16] = {
-   MGADWG_RPL  | 0x00000000, MGADWG_RSTR | 0x00080000,
-   MGADWG_RSTR | 0x00040000, MGADWG_BLK  | 0x000c0000,
-   MGADWG_RSTR | 0x00020000, MGADWG_RSTR | 0x000a0000,
-   MGADWG_RSTR | 0x00060000, MGADWG_RSTR | 0x000e0000,
-   MGADWG_RSTR | 0x00010000, MGADWG_RSTR | 0x00090000,
-   MGADWG_RSTR | 0x00050000, MGADWG_RSTR | 0x000d0000,
-   MGADWG_RPL  | 0x00030000, MGADWG_RSTR | 0x000b0000,
-   MGADWG_RSTR | 0x00070000, MGADWG_RPL  | 0x000f0000
-};
-
-static const CARD32 atype_noblk[16] = {
-   MGADWG_RPL  | 0x00000000, MGADWG_RSTR | 0x00080000,
-   MGADWG_RSTR | 0x00040000, MGADWG_RPL  | 0x000c0000,
-   MGADWG_RSTR | 0x00020000, MGADWG_RSTR | 0x000a0000,
-   MGADWG_RSTR | 0x00060000, MGADWG_RSTR | 0x000e0000,
-   MGADWG_RSTR | 0x00010000, MGADWG_RSTR | 0x00090000,
-   MGADWG_RSTR | 0x00050000, MGADWG_RSTR | 0x000d0000,
-   MGADWG_RPL  | 0x00030000, MGADWG_RSTR | 0x000b0000,
-   MGADWG_RSTR | 0x00070000, MGADWG_RPL  | 0x000f0000
 };
 
 static const struct {
@@ -822,16 +805,6 @@ mgaExaInit(ScreenPtr pScreen)
     }
 
     pExa->UploadToScreen = mgaUploadToScreen;
-
-    /* XXX fill in the XAA setup code here */
-#if 0
-    if(pMga->HasSDRAM) {
-        pMga->Atype = pMga->AtypeNoBLK = atype_noblk;
-    } else {
-        pMga->Atype = atype;
-        pMga->AtypeNoBLK = atype_noblk;
-    }
-#endif
 
     return exaDriverInit(pScreen, pExa);
 }
