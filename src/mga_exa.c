@@ -400,6 +400,13 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         return FALSE;
     }
 
+    /* FIXME
+     * Doing this operation in hardware is broken atm :/
+     */
+    if (op == PictOpAdd && pSrcPict->format == PICT_a8 &&
+        pDstPict->format == PICT_a8)
+        return FALSE;
+
     return TRUE;
 }
 
