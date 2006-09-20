@@ -611,12 +611,12 @@ void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);
 void MGAGSetupFuncs(ScrnInfoPtr pScrn);
 
-#ifdef USE_XAA
+/* #ifdef USE_XAA */
 void MGAStormSync(ScrnInfoPtr pScrn);
 void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
 Bool mgaAccelInit(ScreenPtr pScreen);
-#endif
+/* #endif */
 
 #ifdef USE_EXA
 Bool mgaExaInit(ScreenPtr pScreen);
