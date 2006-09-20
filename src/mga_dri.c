@@ -370,6 +370,9 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
 
       MGAWaitForIdleDMA( pScrn );
 
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec) {
       WAITFIFO( 11 );
       OUTREG( MGAREG_MACCESS, pMga->MAccess );
       OUTREG( MGAREG_PITCH, pLayout->displayWidth );
@@ -390,7 +393,9 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
       OUTREG( MGAREG_YTOP, 0x00000000 );    /* minPixelPointer */
       OUTREG( MGAREG_YBOT, 0x007FFFFF );    /* maxPixelPointer */
 
-      pMga->AccelFlags &= ~CLIPPER_ON;
+            pMga->AccelFlags &= ~CLIPPER_ON;
+        }
+#endif
    }
 }
 
@@ -406,7 +411,12 @@ void MGAGetQuiescenceShared( ScrnInfoPtr pScrn )
 
    if ( pMGAEnt->directRenderingEnabled ) {
       MGAWaitForIdleDMA( pMGAEnt->pScrn_1 );
-      pMga->RestoreAccelState( pScrn );
+
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec)
+            pMga->RestoreAccelState( pScrn );
+#endif
       xf86SetLastScrnFlag( pScrn->entityList[0], pScrn->scrnIndex );
    }
 }
@@ -420,7 +430,8 @@ static void MGASwapContext( ScreenPtr pScreen )
     * appropriate.
     */
    pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+
+   MGA_MARK_SYNC(pMga, pScrn);
 }
 
 static void MGASwapContextShared( ScreenPtr pScreen )
@@ -432,11 +443,10 @@ static void MGASwapContextShared( ScreenPtr pScreen )
 
    pMga = MGAPTR(pMGAEnt->pScrn_1);
 
-   pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+   pMga->haveQuiescense = pMGA2->haveQuiescense = 0;
 
-   pMGA2->haveQuiescense = 0;
-   pMGA2->AccelInfoRec->NeedToSync = TRUE;
+   MGA_MARK_SYNC(pMga, pScrn);
+   MGA_MARK_SYNC(pMGA2, pMGAEnt->pScrn_2);
 }
 
 /* FIXME: This comment is out of date, since we aren't overriding
@@ -486,6 +496,7 @@ MGADRISwapContextShared( ScreenPtr pScreen, DRISyncType syncType,
    }
 }
 
+#ifdef USE_XAA
 void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
 {
    MGAPtr pMga = MGAPTR(pScrn);
@@ -507,6 +518,7 @@ void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
       break;
    }
 }
+#endif
 
 
 static unsigned int mylog2( unsigned int n )

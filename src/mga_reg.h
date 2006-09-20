@@ -109,6 +109,7 @@
 
 #define	MGAREG_FIFOSTATUS	0x1e10
 #define	MGAREG_Status		0x1e14
+#define MGAREG_CACHEFLUSH       0x1fff
 #define	MGAREG_ICLEAR		0x1e18
 #define	MGAREG_IEN		0x1e1c
 
@@ -132,6 +133,15 @@
 #define MGAOPM_DMA_BLIT		(0x01 << 2)
 #define MGAOPM_DMA_VECTOR	(0x10 << 2)
 
+/* MACCESS register additives */
+#define MGAMAC_PW8               0x00
+#define MGAMAC_PW16              0x01
+#define MGAMAC_PW24              0x03 /* not a typo */
+#define MGAMAC_PW32              0x02 /* not a typo */
+#define MGAMAC_BYPASS332         0x10000000
+#define MGAMAC_NODITHER          0x40000000
+#define MGAMAC_DIT555            0x80000000
+
 /* DWGCTL register additives */
 
 /* Lines */
@@ -143,7 +153,7 @@
 
 /* Trapezoids */
 #define MGADWG_TRAP		0x04
-#define MGADWG_TEXTURE_TRAP	0x05
+#define MGADWG_TEXTURE_TRAP	0x06
 
 /* BitBlts */
 
@@ -465,14 +475,116 @@
 #define MGAREG_TEXWIDTH		0x2c28
 #define MGAREG_TEXHEIGHT	0x2c2c
 #define MGAREG_TEXCTL		0x2c30
+#    define MGA_TW4                             (0x00000000)
+#    define MGA_TW8                             (0x00000001)
+#    define MGA_TW15                            (0x00000002)
+#    define MGA_TW16                            (0x00000003)
+#    define MGA_TW12                            (0x00000004)
+#    define MGA_TW32                            (0x00000006)
+#    define MGA_TW8A                            (0x00000007)
+#    define MGA_TW8AL                           (0x00000008)
+#    define MGA_TW422                           (0x0000000A)
+#    define MGA_TW422UYVY                       (0x0000000B)
+#    define MGA_PITCHLIN                        (0x00000100)
+#    define MGA_NOPERSPECTIVE                   (0x00200000)
+#    define MGA_TAKEY                           (0x02000000)
+#    define MGA_TAMASK                          (0x04000000)
+#    define MGA_CLAMPUV                         (0x18000000)
+#    define MGA_TEXMODULATE                     (0x20000000)
 #define MGAREG_TEXCTL2		0x2c3c
+#    define MGA_G400_TC2_MAGIC                  (0x00008000)
+#    define MGA_TC2_DECALBLEND                  (0x00000001)
+#    define MGA_TC2_IDECAL                      (0x00000002)
+#    define MGA_TC2_DECALDIS                    (0x00000004)
+#    define MGA_TC2_CKSTRANSDIS                 (0x00000010)
+#    define MGA_TC2_BORDEREN                    (0x00000020)
+#    define MGA_TC2_SPECEN                      (0x00000040)
+#    define MGA_TC2_DUALTEX                     (0x00000080)
+#    define MGA_TC2_TABLEFOG                    (0x00000100)
+#    define MGA_TC2_BUMPMAP                     (0x00000200)
+#    define MGA_TC2_SELECT_TMU1                 (0x80000000)
 #define MGAREG_TEXTRANS		0x2c34
 #define MGAREG_TEXTRANSHIGH	0x2c38
 #define MGAREG_TEXFILTER	0x2c58
+#    define MGA_MIN_NRST                        (0x00000000)
+#    define MGA_MIN_BILIN                       (0x00000002)
+#    define MGA_MIN_ANISO                       (0x0000000D)
+#    define MGA_MAG_NRST                        (0x00000000)
+#    define MGA_MAG_BILIN                       (0x00000020)
+#    define MGA_FILTERALPHA                     (0x00100000)
 #define MGAREG_ALPHASTART	0x2c70
 #define MGAREG_ALPHAXINC	0x2c74
 #define MGAREG_ALPHAYINC	0x2c78
 #define MGAREG_ALPHACTRL	0x2c7c
+#    define MGA_SRC_ZERO                        (0x00000000)
+#    define MGA_SRC_ONE                         (0x00000001)
+#    define MGA_SRC_DST_COLOR                   (0x00000002)
+#    define MGA_SRC_ONE_MINUS_DST_COLOR         (0x00000003)
+#    define MGA_SRC_ALPHA                       (0x00000004)
+#    define MGA_SRC_ONE_MINUS_SRC_ALPHA         (0x00000005)
+#    define MGA_SRC_DST_ALPHA                   (0x00000006)
+#    define MGA_SRC_ONE_MINUS_DST_ALPHA         (0x00000007)
+#    define MGA_SRC_SRC_ALPHA_SATURATE          (0x00000008)
+#    define MGA_SRC_BLEND_MASK                  (0x0000000f)
+#    define MGA_DST_ZERO                        (0x00000000)
+#    define MGA_DST_ONE                         (0x00000010)
+#    define MGA_DST_SRC_COLOR                   (0x00000020)
+#    define MGA_DST_ONE_MINUS_SRC_COLOR         (0x00000030)
+#    define MGA_DST_SRC_ALPHA                   (0x00000040)
+#    define MGA_DST_ONE_MINUS_SRC_ALPHA         (0x00000050)
+#    define MGA_DST_DST_ALPHA                   (0x00000060)
+#    define MGA_DST_ONE_MINUS_DST_ALPHA         (0x00000070)
+#    define MGA_DST_BLEND_MASK                  (0x00000070)
+#    define MGA_ALPHACHANNEL                    (0x00000100)
+#    define MGA_VIDEOALPHA                      (0x00000200)
+#    define MGA_DIFFUSEDALPHA                   (0x01000000)
+#    define MGA_MODULATEDALPHA                  (0x02000000)
+#define MGAREG_TDUALSTAGE0                      (0x2CF8)
+#define MGAREG_TDUALSTAGE1                      (0x2CFC)
+#    define MGA_TDS_COLOR_ARG2_DIFFUSE          (0x00000000)
+#    define MGA_TDS_COLOR_ARG2_SPECULAR         (0x00000001)
+#    define MGA_TDS_COLOR_ARG2_FCOL             (0x00000002)
+#    define MGA_TDS_COLOR_ARG2_PREVSTAGE        (0x00000003)
+#    define MGA_TDS_COLOR_ALPHA_DIFFUSE         (0x00000000)
+#    define MGA_TDS_COLOR_ALPHA_FCOL            (0x00000004)
+#    define MGA_TDS_COLOR_ALPHA_CURRTEX         (0x00000008)
+#    define MGA_TDS_COLOR_ALPHA_PREVTEX         (0x0000000c)
+#    define MGA_TDS_COLOR_ALPHA_PREVSTAGE       (0x00000010)
+#    define MGA_TDS_COLOR_ARG1_REPLICATEALPHA   (0x00000020)
+#    define MGA_TDS_COLOR_ARG1_INV              (0x00000040)
+#    define MGA_TDS_COLOR_ARG2_REPLICATEALPHA   (0x00000080)
+#    define MGA_TDS_COLOR_ARG2_INV              (0x00000100)
+#    define MGA_TDS_COLOR_ALPHA1INV             (0x00000200)
+#    define MGA_TDS_COLOR_ALPHA2INV             (0x00000400)
+#    define MGA_TDS_COLOR_ARG1MUL_ALPHA1        (0x00000800)
+#    define MGA_TDS_COLOR_ARG2MUL_ALPHA2        (0x00001000)
+#    define MGA_TDS_COLOR_ARG1ADD_MULOUT        (0x00002000)
+#    define MGA_TDS_COLOR_ARG2ADD_MULOUT        (0x00004000)
+#    define MGA_TDS_COLOR_MODBRIGHT_2X          (0x00008000)
+#    define MGA_TDS_COLOR_MODBRIGHT_4X          (0x00010000)
+#    define MGA_TDS_COLOR_ADD_SUB               (0x00000000)
+#    define MGA_TDS_COLOR_ADD_ADD               (0x00020000)
+#    define MGA_TDS_COLOR_ADD2X                 (0x00040000)
+#    define MGA_TDS_COLOR_ADDBIAS               (0x00080000)
+#    define MGA_TDS_COLOR_BLEND                 (0x00100000)
+#    define MGA_TDS_COLOR_SEL_ARG1              (0x00000000)
+#    define MGA_TDS_COLOR_SEL_ARG2              (0x00200000)
+#    define MGA_TDS_COLOR_SEL_ADD               (0x00400000)
+#    define MGA_TDS_COLOR_SEL_MUL               (0x00600000)
+#    define MGA_TDS_ALPHA_ARG1_INV              (0x00800000)
+#    define MGA_TDS_ALPHA_ARG2_DIFFUSE          (0x00000000)
+#    define MGA_TDS_ALPHA_ARG2_FCOL             (0x01000000)
+#    define MGA_TDS_ALPHA_ARG2_PREVTEX          (0x02000000)
+#    define MGA_TDS_ALPHA_ARG2_PREVSTAGE        (0x03000000)
+#    define MGA_TDS_ALPHA_ARG2_INV              (0x04000000)
+#    define MGA_TDS_ALPHA_ADD                   (0x08000000)
+#    define MGA_TDS_ALPHA_ADDBIAS               (0x10000000)
+#    define MGA_TDS_ALPHA_ADD2X                 (0x20000000)
+#    define MGA_TDS_ALPHA_SEL_ARG1              (0x00000000)
+#    define MGA_TDS_ALPHA_SEL_ARG2              (0x40000000)
+#    define MGA_TDS_ALPHA_SEL_ADD               (0x80000000)
+#    define MGA_TDS_ALPHA_SEL_MUL               (0xc0000000)
+
 #define MGAREG_DWGSYNC		0x2c4c
 
 #define MGAREG_AGP_PLL		0x1e4c
