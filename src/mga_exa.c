@@ -752,13 +752,6 @@ mgaUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h,
     return TRUE;
 }
 
-static Bool
-mgaDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h, char *dst,
-              int dst_pitch)
-{
-    return FALSE;
-}
-
 static void
 mgaWaitMarker(ScreenPtr pScreen, int marker)
 {
@@ -828,7 +821,6 @@ mgaExaInit(ScreenPtr pScreen)
         pExa->DoneComposite = mgaNoopDone;
     }
 
-    /* pExa->DownloadFromScreen = mgaDownloadFromScreen; */
     pExa->UploadToScreen = mgaUploadToScreen;
 
     /* XXX fill in the XAA setup code here */
