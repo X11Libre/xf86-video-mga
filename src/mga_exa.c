@@ -549,10 +549,10 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         ds0 |= C_ARG2_FCOL | COLOR_ARG2; /* C = 0xff */
     } else if (pDstPict->format == PICT_a8)
         ds0 |= C_ARG1_ALPHA | COLOR_ARG1; /* C = As */
-    else if (pSrcPict->format != PICT_a8)
-        ds0 |= C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
-    else
+    else if (pSrcPict->format == PICT_a8)
         ds0 |= C_ARG2_FCOL | COLOR_ARG2; /* C = 0 */
+    else
+        ds0 |= C_ARG1_CUR | COLOR_ARG1; /* C = Cs */
 
     /* If the source texture has an alpha channel, use it.
      * Otherwise, set the alpha channel to 0xff (see FCOL setting above).
