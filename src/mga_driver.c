@@ -827,9 +827,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp | 0x80);
 
 	/* apparently the G200SE doesn't have a BIOS to read */
-	if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	    (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
-
+	if (pMga->is_G200SE) {
 	    CARD32 MemoryAt0, MemoryAt1, Offset;
 	    CARD32 FirstMemoryVal1, FirstMemoryVal2;
 	    CARD32 SecondMemoryVal1, SecondMemoryVal2;
@@ -1283,6 +1281,18 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     } else {
 	xf86ErrorF("\n");
     }
+
+    pMga->is_Gx50 = ((pMga->Chipset == PCI_CHIP_MGAG400) && (pMga->ChipRev >= 0x80))
+	|| (pMga->Chipset == PCI_CHIP_MGAG550);
+    pMga->is_G200SE = (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI)
+	|| (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI);
+    pMga->is_HAL_chipset = ((pMga->Chipset == PCI_CHIP_MGAG200_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG400) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG550));
+
 #ifdef USEMGAHAL
     if (HAL_CHIPSETS) {
 	Bool loadHal = TRUE;
@@ -3067,8 +3077,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pMga = MGAPTR(pScrn);
     MGAdac = &pMga->Dac;
 
-    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    if (pMga->is_G200SE) {
 	VRTemp = pScrn->videoRam;
 	FBTemp = pMga->FbMapSize;
 	pScrn->videoRam = 4096;
@@ -3152,8 +3161,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	  );	/* MGA_HAL */
 #endif
     }
-    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    if (pMga->is_G200SE) {
 	pScrn->videoRam = VRTemp;
 	pMga->FbMapSize = FBTemp;
     }

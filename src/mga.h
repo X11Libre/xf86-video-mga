@@ -391,6 +391,11 @@ typedef struct {
     xf86AccessRec	Access;
     int			Chipset;
     int                 ChipRev;
+
+    int is_Gx50:1;
+    int is_G200SE:1;
+    int is_HAL_chipset:1;
+
     Bool		Primary;
     Bool		Interleave;
     int			HwBpp;

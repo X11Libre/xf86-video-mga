@@ -242,8 +242,7 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	    return;
 	}
 
-	if ((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
-	    (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) {
+	if (pMga->is_G200SE) {
 	    MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
 
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
@@ -761,9 +760,8 @@ MGA_NOT_HAL(
 		   ((i == 0x2c) || (i == 0x2d) || (i == 0x2e) ||
 		    (i == 0x4c) || (i == 0x4d) || (i == 0x4e))))
 		 continue; 
-	      if (((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
-		   (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) &&
-		   ((i == 0x2C) || (i == 0x2D) || (i == 0x2E)))
+	      if (pMga->is_G200SE
+		  && ((i == 0x2C) || (i == 0x2D) || (i == 0x2E)))
 	         continue;
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
@@ -800,8 +798,7 @@ MGA_NOT_HAL(
 	      OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
 
 	   /* This handles restoring the generic VGA registers. */
-	   if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	       (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+	   if (pMga->is_G200SE) {
 	      vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
 	      if (restoreFonts)
 	         MGAG200SERestoreFonts(pScrn, vgaReg);
@@ -901,8 +898,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * This function will handle creating the data structure and filling
 	 * in the generic VGA portion.
 	 */
-	if ((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
-	    (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) {
+	if (pMga->is_G200SE) {
 	    vgaHWSave(pScrn, vgaReg, VGA_SR_MODE);
 	    if (saveFonts)
 		MGAG200SESaveFonts(pScrn, vgaReg);
@@ -1114,8 +1110,7 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
   outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(DDC_P1_SCL_MASK | DDC_P1_SDA_MASK), 0);
 
   /* wait for Vsync */
-  if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-      (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+  if (pMga->is_G200SE) {
     usleep(4);
   } else {
     while( INREG( MGAREG_Status ) & 0x08 );
