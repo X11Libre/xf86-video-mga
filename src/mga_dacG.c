@@ -763,7 +763,7 @@ MGA_NOT_HAL(
 		 continue; 
 	      if (((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
 		   (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) &&
-		   (i == 0x2C) || (i == 0x2D) || (i == 0x2E))
+		   ((i == 0x2C) || (i == 0x2D) || (i == 0x2E)))
 	         continue;
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
