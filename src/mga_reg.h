@@ -437,10 +437,6 @@
 #define MGAREG_C2OFFSET         0x3c40
 #define MGAREG_C2DATACTL        0x3c4c
 
-#define MGA1064_DISP_CTL        0x8a
-#define MGA1064_SYNC_CTL        0x8b
-#define MGA1064_PWR_CTL         0xa0
-
 /* video register */
 
 #define MGAREG_BESA1C3ORG	0x3d60
