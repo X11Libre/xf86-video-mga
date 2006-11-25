@@ -402,10 +402,6 @@
 #define MGA1064_PIX_PLL_STAT	0x4f
 
 /*Added for G450 dual head*/
-/* Supported PLL*/
-#define __PIXEL_PLL                 1
-#define __SYSTEM_PLL                2
-#define __VIDEO_PLL                 3
 
 #define MGA1064_VID_PLL_P       0x8D
 #define MGA1064_VID_PLL_M       0x8E
