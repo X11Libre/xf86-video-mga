@@ -366,7 +366,7 @@
 
 #define MGA1064_GEN_CTL		0x1d
 #define MGA1064_MISC_CTL	0x1e
-#define MGA1064_MISC_CTL_DAC_POW_DN   		( 0x01 << 0 )
+#define MGA1064_MISC_CTL_DAC_EN                ( 0x01 << 0 )
 #define MGA1064_MISC_CTL_VGA   		( 0x01 << 1 )
 #define MGA1064_MISC_CTL_DIS_CON   		( 0x03 << 1 )
 #define MGA1064_MISC_CTL_MAFC   		( 0x02 << 1 )
