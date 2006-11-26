@@ -332,7 +332,8 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 	case PCI_CHIP_MGAG100:
 	case PCI_CHIP_MGAG100_PCI:
-		pReg->DacRegs[ MGAGDAC_XVREFCTRL ] = 0x03;
+                pReg->DacRegs[MGA1064_VREF_CTL] = 0x03;
+
 		if(pMga->HasSDRAM) {
 		    if(pMga->OverclockMem) {
                         /* 220 Mhz */

@@ -355,7 +355,6 @@
 #define MGA1064_MUL_CTL_G16V16bits		0x06
 #define MGA1064_MUL_CTL_32_24bits		0x07
 
-#define MGAGDAC_XVREFCTRL		0x18
 #define MGA1064_PIX_CLK_CTL		0x1a
 #define MGA1064_PIX_CLK_CTL_CLK_DIS   		( 0x01 << 2 )
 #define MGA1064_PIX_CLK_CTL_CLK_POW_DOWN   	( 0x01 << 3 )
