@@ -365,6 +365,7 @@
 #define MGA1064_PIX_CLK_CTL_SEL_MSK   		( 0x03 << 0 )
 
 #define MGA1064_GEN_CTL		0x1d
+#define MGA1064_GEN_CTL_SYNC_ON_GREEN_DIS      (0x01 << 5)
 #define MGA1064_MISC_CTL	0x1e
 #define MGA1064_MISC_CTL_DAC_EN                ( 0x01 << 0 )
 #define MGA1064_MISC_CTL_VGA   		( 0x01 << 1 )

@@ -413,8 +413,14 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		MGA_HAL(break;);
 #endif
         pReg->DacRegs[ MGA1064_VREF_CTL ] = 0x03;
-        pReg->DacRegs[ MGA1064_PIX_CLK_CTL ] = 0x01;
-        pReg->DacRegs[ MGA1064_MISC_CTL ] = 0x19;
+                pReg->DacRegs[MGA1064_PIX_CLK_CTL] =
+                    MGA1064_PIX_CLK_CTL_SEL_PLL;
+
+                pReg->DacRegs[MGA1064_MISC_CTL] =
+                    MGA1064_MISC_CTL_DAC_EN |
+                    MGA1064_MISC_CTL_VGA8 |
+                    MGA1064_MISC_CTL_DAC_RAM_CS;
+
 		if(pMga->HasSDRAM)
 		    pReg->Option = 0x40499121;
 		else
@@ -565,7 +571,11 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	MGA_NOT_HAL(pReg->DacRegs[MGA1064_CURSOR_BASE_ADR_HI] = pMga->FbCursorOffset >> 18);
 	
 	if (pMga->SyncOnGreen) {
-	    MGA_NOT_HAL(pReg->DacRegs[MGA1064_GEN_CTL] &= ~0x20);
+	    MGA_NOT_HAL(
+                pReg->DacRegs[MGA1064_GEN_CTL] &=
+                    ~MGA1064_GEN_CTL_SYNC_ON_GREEN_DIS;
+            );
+
 	    pReg->ExtVga[3] |= 0x40;
 	}
 
