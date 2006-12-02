@@ -3694,8 +3694,6 @@ MGAAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 }
 
-#define C2STARTADD0 0x3C28
-
 void
 MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
 {
@@ -3725,7 +3723,7 @@ MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
         Base = (y * pLayout->displayWidth + x) * pLayout->bitsPerPixel >> 3;
         Base += pMga->DstOrg;
         Base &= 0x01ffffc0;
-        OUTREG(C2STARTADD0, Base);
+        OUTREG(MGAREG_C2STARTADD0, Base);
     );
 }
 
