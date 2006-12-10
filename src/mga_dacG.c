@@ -806,7 +806,7 @@ MGA_NOT_HAL(
 #endif
 	   /* restore CRTCEXT regs */
            for (i = 0; i < 6; i++)
-	      OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
+	      OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[i] << 8) | i);
 
 	   /* This handles restoring the generic VGA registers. */
 	   if (pMga->is_G200SE) {
@@ -822,7 +822,7 @@ MGA_NOT_HAL(
 	   /*
 	    * this is needed to properly restore start address
 	    */
-	   OUTREG16(0x1FDE, (mgaReg->ExtVga[0] << 8) | 0);
+	   OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[0] << 8) | 0);
 	} else {
 	   /* Second Crtc */
 	   xMODEINFO ModeInfo;
@@ -903,7 +903,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	/*
 	 * Code is needed to get back to bank zero.
 	 */
-	OUTREG16(0x1FDE, 0x0004);
+	OUTREG16(MGAREG_CRTCEXT_INDEX, 0x0004);
 	
 	/*
 	 * This function will handle creating the data structure and filling
@@ -959,8 +959,8 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
 	for (i = 0; i < 6; i++)
 	{
-		OUTREG8(0x1FDE, i);
-		mgaReg->ExtVga[i] = INREG8(0x1FDF);
+		OUTREG8(MGAREG_CRTCEXT_INDEX, i);
+		mgaReg->ExtVga[i] = INREG8(MGAREG_CRTCEXT_DATA);
 	}
 #ifdef DEBUG		
 	ErrorF("Saved values:\nDAC:");
