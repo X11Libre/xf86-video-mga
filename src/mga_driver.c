@@ -500,7 +500,7 @@ static XF86ModuleVersionInfo mgaVersRec =
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
-	MGA_MAJOR_VERSION, MGA_MINOR_VERSION, MGA_PATCHLEVEL,
+    PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,			/* This is a video driver */
 	ABI_VIDEODRV_VERSION,
 	MOD_CLASS_VIDEODRV,
@@ -2840,8 +2840,8 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
              */
             CARD8 ucXDispCtrl = inMGAdac(MGA1064_DISP_CTL);
             
-            ucXDispCtrl &= ~0x0c;   /* dac2outsel mask */
-            ucXDispCtrl |=  0x04;   /* dac2 -> crtc1   */
+            ucXDispCtrl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
                 
             outMGAdac(MGA1064_DISP_CTL, ucXDispCtrl);
             
@@ -2849,9 +2849,13 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
             CARD8 ucXDispCtrl = inMGAdac(MGA1064_DISP_CTL);
             CARD32 ulC2CTL = INREG(MGAREG_C2CTL);
                 
-            ucXDispCtrl &= ~0x0c;   /* dac2outsel mask */
-            ucXDispCtrl |= 0x5;     /* dac1outsel -> crtcdacsel, dac2 -> crtc1 */
-            ulC2CTL &= ~0x00100000; /* crtcdacsel -> crtc1 */
+            ucXDispCtrl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC1OUTSEL_EN;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
+
+            /* crtcdacsel -> crtc1 */
+            ulC2CTL &= ~MGAREG_C2CTL_CRTCDACSEL_CRTC2;
+            ulC2CTL |= MGAREG_C2CTL_CRTCDACSEL_CRTC1;
                 
             outMGAdac(MGA1064_DISP_CTL, ucXDispCtrl);
             OUTREG(MGAREG_C2CTL, ulC2CTL);
@@ -2861,12 +2865,10 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
         /* Force to close second crtc */
         CARD32 ulC2CTL = INREG(MGAREG_C2CTL);
         
-        ulC2CTL &= ~0x1;            /* crtc2 disabled */
+        ulC2CTL &= ~MGAREG_C2CTL_C2_EN;
 
         OUTREG(MGAREG_C2CTL, ulC2CTL);
     }
-
-    return;
 }
 
 /*
@@ -3578,8 +3580,6 @@ MGAAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 }
 
-#define C2STARTADD0 0x3C28
-
 void
 MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
 {
@@ -3609,7 +3609,7 @@ MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
         Base = (y * pLayout->displayWidth + x) * pLayout->bitsPerPixel >> 3;
         Base += pMga->DstOrg;
         Base &= 0x01ffffc0;
-        OUTREG(C2STARTADD0, Base);
+        OUTREG(MGAREG_C2STARTADD0, Base);
     );
 }
 
@@ -3965,8 +3965,8 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 
 	if (PowerManagementMode==DPMSModeOn) {
 		/* Enable CRTC2 */
-		val |= 0x1;
-		val &= ~(0x8);
+		val |= MGAREG_C2CTL_C2_EN;
+		val &= ~MGAREG_C2CTL_PIXCLKDIS_DISABLE;
 		OUTREG(MGAREG_C2CTL, val);
 		/* Restore normal MAVEN values */
 		if (pMga->Maven) {
@@ -3994,8 +3994,8 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 	}
 	else {
 		/* Disable CRTC2 video */
-		val |= 0x8;
-		val &= ~(0x1);
+		val |= MGAREG_C2CTL_PIXCLKDIS_DISABLE;
+		val &= ~MGAREG_C2CTL_C2_EN;
 		OUTREG(MGAREG_C2CTL, val);
 
 		/* Disable MAVEN display */

@@ -326,7 +326,8 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 	case PCI_CHIP_MGAG100:
 	case PCI_CHIP_MGAG100_PCI:
-		pReg->DacRegs[ MGAGDAC_XVREFCTRL ] = 0x03;
+                pReg->DacRegs[MGA1064_VREF_CTL] = 0x03;
+
 		if(pMga->HasSDRAM) {
 		    if(pMga->OverclockMem) {
                         /* 220 Mhz */
@@ -407,8 +408,14 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		MGA_HAL(break;);
 #endif
         pReg->DacRegs[ MGA1064_VREF_CTL ] = 0x03;
-        pReg->DacRegs[ MGA1064_PIX_CLK_CTL ] = 0x01;
-        pReg->DacRegs[ MGA1064_MISC_CTL ] = 0x19;
+                pReg->DacRegs[MGA1064_PIX_CLK_CTL] =
+                    MGA1064_PIX_CLK_CTL_SEL_PLL;
+
+                pReg->DacRegs[MGA1064_MISC_CTL] =
+                    MGA1064_MISC_CTL_DAC_EN |
+                    MGA1064_MISC_CTL_VGA8 |
+                    MGA1064_MISC_CTL_DAC_RAM_CS;
+
 		if(pMga->HasSDRAM)
 		    pReg->Option = 0x40499121;
 		else
@@ -559,7 +566,11 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	MGA_NOT_HAL(pReg->DacRegs[MGA1064_CURSOR_BASE_ADR_HI] = pMga->FbCursorOffset >> 18);
 	
 	if (pMga->SyncOnGreen) {
-	    MGA_NOT_HAL(pReg->DacRegs[MGA1064_GEN_CTL] &= ~0x20);
+	    MGA_NOT_HAL(
+                pReg->DacRegs[MGA1064_GEN_CTL] &=
+                    ~MGA1064_GEN_CTL_SYNC_ON_GREEN_DIS;
+            );
+
 	    pReg->ExtVga[3] |= 0x40;
 	}
 
@@ -795,7 +806,7 @@ MGA_NOT_HAL(
 #endif
 	   /* restore CRTCEXT regs */
            for (i = 0; i < 6; i++)
-	      OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
+	      OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[i] << 8) | i);
 
 	   /* This handles restoring the generic VGA registers. */
 	   if (pMga->is_G200SE) {
@@ -811,7 +822,7 @@ MGA_NOT_HAL(
 	   /*
 	    * this is needed to properly restore start address
 	    */
-	   OUTREG16(0x1FDE, (mgaReg->ExtVga[0] << 8) | 0);
+	   OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[0] << 8) | 0);
 	} else {
 	   /* Second Crtc */
 	   xMODEINFO ModeInfo;
@@ -892,7 +903,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	/*
 	 * Code is needed to get back to bank zero.
 	 */
-	OUTREG16(0x1FDE, 0x0004);
+	OUTREG16(MGAREG_CRTCEXT_INDEX, 0x0004);
 	
 	/*
 	 * This function will handle creating the data structure and filling
@@ -951,8 +962,8 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
 	for (i = 0; i < 6; i++)
 	{
-		OUTREG8(0x1FDE, i);
-		mgaReg->ExtVga[i] = INREG8(0x1FDF);
+		OUTREG8(MGAREG_CRTCEXT_INDEX, i);
+		mgaReg->ExtVga[i] = INREG8(MGAREG_CRTCEXT_DATA);
 	}
 #ifdef DEBUG		
 	ErrorF("Saved values:\nDAC:");
