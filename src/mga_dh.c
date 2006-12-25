@@ -434,7 +434,7 @@ void MGACRTC2SetDisplayStart (ScrnInfoPtr pScrn, xMODEINFO *pModeInfo, CARD32 ba
     
     OUTREG(MGAREG_C2STARTADD0,  pReg->crtc2[MGAREG2_C2STARTADD0]);  
 #ifdef DEBUG
-    ErrorF("EXIT MGACRTC2GetDisplayStart\n");
+    ErrorF("EXIT MGACRTC2SetDisplayStart\n");
 #endif
     
 }
