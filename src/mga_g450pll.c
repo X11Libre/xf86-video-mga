@@ -274,11 +274,10 @@ static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, Bool *lpbLocked)
 
    MGAPtr pMga = MGAPTR(pScrn);
 
-   /* Pixel PLL */
    if (!pMga->SecondCrtc)
-      OUTREG8(0x3c00, 0x4f);    /* Pixel PLL */
+      OUTREG8(0x3c00, MGA1064_PIX_PLL_STAT);
    else
-      OUTREG8(0x3c00, 0x8c);    /* Video PLL */
+      OUTREG8(0x3c00, MGA1064_VID_PLL_STAT);
 
    ulFallBackCounter = 0;
 
