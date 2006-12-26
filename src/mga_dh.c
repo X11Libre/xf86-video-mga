@@ -207,7 +207,7 @@ void MGACRTC2Set(ScrnInfoPtr pScrn, xMODEINFO *pModeInfo)
     
     /** Offset value*/
     
-    OUTREG(MGAREG_C2OFFSET, pReg->crtc2[MGAREG2_C2VSYNC]);
+    OUTREG(MGAREG_C2OFFSET, pReg->crtc2[MGAREG2_C2OFFSET]);
 #ifdef DEBUG    
     ErrorF("EXIT MGACRTC2Set\n");
 #endif
