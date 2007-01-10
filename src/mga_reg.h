@@ -403,6 +403,7 @@
 
 /*Added for G450 dual head*/
 
+#define MGA1064_VID_PLL_STAT    0x8c
 #define MGA1064_VID_PLL_P       0x8D
 #define MGA1064_VID_PLL_M       0x8E
 #define MGA1064_VID_PLL_N       0x8F
