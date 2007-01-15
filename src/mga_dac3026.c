@@ -746,7 +746,7 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	for (i = 0; i < 6; i++)
 		OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
 
-	pci_device_cfg_write_bits(pMga, OPTION_MASK, mgaReg->Option,
+	pci_device_cfg_write_bits(pMga->PciInfo, OPTION_MASK, mgaReg->Option,
 				  PCI_OPTION_REG);
 
 	MGA_NOT_HAL(
