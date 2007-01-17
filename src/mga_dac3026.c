@@ -711,7 +711,7 @@ MGA3026Init(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	   but that's no big deal since we will Restore right after
 	   this function */
 
-	MGA_NOT_HAL(MGATi3026SetMCLK(pScrn, MGAdac->MemoryClock));
+	MGATi3026SetMCLK(pScrn, MGAdac->MemoryClock);
 
 #ifdef DEBUG		
 	ErrorF("%6ld: %02X %02X %02X	%02X %02X %02X	%08lX\n", mode->Clock,
@@ -749,7 +749,6 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, OPTION_MASK,
 		       mgaReg->Option);
 
-	MGA_NOT_HAL(
 	/* select pixel clock PLL as clock source */
 	outTi3026(TVP3026_CLK_SEL, 0, mgaReg->DacRegs[3]);
 	
@@ -757,8 +756,7 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	outTi3026(TVP3026_PLL_ADDR, 0, 0x2A);
 	outTi3026(TVP3026_LOAD_CLK_DATA, 0, 0);
 	outTi3026(TVP3026_PIX_CLK_DATA, 0, 0);
-	);	/* MGA_NOT_HAL */
-	 
+
 	/*
 	 * This function handles restoring the generic VGA registers.
 	 */
@@ -771,7 +769,6 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * goes here. 
 	 */
 
-	MGA_NOT_HAL(
 	/* program pixel clock PLL */
 	outTi3026(TVP3026_PLL_ADDR, 0, 0x00);
 	for (i = 0; i < 3; i++)
@@ -785,20 +782,17 @@ MGA3026Restore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
 	/* set Q divider for loop clock PLL */
 	outTi3026(TVP3026_MCLK_CTL, 0, mgaReg->DacRegs[18]);
-	);	/* MGA_NOT_HAL */
-	
+
 	/* program loop PLL */
 	outTi3026(TVP3026_PLL_ADDR, 0, 0x00);
 	for (i = 3; i < 6; i++)
 		outTi3026(TVP3026_LOAD_CLK_DATA, 0, mgaReg->DacClk[i]);
 
-	MGA_NOT_HAL(
 	if ((vgaReg->MiscOutReg & 0x08) && ((mgaReg->DacClk[3] & 0xC0) == 0xC0) ) {
 		/* poll until loop PLL LOCK bit is set */
 		outTi3026(TVP3026_PLL_ADDR, 0, 0x3F);
 		while ( ! (inTi3026(TVP3026_LOAD_CLK_DATA) & 0x40) );
 	}
-	);	/* MGA_NOT_HAL */
 
 	/*
 	 * restore other DAC registers
@@ -851,7 +845,6 @@ MGA3026Save(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 		mgaReg->ExtVga[i] = INREG8(0x1FDF);
 	}
 
-	MGA_NOT_HAL(
 	outTi3026(TVP3026_PLL_ADDR, 0, 0x00);
 	for (i = 0; i < 3; i++)
 		outTi3026(TVP3026_PIX_CLK_DATA, 0, mgaReg->DacClk[i] =
@@ -861,8 +854,7 @@ MGA3026Save(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	for (i = 3; i < 6; i++)
 		outTi3026(TVP3026_LOAD_CLK_DATA, 0, mgaReg->DacClk[i] =
 					inTi3026(TVP3026_LOAD_CLK_DATA));
-	);	/* MGA_NOT_HAL */
-	
+
 	for (i = 0; i < DACREGSIZE; i++)
 		mgaReg->DacRegs[i]	 = inTi3026(MGADACregs[i]);
 	

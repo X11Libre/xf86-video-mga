@@ -40,10 +40,6 @@
 #include "mga_dri.h"
 #endif
 
-#ifdef USEMGAHAL
-#include "client.h"
-#endif
-
 typedef enum {
     OPTION_SW_CURSOR,
     OPTION_HW_CURSOR,
@@ -72,7 +68,6 @@ typedef enum {
     OPTION_TVSTANDARD,
     OPTION_CABLETYPE,
     OPTION_USEIRQZERO,
-    OPTION_NOHAL,
     OPTION_SWAPPED_HEAD,
     OPTION_DRI,
     OPTION_MERGEDFB,
@@ -276,11 +271,6 @@ typedef enum {
 
 typedef struct {
     int			lastInstance;
-#ifdef USEMGAHAL
-    LPCLIENTDATA	pClientStruct;
-    LPBOARDHANDLE	pBoard;
-    LPMGAHWINFO		pMgaHwInfo;
-#endif
     int			refCount;
     CARD32		masterFbAddress;
     long		masterFbMapSize;
@@ -374,12 +364,6 @@ struct mga_bios_values {
 
 
 typedef struct {
-#ifdef USEMGAHAL
-    LPCLIENTDATA	pClientStruct;
-    LPBOARDHANDLE	pBoard;
-    LPMGAMODEINFO	pMgaModeInfo;
-    LPMGAHWINFO		pMgaHwInfo;
-#endif
     EntityInfoPtr	pEnt;
     struct mga_bios_values bios;
     CARD8               BiosOutputMode;
@@ -391,7 +375,6 @@ typedef struct {
 
     int is_Gx50:1;
     int is_G200SE:1;
-    int is_HAL_chipset:1;
 
     Bool		Primary;
     Bool		Interleave;
@@ -537,9 +520,6 @@ typedef struct {
     MGAPaletteInfo	palinfo[256];  /* G400 hardware bug workaround */
     FBLinearPtr		LinearScratch;
     Bool                softbooted;
-#ifdef USEMGAHAL
-    Bool                HALLoaded;
-#endif
     OptionInfoPtr	Options;
 
     /* Exa */
@@ -567,7 +547,6 @@ typedef struct {
     ScrnInfoPtr       pScrn2; /*pointer to second CRTC screeninforec,
                                        if in merged mode */
 /* End of Merged Framebuffer Data */
-  int			HALGranularityOffX, HALGranularityOffY;
 } MGARec, *MGAPtr;
 
 extern CARD32 MGAAtype[16];
@@ -693,26 +672,6 @@ long MGAG450SavePLLFreq(ScrnInfoPtr pScrn);
 void MGAprintDac(ScrnInfoPtr pScrn);
 void MGAG200SESaveFonts(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SERestoreFonts(ScrnInfoPtr, vgaRegPtr);
-
-#ifdef USEMGAHAL
-/************ ESC Call Definition ***************/
-typedef struct {
-    char *function;
-    void (*funcptr)(ScrnInfoPtr pScrn, unsigned long *param, char *out, DisplayModePtr pMode);
-} MGAEscFuncRec, *MGAEscFuncPtr;
-
-typedef struct {
-    char function[32];
-    unsigned long parameters[32];
-} EscCmdStruct;
-
-extern LPMGAMODEINFO pMgaModeInfo[2];
-extern MGAMODEINFO   TmpMgaModeInfo[2];
-
-extern void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, DisplayModePtr pMode);
-void MGAFillDisplayModeStruct(DisplayModePtr pMode, LPMGAMODEINFO pModeInfo);
-/************************************************/
-#endif
 
 static __inline__ void
 MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)

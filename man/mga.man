@@ -23,11 +23,8 @@ TrueColor.  Multi\-card configurations are supported.  XVideo is supported
 on G200 and newer systems, with either
 .B TexturedVideo
 or video overlay.  The second head of dual\-head cards is supported for the
-G450 and G550.  Support for the second head on G400 cards requires a
-binary\-only "mga_hal" module that is available from Matrox
-<http://www.matrox.com>, and may be on the CD supplied with the card.  That
-module also provides various other enhancements, and may be necessary to
-use the DVI (digital) output on the G550 (and other cards).
+G450 and G550. The DVI (digital) output on the G450 and the G550 is not
+supported.
 .SH "SUPPORTED HARDWARE"
 The
 .B mga
