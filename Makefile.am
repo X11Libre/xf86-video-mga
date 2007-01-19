@@ -22,7 +22,7 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src man util
 
 CLEANFILES = ChangeLog
-EXTRA_DIST = README_HALLIB mga_PInS.txt ChangeLog
+EXTRA_DIST = mga_PInS.txt ChangeLog
 
 .PHONY: ChangeLog
 
