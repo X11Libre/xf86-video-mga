@@ -129,8 +129,14 @@ static void	MGAFreeScreen(int scrnIndex, int flags);
 static ModeStatus MGAValidMode(int scrnIndex, DisplayModePtr mode,
 			       Bool verbose, int flags);
 
+#if ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ >= 4)
+#define __must_check  __attribute__((warn_unused_result))
+#else
+#define __must_check  /* */
+#endif
+
 /* Internally used functions */
-static Bool	MGAMapMem(ScrnInfoPtr pScrn);
+static Bool __must_check MGAMapMem(ScrnInfoPtr pScrn);
 static Bool	MGAUnmapMem(ScrnInfoPtr pScrn);
 static void	MGASave(ScrnInfoPtr pScrn);
 static void	MGARestore(ScrnInfoPtr pScrn);
@@ -820,7 +826,10 @@ MGACountRam(ScrnInfoPtr pScrn)
 	int i;
 
 	pMga->FbMapSize = ProbeSize * 1024;
-	MGAMapMem(pScrn);
+	if (!MGAMapMem(pScrn)) {
+	    return 0;
+	}
+
 	base = pMga->FbBase;
 
 	/* turn MGA mode on - enable linear frame buffer (CRTCEXT3) */
@@ -1794,6 +1803,12 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pScrn->videoRam = fbdevHWGetVidmem(pScrn)/1024;
     } else {
 	pScrn->videoRam = MGACountRam(pScrn);
+    }
+
+    if (pScrn->videoRam == 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "Unable to detect video RAM.\n");
+	return FALSE;
     }
 
     if (pMga->DualHeadEnabled) {
