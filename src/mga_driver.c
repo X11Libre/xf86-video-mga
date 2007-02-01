@@ -2391,71 +2391,64 @@ static Bool
 MGAMapMem(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-    struct pci_device * const dev = pMga->PciInfo;
+    struct pci_device *const dev = pMga->PciInfo;
     int err;
 
 
-    err = pci_device_map_region(dev, 0, TRUE);
-    if (err) {
-	return FALSE;
-    }
-
-    err = pci_device_map_region(dev, 1, TRUE);
-    if (err) {
-	return FALSE;
-    }
-
-    pMga->IOBase = dev->regions[ pMga->io_bar ].memory;
-    pMga->FbBase = dev->regions[ pMga->framebuffer_bar ].memory;
-    pMga->ILOADBase = NULL;
-
-    if (pMga->iload_bar != -1) {
-	err = pci_device_map_region(dev, 2, TRUE);
+    if (!pMga->FBDev) {
+	err = pci_device_map_region(dev, 0, TRUE);
 	if (err) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "Unable to map BAR 0.  %s (%d)\n",
+		       strerror(err), err);
 	    return FALSE;
 	}
 
-	pMga->ILOADBase = dev->regions[ pMga->iload_bar ].memory;
+	err = pci_device_map_region(dev, 1, TRUE);
+	if (err) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "Unable to map BAR 1.  %s (%d)\n",
+		       strerror(err), err);
+	    return FALSE;
+	}
+
+	pMga->IOBase = dev->regions[ pMga->io_bar ].memory;
+	pMga->FbBase = dev->regions[ pMga->framebuffer_bar ].memory;
+    }
+    else {
+	pMga->FbBase = fbdevHWMapVidmem(pScrn);
+	if (pMga->FbBase == NULL) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "Unable to map framebuffer.\n");
+	    return FALSE;
+	}
+
+	pMga->IOBase = fbdevHWMapMMIO(pScrn);
+	if (pMga->IOBase == NULL) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Unable to map MMIO.\n");
+	    return FALSE;
+	}
+    }
+
+
+    pMga->FbStart = pMga->FbBase + pMga->YDstOrg * (pScrn->bitsPerPixel / 8);
+
+    pMga->ILOADBase = NULL;
+    if (pMga->iload_bar != -1) {
+	err = pci_device_map_region(dev, pMga->iload_bar, TRUE);
+	if (err) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "Unable to map BAR 2 (ILOAD region).  %s (%d)\n",
+		       strerror(err), err);
+	    return FALSE;
+	}
+
+	pMga->ILOADBase = dev->regions[pMga->iload_bar].memory;
     }
 	
 
     return TRUE;
 }
-
-static Bool
-MGAMapMemFBDev(ScrnInfoPtr pScrn)
-{
-    MGAPtr pMga = MGAPTR(pScrn);
-    struct pci_device * const dev = pMga->PciInfo;
-    int err;
-
-
-    pMga->FbBase = fbdevHWMapVidmem(pScrn);
-    if (pMga->FbBase == NULL)
-	return FALSE;
-
-    pMga->IOBase = fbdevHWMapMMIO(pScrn);
-    if (pMga->IOBase == NULL)
-	return FALSE;
-
-    pMga->FbStart = pMga->FbBase + pMga->YDstOrg * (pScrn->bitsPerPixel / 8);
-
-    /* Can't ask matroxfb for a mapping of the ILOAD window.
-     */
-
-    pMga->ILOADBase = NULL;
-    if (pMga->iload_bar != -1) {
-	err = pci_device_map_region(dev, 2, TRUE);
-	if (err) {
-	    return FALSE;
-	}
-
-	pMga->ILOADBase = dev->regions[ pMga->iload_bar ].memory;
-    }
-
-    return TRUE;
-}
-
 
 
 /*
@@ -2470,43 +2463,27 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     unsigned i;
 
     
-    for (i = 0 ; i < 6 ; i++) {
-	if (dev->regions[i].memory != NULL) {
-	    pci_device_unmap_region(dev, i);
-	}
+    if (!pMga->FBDev) {
+	pci_device_unmap_region(dev, 0);
+	pci_device_unmap_region(dev, 1);
+    }
+    else {
+	fbdevHWUnmapVidmem(pScrn);
+	fbdevHWUnmapMMIO(pScrn);
     }
 
-    pMga->IOBase = NULL;
-    pMga->FbBase = NULL;
-    pMga->FbStart = NULL;
-    pMga->ILOADBase = NULL;
-
-    return TRUE;
-}
-
-static Bool
-MGAUnmapMemFBDev(ScrnInfoPtr pScrn)
-{
-    MGAPtr pMga = MGAPTR(pScrn);
-    struct pci_device * const dev = pMga->PciInfo;
-
-    fbdevHWUnmapVidmem(pScrn);
-    fbdevHWUnmapMMIO(pScrn);
-
     if ((pMga->iload_bar != -1)
-	 && (dev->regions[ pMga->iload_bar ].memory != NULL)) {
+	 && (dev->regions[pMga->iload_bar].memory != NULL)) {
 	pci_device_unmap_region(dev, pMga->iload_bar);
     }
 
+    pMga->IOBase = NULL;
     pMga->FbBase = NULL;
     pMga->FbStart = NULL;
-    pMga->IOBase = NULL;
     pMga->ILOADBase = NULL;
 
     return TRUE;
 }
-
-
 
 
 /*
@@ -2982,13 +2959,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
     
     /* Map the MGA memory and MMIO areas */
-    if (pMga->FBDev) {
-	if (!MGAMapMemFBDev(pScrn))
-	    return FALSE;
-    } else {
-	if (!MGAMapMem(pScrn))
-	    return FALSE;
-    }
+    if (!MGAMapMem(pScrn))
+	return FALSE;
     
     if ((pMga->Chipset == PCI_CHIP_MGAG100)
 	|| (pMga->Chipset == PCI_CHIP_MGAG100_PCI))
@@ -3741,7 +3713,7 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
     if (pScrn->vtSema) {
 	if (pMga->FBDev) {
 	    fbdevHWRestore(pScrn);
-	    MGAUnmapMemFBDev(pScrn);
+	    MGAUnmapMem(pScrn);
         } else {
 	    MGARestore(pScrn);
 	    vgaHWLock(hwp);
