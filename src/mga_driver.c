@@ -2956,6 +2956,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 #ifdef XF86DRI
     MessageType driFrom = X_DEFAULT;
 #endif
+    DPMSSetProcPtr mga_dpms_set_proc = NULL;
 
     /*
      * First get the ScrnInfoRec
@@ -2973,10 +2974,31 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	pMga->FbMapSize = pScrn->videoRam * 1024;
     }
     
+
     /* Map the MGA memory and MMIO areas */
     if (!MGAMapMem(pScrn))
 	return FALSE;
-    
+
+
+    /* Select functions that vary based on the CRTC configureation of the
+     * screen.
+     */
+    if (!pMga->MergedFB) {
+	if (pMga->SecondCrtc) { 
+	    mga_dpms_set_proc = MGADisplayPowerManagementSetCrtc2;
+	    pScreen->SaveScreen = MGASaveScreenCrtc2;
+	}
+	else {
+	    mga_dpms_set_proc = MGADisplayPowerManagementSet;
+	    pScreen->SaveScreen = MGASaveScreen;
+	}
+    }
+    else {
+        pScreen->SaveScreen = MGASaveScreenMerged;
+	mga_dpms_set_proc = MGADisplayPowerManagementSetMerged;
+    }
+
+
     if ((pMga->Chipset == PCI_CHIP_MGAG100)
 	|| (pMga->Chipset == PCI_CHIP_MGAG100_PCI))
         MGAG100BlackMagic(pScrn);
@@ -3067,13 +3089,20 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     vgaHWGetIOBase(hwp);
 
     /* Map the VGA memory when the primary video */
-    if (pMga->Primary && !pMga->FBDev) {
-	hwp->MapSize = 0x10000;
-	if (!vgaHWMapMem(pScrn))
+    if (!pMga->FBDev) {
+	if (pMga->Primary) {
+	    hwp->MapSize = 0x10000;
+	    if (!vgaHWMapMem(pScrn))
+		return FALSE;
+	}
+
+	/* Save the current state */
+	MGASave(pScrn);
+	/* Initialise the first mode */
+	if (!MGAModeInit(pScrn, pScrn->currentMode))
 	    return FALSE;
     }
-
-    if (pMga->FBDev) {
+    else {
 	fbdevHWSave(pScrn);
 	/* Disable VGA core, and leave memory access on */
 	pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, 0x00000000, 
@@ -3088,24 +3117,13 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	}
 
 	MGAStormEngineInit(pScrn);
-    } else {
-	/* Save the current state */
-	MGASave(pScrn);
-	/* Initialise the first mode */
-	if (!MGAModeInit(pScrn, pScrn->currentMode))
-	    return FALSE;
     }
-    /* Darken the screen for aesthetic reasons and set the viewport */
-    if (pMga->SecondCrtc == TRUE && !pMga->MergedFB) { 
-	MGASaveScreenCrtc2(pScreen, SCREEN_SAVER_ON);
-    } 
-    if (pMga->SecondCrtc == FALSE && !pMga->MergedFB) {
-	MGASaveScreen(pScreen, SCREEN_SAVER_ON);
-    }
-    if( pMga->MergedFB ) {
-	MGASaveScreenMerged( pScreen, SCREEN_SAVER_ON );
-    }
+
+    /* Darken the screen for aesthetic reasons and set the viewport 
+     */
+    (*pScreen->SaveScreen)(pScreen, SCREEN_SAVER_ON);
     pScrn->AdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+
 
     /*
      * The next step is to setup the screen's visuals, and initialise the
@@ -3343,28 +3361,10 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	ShadowFBInit(pScreen, refreshArea);
     }
 
-    if(pMga->SecondCrtc == TRUE && !pMga->MergedFB) { 
-        xf86DPMSInit(pScreen, MGADisplayPowerManagementSetCrtc2, 0);
-    } 
-    if(pMga->SecondCrtc == FALSE && !pMga->MergedFB) {
-        xf86DPMSInit(pScreen, MGADisplayPowerManagementSet, 0);
-    }
-    if(pMga->MergedFB) {
-        xf86DPMSInit(pScreen, MGADisplayPowerManagementSetMerged, 0);
-    }
-    
+    xf86DPMSInit(pScreen, mga_dpms_set_proc, 0);
+
     pScrn->memPhysBase = pMga->FbAddress;
     pScrn->fbOffset = pMga->YDstOrg * (pScrn->bitsPerPixel / 8);
-
-    if(!pMga->MergedFB) {
-        if(pMga->SecondCrtc == TRUE) { 
-    	    pScreen->SaveScreen = MGASaveScreenCrtc2;
-        } else {
-            pScreen->SaveScreen = MGASaveScreen;
-        }
-    } else { /* Merged FB */
-        pScreen->SaveScreen = MGASaveScreenMerged;
-    }
 
     MGAInitVideo(pScreen);
 
