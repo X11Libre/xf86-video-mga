@@ -219,8 +219,12 @@
 
 #define MGADWG_PATTERN		( 0x01 << 29 )
 #define MGADWG_TRANSC		( 0x01 << 30 )
+
 #define MGAREG_MISC_WRITE	0x3c2
 #define MGAREG_MISC_READ	0x3cc
+#define MGAREG_MISC_HSYNCPOL    0x40
+#define MGAREG_MISC_VSYNCPOL    0x80
+
 #define MGAREG_MISC_IOADSEL	(0x1 << 0)
 #define MGAREG_MISC_RAMMAPEN	(0x1 << 1)
 #define MGAREG_MISC_CLK_SEL_VGA25	(0x0 << 2)
@@ -233,10 +237,15 @@
 /* MMIO VGA registers */
 #define MGAREG_SEQ_INDEX	0x1fc4
 #define MGAREG_SEQ_DATA		0x1fc5
+#define MGAREG_SEQ1_SCREEN_OFF 0x20
+
 #define MGAREG_CRTC_INDEX	0x1fd4
 #define MGAREG_CRTC_DATA	0x1fd5
+
 #define MGAREG_CRTCEXT_INDEX	0x1fde
 #define MGAREG_CRTCEXT_DATA	0x1fdf
+#define MGAREG_CRTCEXT1_HSYNC_OFF 0x10
+#define MGAREG_CRTCEXT1_VSYNC_OFF 0x20
 
 
 
@@ -433,17 +442,6 @@
 #define MGA1064_PWR_CTL_CFIFO_EN               (0x01 << 4)
 
 #define MGA1064_PAN_CTL         0xa2
-
-/* Using crtc2 */
-#define MGAREG2_C2CTL            0x10
-#define MGAREG2_C2HPARAM         0x14
-#define MGAREG2_C2HSYNC          0x18
-#define MGAREG2_C2VPARAM         0x1c
-#define MGAREG2_C2VSYNC          0x20
-#define MGAREG2_C2STARTADD0      0x28
-
-#define MGAREG2_C2OFFSET         0x40
-#define MGAREG2_C2DATACTL        0x4c
 
 #define MGAREG_C2CTL            0x3c10
 #define MGAREG_C2CTL_C2_EN                     0x01

@@ -191,11 +191,11 @@ static CARD32 G450FindFirstPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout,
 }
 
 
-static CARD32 G450WriteMNP(ScrnInfoPtr pScrn, CARD32 ulMNP)
+static CARD32 G450WriteMNP(ScrnInfoPtr pScrn, mga_pll_t pll, CARD32 ulMNP)
 {
    MGAPtr pMga = MGAPTR(pScrn);
 
-   if (!pMga->SecondCrtc) {
+   if (pll == MGA_PIXEL_PLL) {
       outMGAdac(MGA1064_PIX_PLLC_M, (CARD8)(ulMNP >> 16));   
       outMGAdac(MGA1064_PIX_PLLC_N, (CARD8)(ulMNP >>  8));   
       outMGAdac(MGA1064_PIX_PLLC_P, (CARD8) ulMNP);   
@@ -207,12 +207,12 @@ static CARD32 G450WriteMNP(ScrnInfoPtr pScrn, CARD32 ulMNP)
    return TRUE;
 }
 
-static CARD32 G450ReadMNP(ScrnInfoPtr pScrn)
+static CARD32 G450ReadMNP(ScrnInfoPtr pScrn, mga_pll_t pll)
 {
    MGAPtr pMga = MGAPTR(pScrn);
    CARD32 ret = 0;
 
-   if (!pMga->SecondCrtc) {
+   if (pll == MGA_PIXEL_PLL) {
       ret = (CARD8)inMGAdac(MGA1064_PIX_PLLC_M) << 16;   
       ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_N) << 8;   
       ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_P);   
@@ -267,14 +267,14 @@ static CARD32 G450CompareMNP(ScrnInfoPtr pScrn, CARD32 ulFout, CARD32 ulMNP1,
 }
 
 
-static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, Bool *lpbLocked)
+static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, mga_pll_t pll, Bool *lpbLocked)
 {
    CARD32 ulFallBackCounter, ulLockCount, ulCount;
    CARD8  ucPLLStatus;
 
    MGAPtr pMga = MGAPTR(pScrn);
 
-   if (!pMga->SecondCrtc)
+   if (pll == MGA_PIXEL_PLL)
       OUTREG8(0x3c00, MGA1064_PIX_PLL_STAT);
    else
       OUTREG8(0x3c00, MGA1064_VID_PLL_STAT);
@@ -306,7 +306,7 @@ static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, Bool *lpbLocked)
 }
 
 
-double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out) 
+double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, mga_pll_t pll, long f_out)
 {
    Bool bFoundValidPLL;
    Bool bLocked;
@@ -373,8 +373,7 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
    bFoundValidPLL = FALSE;
    ulMNP = 0;
 
-   /* For pixel pll */
-   if (!pMga->SecondCrtc) {
+   if (pll == MGA_PIXEL_PLL) {
        ucMisc = INREG8(0x1FCC);
        OUTREG8(0x1fc2, (CARD8)(ucMisc | CLKSEL_MGA));    
    }
@@ -410,49 +409,49 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP - 0x300);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP - 0x300);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP + 0x300);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP + 0x300);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP - 0x200);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP - 0x200);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP + 0x200);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP + 0x200);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP - 0x100);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP - 0x100);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP + 0x100);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP + 0x100);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
 
          if(bLocked)
          {
-            G450WriteMNP(pScrn, ulTryMNP);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP);
+            G450IsPllLocked(pScrn, pll, &bLocked);
          }     
          else if(!ulMNP)
          {
-            G450WriteMNP(pScrn, ulTryMNP);
-            G450IsPllLocked(pScrn, &bLocked);
+            G450WriteMNP(pScrn, pll, ulTryMNP);
+            G450IsPllLocked(pScrn, pll, &bLocked);
             if(bLocked)
             {
                ulMNP = ulMNPTable[ulIndex]; 
@@ -471,11 +470,11 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
    {
       if(ulMNP)
       {
-         G450WriteMNP(pScrn, ulMNP);
+         G450WriteMNP(pScrn, pll, ulMNP);
       }
       else
       {
-         G450WriteMNP(pScrn, ulMNPTable[0]);
+         G450WriteMNP(pScrn, pll, ulMNPTable[0]);
       }
    }
   
@@ -483,9 +482,9 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
 }
 
 long
-MGAG450SavePLLFreq(ScrnInfoPtr pScrn) 
+MGAG450SavePLLFreq(ScrnInfoPtr pScrn, mga_pll_t pll)
 {
-    CARD32 ulMNP = G450ReadMNP(pScrn);
+    CARD32 ulMNP = G450ReadMNP(pScrn, pll);
     CARD8  ucP;
     CARD32 freq;
 
@@ -501,9 +500,9 @@ MGAG450SavePLLFreq(ScrnInfoPtr pScrn)
 
 #ifdef DEBUG
 void
-MGAG450PrintPLL(ScrnInfoPtr pScrn)
+MGAG450PrintPLL(ScrnInfoPtr pScrn, mga_pll_t pll)
 {
-    CARD32 ulMNP = G450ReadMNP(pScrn);
+    CARD32 ulMNP = G450ReadMNP(pScrn, pll);
     CARD8  ucP;
     CARD32 freq;
 

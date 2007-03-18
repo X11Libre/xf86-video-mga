@@ -36,22 +36,24 @@ mga_drv_la_SOURCES = \
          mga_dac3026.c \
          mga_dacG.c \
          mga_dga.c \
-         mga_dh.c \
          mga_driver.c \
          mga_g450pll.c \
          mga.h \
          mga_hwcurs.c \
          mga_macros.h \
          mga_maven.h \
-         mga_merge.c \
-         mga_merge.h \
          mgareg_flags.h \
          mga_reg.h \
          mga_sarea.h \
          mga_shadow.c \
          mga_ucode.h \
 	 mga_vga.c \
-         mga_video.c
+         mga_video.c \
+         mga_2064_crtc.c \
+         mga_2064_output.c \
+         mga_g_crtc.c \
+         mga_g_crtc2.c \
+         mga_g_output.c
 
 if DRI
 mga_drv_la_SOURCES += \

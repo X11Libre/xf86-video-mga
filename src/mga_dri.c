@@ -399,28 +399,6 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
    }
 }
 
-void MGAGetQuiescenceShared( ScrnInfoPtr pScrn )
-{
-   MGAPtr pMga = MGAPTR(pScrn);
-   MGAEntPtr pMGAEnt = pMga->entityPrivate;
-   MGAPtr pMGA2 = MGAPTR(pMGAEnt->pScrn_2);
-
-   pMga = MGAPTR(pMGAEnt->pScrn_1);
-   pMga->haveQuiescense = 1;
-   pMGA2->haveQuiescense = 1;
-
-   if ( pMGAEnt->directRenderingEnabled ) {
-      MGAWaitForIdleDMA( pMGAEnt->pScrn_1 );
-
-        /* FIXME what about EXA? */
-#ifdef USE_XAA
-        if (!pMga->Exa && pMga->AccelInfoRec)
-            pMga->RestoreAccelState( pScrn );
-#endif
-      xf86SetLastScrnFlag( pScrn->entityList[0], pScrn->scrnIndex );
-   }
-}
-
 static void MGASwapContext( ScreenPtr pScreen )
 {
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
@@ -432,21 +410,6 @@ static void MGASwapContext( ScreenPtr pScreen )
    pMga->haveQuiescense = 0;
 
    MGA_MARK_SYNC(pMga, pScrn);
-}
-
-static void MGASwapContextShared( ScreenPtr pScreen )
-{
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-   MGAPtr pMga = MGAPTR(pScrn);
-   MGAEntPtr pMGAEnt = pMga->entityPrivate;
-   MGAPtr pMGA2 = MGAPTR(pMGAEnt->pScrn_2);
-
-   pMga = MGAPTR(pMGAEnt->pScrn_1);
-
-   pMga->haveQuiescense = pMGA2->haveQuiescense = 0;
-
-   MGA_MARK_SYNC(pMga, pScrn);
-   MGA_MARK_SYNC(pMGA2, pMGAEnt->pScrn_2);
 }
 
 /* FIXME: This comment is out of date, since we aren't overriding
@@ -480,19 +443,6 @@ MGADRISwapContext( ScreenPtr pScreen, DRISyncType syncType,
 	newContextType == DRI_2D_CONTEXT )
    {
       MGASwapContext( pScreen );
-   }
-}
-
-static void
-MGADRISwapContextShared( ScreenPtr pScreen, DRISyncType syncType,
-			  DRIContextType oldContextType, void *oldContext,
-			  DRIContextType newContextType, void *newContext )
-{
-   if ( syncType == DRI_3D_SYNC &&
-	oldContextType == DRI_2D_CONTEXT &&
-	newContextType == DRI_2D_CONTEXT )
-   {
-      MGASwapContextShared( pScreen );
    }
 }
 
@@ -975,6 +925,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
       return FALSE;
    }
    pMga->pDRIInfo = pDRIInfo;
+   pMga->dri_lock_held = FALSE;
 
    pDRIInfo->drmDriverName = MGAKernelDriverName;
    pDRIInfo->clientDriverName = MGAClientDriverName;
@@ -1050,12 +1001,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->CreateContext = MGACreateContext;
    pDRIInfo->DestroyContext = MGADestroyContext;
-   if ( xf86IsEntityShared( pScrn->entityList[0] ) 
-		&& pMga->DualHeadEnabled) {
-      pDRIInfo->SwapContext = MGADRISwapContextShared;
-   } else {
-      pDRIInfo->SwapContext = MGADRISwapContext;
-   }
+   pDRIInfo->SwapContext = MGADRISwapContext;
 
    pDRIInfo->InitBuffers = mgaDRIInitBuffers;
    pDRIInfo->MoveBuffers = mgaDRIMoveBuffers;
@@ -1336,4 +1282,32 @@ void MGADRICloseScreen( ScreenPtr pScreen )
    if ( pMga->pVisualConfigsPriv ) {
       xfree( pMga->pVisualConfigsPriv );
    }
+}
+
+Bool
+MGADRILock(ScrnInfoPtr scrn)
+{
+    MGAPtr pMga = MGAPTR(scrn);
+    ScreenPtr screen = screenInfo.screens[scrn->scrnIndex];
+    Bool ret = FALSE;
+
+    if (pMga->directRenderingEnabled && !pMga->dri_lock_held) {
+        DRILock(screen, 0);
+        pMga->dri_lock_held = TRUE;
+        ret = TRUE;
+    }
+
+    return ret;
+}
+
+void
+MGADRIUnlock(ScrnInfoPtr scrn)
+{
+    MGAPtr pMga = MGAPTR(scrn);
+    ScreenPtr screen = screenInfo.screens[scrn->scrnIndex];
+
+    if (pMga->directRenderingEnabled && pMga->dri_lock_held) {
+        DRIUnlock(screen);
+        pMga->dri_lock_held = FALSE;
+    }
 }
