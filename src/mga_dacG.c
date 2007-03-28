@@ -422,11 +422,9 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
                     MGA1064_MISC_CTL_VGA8 |
                     MGA1064_MISC_CTL_DAC_RAM_CS;
 
-		if(pMga->HasSDRAM)
-		    pReg->Option = 0x40499121;
-		else
-		    pReg->Option = 0x4049cd21;
-        pReg->Option2 = 0x00008000;
+		if (pMga->HasSDRAM)
+		    pReg->Option = 0x40049120;
+	        pReg->Option2 = 0x00008000;
 		break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
@@ -810,7 +808,7 @@ MGA_NOT_HAL(
 
 	   /* This handles restoring the generic VGA registers. */
 	   if (pMga->is_G200SE) {
-	      vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
+ 	      MGAG200SERestoreMode(pScrn, vgaReg);
 	      if (restoreFonts)
 	         MGAG200SERestoreFonts(pScrn, vgaReg);
 	   } else {
@@ -910,7 +908,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * in the generic VGA portion.
 	 */
 	if (pMga->is_G200SE) {
-	    vgaHWSave(pScrn, vgaReg, VGA_SR_MODE);
+ 	    MGAG200SESaveMode(pScrn, vgaReg);
 	    if (saveFonts)
 		MGAG200SESaveFonts(pScrn, vgaReg);
 	} else {
@@ -962,6 +960,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 		OUTREG8(MGAREG_CRTCEXT_INDEX, i);
 		mgaReg->ExtVga[i] = INREG8(MGAREG_CRTCEXT_DATA);
 	}
+
 #ifdef DEBUG		
 	ErrorF("Saved values:\nDAC:");
 	for (i=0; i<DACREGSIZE; i++) {

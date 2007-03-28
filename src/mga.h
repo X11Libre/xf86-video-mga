@@ -147,6 +147,32 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 	    outMGAdreg(MGA1064_DATA, tmp | (val)); \
 	} while (0)
 
+#define MGAWAITVSYNC() \
+    do { \
+	unsigned int count = 0; \
+    	unsigned int status = 0; \
+	do { \
+	    status = INREG( MGAREG_Status ); \
+	    count++; \
+    	} while( ( status & 0x08 ) && (count < 250000) );\
+	count = 0; \
+    	status = 0; \
+	do { \
+	    status = INREG( MGAREG_Status ); \
+	    count++; \
+    	} while( !( status & 0x08 ) && (count < 250000) );\
+    } while (0)
+    
+#define MGAWAITBUSY() \
+    do { \
+    	unsigned int count = 0; \
+	unsigned int status = 0; \
+    	do { \
+    	    status = INREG8( MGAREG_Status + 2 ); \
+	    count++; \
+    	} while( ( status & 0x01 ) && (count < 500000) ); \
+    } while (0)
+
 #define PORT_OFFSET 	(0x1F00 - 0x300)
 
 #define MGA_VERSION 4000
@@ -693,6 +719,9 @@ long MGAG450SavePLLFreq(ScrnInfoPtr pScrn);
 void MGAprintDac(ScrnInfoPtr pScrn);
 void MGAG200SESaveFonts(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SERestoreFonts(ScrnInfoPtr, vgaRegPtr);
+void MGAG200SESaveMode(ScrnInfoPtr, vgaRegPtr);
+void MGAG200SERestoreMode(ScrnInfoPtr, vgaRegPtr);
+void MGAG200SEHWProtect(ScrnInfoPtr, Bool);
 
 #ifdef USEMGAHAL
 /************ ESC Call Definition ***************/
