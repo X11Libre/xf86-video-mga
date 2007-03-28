@@ -1477,6 +1477,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     memcpy(pMga->Options, MGAOptions, sizeof(MGAOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pMga->Options);
 
+    if (pMga->is_G200SE) {
+        /* Disable MTRR support on PCIe systems */
+        CARD32 temp = pciReadLong(pMga->PciTag, 0xDC);
+        if ((temp & 0x0000FF00) != 0x0) {
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Disabling MTRR support.\n");
+            pScrn->options = xf86ReplaceBoolOption(pScrn->options, "MTRR", FALSE);
+        }
+    }
     
 #if !defined(__powerpc__)
     pMga->softbooted = FALSE;
