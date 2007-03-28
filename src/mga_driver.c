@@ -1427,6 +1427,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (pMga->SecondCrtc)
 	flags24 = Support32bppFb;
 
+    if (pMga->is_G200SE)
+	pScrn->confScreen->defaultdepth = 16;
+
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24)) {
 	return FALSE;
     } else {
@@ -1988,6 +1991,21 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     /* Read and print the Monitor DDC info */
     pScrn->monitor->DDC = MGAdoDDC(pScrn);
 #endif /* !__powerpc__ */
+
+    if (!pScrn->monitor->DDC && pMga->is_G200SE) {
+	/* Jam in ranges big enough for 1024x768 */
+	if (!pScrn->monitor->nHsync) {
+	    pScrn->monitor->nHsync = 1;
+	    pScrn->monitor->hsync[0].lo = 31.5;
+	    pScrn->monitor->hsync[0].hi = 48.0;
+	}
+	if (!pScrn->monitor->nVrefresh) {
+	    pScrn->monitor->nVrefresh = 1;
+	    pScrn->monitor->vrefresh[0].lo = 56.0;
+	    pScrn->monitor->vrefresh[0].hi = 75.0;
+	}
+    }
+	    
 
     /*
      * If the driver can do gamma correction, it should call xf86SetGamma()
