@@ -732,6 +732,8 @@ mgaUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h,
         src += src_pitch;
     }
 
+    exaMarkSync(pDst->drawable.pScreen);
+
     return TRUE;
 }
 
