@@ -227,11 +227,6 @@ mgaPrepareCopy(PixmapPtr pSrc, PixmapPtr pDst, int xdir, int ydir, int alu,
      */
     QUIESCE_DMA(pSrc);
 
-    DEBUG_MSG(("s: %x@%x d: %x@%x xdir %d ydir %d alu %d pm %d\n",
-           exaGetPixmapOffset(pSrc), exaGetPixmapPitch(pSrc),
-           exaGetPixmapOffset(pDst), exaGetPixmapPitch(pDst),
-           xdir, ydir, alu, planemask));
-
     if (xdir < 0)
         blit_direction |= BLIT_LEFT;
 
@@ -261,8 +256,6 @@ mgaCopy(PixmapPtr pDst, int srcx, int srcy, int dstx, int dsty, int w, int h)
     PMGA(pDst);
     int start, end;
 
-    DEBUG_MSG(("    %d,%d -> %d,%d %dx%d\n", srcx, srcy, dstx,dsty, w, h));
-
     w--;
 
     if (pMga->BltScanDirection & BLIT_UP) {
@@ -276,9 +269,6 @@ mgaCopy(PixmapPtr pDst, int srcx, int srcy, int dstx, int dsty, int w, int h)
         start += w;
     else
         end += w;
-
-    DEBUG_MSG(("        end %d start %d dstx %d dsty %d w %d h %d\n",
-              end, start, dstx, dsty, w, h));
 
     WAITFIFO(4);
     OUTREG(MGAREG_AR0, end);
