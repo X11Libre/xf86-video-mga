@@ -741,6 +741,80 @@ mgaWaitMarker(ScreenPtr pScreen, int marker)
     while (INREG (MGAREG_Status) & 0x10000);
 }
 
+static void
+init_dri(ScrnInfoPtr pScrn)
+{
+    MGAPtr pMga = MGAPTR(pScrn);
+    MGADRIServerPrivatePtr dri = pMga->DRIServerInfo;
+    int cpp = pScrn->bitsPerPixel / 8;
+    int widthBytes = pScrn->displayWidth * cpp;
+    int bufferSize = ((pScrn->virtualY * widthBytes + MGA_BUFFER_ALIGN)
+                      & ~MGA_BUFFER_ALIGN);
+    int maxlines, mb;
+
+    switch (pMga->Chipset) {
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+        mb = 1;
+	break;
+    default:
+        mb = 16;
+	break;
+    }
+
+    maxlines = (min(pMga->FbUsableSize, mb * 1024 * 1024)) /
+               (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+
+    dri->frontOffset = 0;
+    dri->frontPitch = widthBytes;
+
+    /* Try for front, back, depth, and two framebuffers worth of
+     * pixmap cache.  Should be enough for a fullscreen background
+     * image plus some leftovers.
+     */
+    dri->textureSize = pMga->FbMapSize - 5 * bufferSize;
+
+    /* If that gives us less than half the available memory, let's
+     * be greedy and grab some more.  Sorry, I care more about 3D
+     * performance than playing nicely, and you'll get around a full
+     * framebuffer's worth of pixmap cache anyway.
+     */
+    if (dri->textureSize < (int)pMga->FbMapSize / 2) {
+        dri->textureSize = pMga->FbMapSize - 4 * bufferSize;
+    }
+
+    /* Check to see if there is more room available after the maximum
+     * scanline for textures.
+     */
+    if ((int) pMga->FbMapSize - maxlines * widthBytes - bufferSize * 2
+        > dri->textureSize) {
+        dri->textureSize = pMga->FbMapSize - maxlines * widthBytes -
+                           bufferSize * 2;
+    }
+
+    /* Set a minimum usable local texture heap size.  This will fit
+     * two 256x256x32bpp textures.
+     */
+    if (dri->textureSize < 512 * 1024) {
+        dri->textureOffset = 0;
+        dri->textureSize = 0;
+    }
+
+    /* Reserve space for textures */
+    dri->textureOffset = (pMga->FbMapSize - dri->textureSize +
+                          MGA_BUFFER_ALIGN) & ~MGA_BUFFER_ALIGN;
+
+    /* Reserve space for the shared depth buffer */
+    dri->depthOffset = (dri->textureOffset - bufferSize +
+                        MGA_BUFFER_ALIGN) & ~MGA_BUFFER_ALIGN;
+    dri->depthPitch = widthBytes;
+
+    /* Reserve space for the shared back buffer */
+    dri->backOffset = (dri->depthOffset - bufferSize +
+                       MGA_BUFFER_ALIGN) & ~MGA_BUFFER_ALIGN;
+    dri->backPitch = widthBytes;
+}
+
 Bool
 mgaExaInit(ScreenPtr pScreen)
 {
@@ -798,6 +872,9 @@ mgaExaInit(ScreenPtr pScreen)
     }
 
     pExa->UploadToScreen = mgaUploadToScreen;
+
+    if (pMga->directRenderingEnabled)
+        init_dri(pScrn);
 
     return exaDriverInit(pScreen, pExa);
 }
