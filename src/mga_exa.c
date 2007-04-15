@@ -728,6 +728,31 @@ mgaUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h,
     return TRUE;
 }
 
+static Bool
+mgaDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h,
+                      char *dst, int dst_pitch)
+{
+    PMGA(pSrc);
+
+    char *src = pSrc->devPrivate.ptr;
+    int src_pitch = exaGetPixmapPitch(pSrc);
+
+    int cpp = (pSrc->drawable.bitsPerPixel + 7) / 8;
+    int bytes = w * cpp;
+
+    src += y * src_pitch + x * cpp;
+
+    QUIESCE_DMA(pSrc);
+
+    while (h--) {
+	memcpy (dst, src, bytes);
+	src += src_pitch;
+	dst += dst_pitch;
+    }
+
+    return TRUE;
+}
+
 static void
 mgaWaitMarker(ScreenPtr pScreen, int marker)
 {
@@ -873,6 +898,7 @@ mgaExaInit(ScreenPtr pScreen)
     }
 
     pExa->UploadToScreen = mgaUploadToScreen;
+    pExa->DownloadFromScreen = mgaDownloadFromScreen;
 
     if (pMga->directRenderingEnabled)
         init_dri(pScrn);
