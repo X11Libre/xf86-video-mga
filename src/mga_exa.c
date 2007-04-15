@@ -350,6 +350,8 @@ static Bool
 mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
                   PicturePtr pDstPict)
 {
+    MGAPtr pMga = xf86Screens[pSrcPict->pDrawable->pScreen->myNum]->driverPrivate;
+
     if (op >= sizeof(mgaBlendOp) / sizeof(mgaBlendOp[0])) {
         DEBUG_MSG(("unsupported op %x\n", op));
         return FALSE;
@@ -373,10 +375,9 @@ mgaCheckComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
         return FALSE;
     }
 
-    /* FIXME
-     * Doing this operation in hardware is broken atm :/
-     */
-    if (op == PictOpAdd && pSrcPict->format == PICT_a8 &&
+    /* Only the G550 can perform Add on A8 textures, it seems. */
+    if (pMga->Chipset != PCI_CHIP_MGAG550 &&
+        op == PictOpAdd && pSrcPict->format == PICT_a8 &&
         pDstPict->format == PICT_a8)
         return FALSE;
 
