@@ -150,7 +150,13 @@ output_dac1_dpms(xf86OutputPtr output, int mode)
         break;
     }
 
+    MGAWAITVSYNC();
+    MGAWAITBUSY();
+
     OUTREG8(MGAREG_SEQ_DATA, seq1);
+
+    usleep(20000);
+
     OUTREG8(MGAREG_CRTCEXT_DATA, crtcext1);
 #endif
 

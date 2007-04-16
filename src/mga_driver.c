@@ -698,6 +698,7 @@ MGACountRam(ScrnInfoPtr pScrn)
     int ProbeSize = 8192;
     int SizeFound = 2048;
     CARD32 biosInfo = 0;
+    CARD8 seq1;
 
 #if 0
     /* This isn't correct. It looks like this can have arbitrary
@@ -770,6 +771,16 @@ MGACountRam(ScrnInfoPtr pScrn)
 	MGAMapMem(pScrn);
 	base = pMga->FbBase;
 
+	if (pMga->is_G200SE) {
+	    OUTREG8(MGAREG_SEQ_INDEX, 0x01);
+	    seq1 = INREG8(MGAREG_SEQ_DATA);
+	    seq1 |= 0x20;
+	    MGAWAITVSYNC();
+	    MGAWAITBUSY();
+	    OUTREG8(MGAREG_SEQ_DATA, seq1);
+	    usleep(20000);
+	}
+
 	/* turn MGA mode on - enable linear frame buffer (CRTCEXT3) */
 	OUTREG8(MGAREG_CRTCEXT_INDEX, 3);
 	tmp = INREG8(MGAREG_CRTCEXT_DATA);
@@ -790,7 +801,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	    base[1] = 0;
 
 	    for (Offset = 0x100000; Offset < (ProbeSize * 1024);
-		 Offset += 0x1000) {
+		    Offset += 0x1000) {
 		FirstMemoryVal1 = base[Offset];
 		FirstMemoryVal2 = base[Offset+1];
 		SecondMemoryVal1 = base[Offset+0x100];
@@ -845,8 +856,17 @@ MGACountRam(ScrnInfoPtr pScrn)
 	OUTREG8(MGAREG_CRTCEXT_INDEX, 3);
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp);
 
+	if (pMga->is_G200SE) {
+	    OUTREG8(MGAREG_SEQ_INDEX, 0x01);
+	    seq1 = INREG8(MGAREG_SEQ_DATA);
+	    seq1 &= ~0x20;
+	    MGAWAITVSYNC();
+	    MGAWAITBUSY();
+	    OUTREG8(MGAREG_SEQ_DATA, seq1);
+	    usleep(20000);
+	}
 	MGAUnmapMem(pScrn);
-   }
+    }
    return SizeFound;
 }
 
@@ -1254,6 +1274,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (pMga->SecondCrtc)
 	flags24 = Support32bppFb;
 
+    if (pMga->is_G200SE)
+	pScrn->confScreen->defaultdepth = 16;
+
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24)) {
 	return FALSE;
     } else {
@@ -1304,6 +1327,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     memcpy(pMga->Options, MGAOptions, sizeof(MGAOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pMga->Options);
 
+    if (pMga->is_G200SE) {
+        /* Disable MTRR support on PCIe systems */
+        CARD32 temp = pciReadLong(pMga->PciTag, 0xDC);
+        if ((temp & 0x0000FF00) != 0x0) {
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Disabling MTRR support.\n");
+            pScrn->options = xf86ReplaceBoolOption(pScrn->options, "MTRR", FALSE);
+        }
+    }
     
 #if !defined(__powerpc__)
     pMga->softbooted = FALSE;
@@ -1736,6 +1767,21 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     }
     MGAUnmapMem(pScrn);
+
+    if (!pScrn->monitor->DDC && pMga->is_G200SE) {
+	/* Jam in ranges big enough for 1024x768 */
+	if (!pScrn->monitor->nHsync) {
+	    pScrn->monitor->nHsync = 1;
+	    pScrn->monitor->hsync[0].lo = 31.5;
+	    pScrn->monitor->hsync[0].hi = 48.0;
+	}
+	if (!pScrn->monitor->nVrefresh) {
+	    pScrn->monitor->nVrefresh = 1;
+	    pScrn->monitor->vrefresh[0].lo = 56.0;
+	    pScrn->monitor->vrefresh[0].hi = 75.0;
+	}
+    }
+	    
 
     /*
      * If the driver can do gamma correction, it should call xf86SetGamma()
@@ -2183,7 +2229,11 @@ MGASetMode(ScrnInfoPtr scrn, DisplayModePtr mode)
 	return FALSE;
 
     /* Program the registers */
-    vgaHWProtect(pScrn, TRUE);
+    if (pMga->is_G200SE) {
+        MGAG200SEHWProtect(pScrn, TRUE);
+    } else {
+        vgaHWProtect(pScrn, TRUE);
+    }
     vgaReg = &hwp->ModeReg;
     mgaReg = &pMga->ModeReg;
 #endif
@@ -2193,13 +2243,22 @@ MGASetMode(ScrnInfoPtr scrn, DisplayModePtr mode)
     MGAStormSync(scrn);
     MGAStormEngineInit(scrn);
 
-    vgaHWProtect(scrn, FALSE);
+    if (pMga->is_G200SE) {
+        MGAG200SEHWProtect(scrn, FALSE);
+    } else {
+        vgaHWProtect(scrn, FALSE);
+    }
 
     if (xf86IsPc98()) {
 	if (pMga->Chipset == PCI_CHIP_MGA2064)
 	    outb(0xfac, 0x01);
 	else
 	    outb(0xfac, 0x02);
+    }
+
+    if (pMga->is_G200SE) {
+        OUTREG8(0x1FDE, 0x06);
+        OUTREG8(0x1FDF, 0x14);
     }
 
     return TRUE;
@@ -2434,8 +2493,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
       * InitGLXVisuals call back.
       * The DRI does not work when textured video is enabled at this time.
       */
-    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    if (pMga->is_G200SE) {
 	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		   "Not supported by hardware, not initializing the DRI\n");
 	pMga->directRenderingEnabled = FALSE;

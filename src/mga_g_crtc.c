@@ -433,9 +433,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
             MGA1064_MISC_CTL_DAC_RAM_CS;
 
         if (pMga->HasSDRAM)
-            state->Option = 0x40499121;
-        else
-            state->Option = 0x4049cd21;
+            state->Option = 0x40049120;
 
         state->Option2 = 0x00008000;
         break;
@@ -698,7 +696,7 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
 
     /* This handles restoring the generic VGA registers. */
     if (pMga->is_G200SE) {
-        vgaHWRestore(scrn, vga, VGA_SR_MODE);
+        MGAG200SERestoreMode(scrn, vga);
 
         if (vga_flags & VGA_SR_FONTS)
             MGAG200SERestoreFonts(scrn, vga);
@@ -752,7 +750,7 @@ state_save(xf86CrtcPtr crtc, MgaCrtcStatePtr state, int vga_flags)
      * in the generic VGA portion.
      */
     if (pMga->is_G200SE) {
-        vgaHWSave(scrn, vga, VGA_SR_MODE);
+        MGAG200SESaveMode(scrn, vga);
 
         if (vga_flags & VGA_SR_FONTS)
             MGAG200SESaveFonts(scrn, vga);
