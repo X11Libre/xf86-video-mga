@@ -2024,7 +2024,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     /* XXX Set HW cursor use */
 
     /* Set the min pixel clock */
-    pMga->MinClock = 12000;	/* XXX Guess, need to check this */
+    pMga->MinClock = 16000;
     xf86DrvMsg(pScrn->scrnIndex, X_DEFAULT, "Min pixel clock is %d MHz\n",
 	       pMga->MinClock / 1000);
     /*
