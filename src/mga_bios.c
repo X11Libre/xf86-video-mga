@@ -118,6 +118,7 @@ static void mga_initialize_bios_values( MGAPtr pMga,
     (void) memset( bios, 0, sizeof( *bios ) );
 
     bios->pixel.min_freq = 50000;
+    bios->connector[0] = bios->connector[1] = MGA_CONNECTOR_NONE;
 
     switch( pMga->Chipset ) {
     case PCI_CHIP_MGA2064:
@@ -341,6 +342,7 @@ static void mga_parse_bios_ver_5( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     const unsigned scale = (bios_data[4] != 0) ? 8000 : 6000;
+    mga_connector_t connector;
 
 
     if ( bios_data[38] != 0xff ) {
@@ -397,6 +399,14 @@ static void mga_parse_bios_ver_5( struct mga_bios_values * bios,
     }
 
     bios->host_interface = (bios_data[113] >> 3) & 0x07;
+
+    connector = bios_data[116] & 0x0f;
+    if (connector <= MGA_CONNECTOR_LAST)
+        bios->connector[0] = connector;
+
+    connector = (bios_data[116] >> 4) & 0x0f;
+    if (connector <= MGA_CONNECTOR_LAST)
+        bios->connector[1] = connector;
 }
 
 

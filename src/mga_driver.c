@@ -1078,24 +1078,41 @@ MGAMavenRead(ScrnInfoPtr pScrn, I2CByte reg, I2CByte *val)
 static void
 setup_outputs(ScrnInfoPtr scrn)
 {
+    MGAPtr pMga;
     xf86OutputPtr output;
 
-    /* FIXME:
-     * Create outputs depending on the hardware.
-     */
-    output = MgaGOutputPanelInit (scrn);
+    pMga = MGAPTR(scrn);
+
+    /* first output */
+    switch (pMga->bios.connector[0]) {
+    case MGA_CONNECTOR_DVI:
+        output = MgaGOutputPanelInit (scrn);
+        break;
+    default:
+        /* in case PInS doesn't contain connector info
+         * or it claims there's no primary output
+         * we just assume it's VGA.
+         */
+        output = MgaGOutputDac1Init (scrn);
+        break;
+    }
+
+    /* the first output can be mapped to any crtc */
     output->possible_crtcs = 1 | 2;
-    output->possible_clones = 1 | 2;
 
-#if 0
-    output = MgaGOutputDac1Init (scrn);
-    output->possible_crtcs = 1 |  2;
-    output->possible_clones = 1 | 2;
-#endif
+    /* second output */
+    switch (pMga->bios.connector[1]) {
+    case MGA_CONNECTOR_HD15:
+        output = MgaGOutputDac2Init (scrn);
+        break;
+    default:
+        output = NULL;
+        break;
+    }
 
-    output = MgaGOutputDac2Init (scrn);
-    output->possible_crtcs = 2;
-    output->possible_clones = 2;
+    /* the second output can only be mapped to crtc 2 */
+    if (output)
+        output->possible_crtcs = 2;
 }
 
 /* Mandatory */

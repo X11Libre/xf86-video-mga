@@ -301,6 +301,14 @@ typedef enum {
     MGA_HOST_AGP_4x = 7     /**< AGP 4x capable. */
 } mga_host_t;
 
+typedef enum {
+    MGA_CONNECTOR_NONE = 0,
+    MGA_CONNECTOR_HD15,
+    MGA_CONNECTOR_DVI,
+    MGA_CONNECTOR_TV,
+    MGA_CONNECTOR_LAST = MGA_CONNECTOR_TV
+} mga_connector_t;
+
 /**
  * Card information derrived from BIOS PInS data.
  */
@@ -341,6 +349,11 @@ struct mga_bios_values {
      * Type of physical interface used for the card.
      */
     mga_host_t host_interface;
+
+    /**
+     * On G450 and G550 PInS lists the available connectors.
+     */
+    mga_connector_t connector[2];
 };
 
 
