@@ -1080,14 +1080,15 @@ setup_g_outputs(ScrnInfoPtr scrn)
 {
     MGAPtr pMga;
     xf86OutputPtr output;
-    Bool number_vga = FALSE;
+    Bool number_vga = FALSE, number_dvi = FALSE;
 
     pMga = MGAPTR(scrn);
 
     /* first output */
     switch (pMga->bios.connector[0]) {
     case MGA_CONNECTOR_DVI:
-        output = MgaGOutputPanelInit (scrn);
+        number_dvi = pMga->bios.connector[1] == MGA_CONNECTOR_DVI;
+        output = MgaGOutputPanel1Init (scrn, number_dvi);
         break;
     default:
         /* in case PInS doesn't contain connector info
@@ -1106,6 +1107,9 @@ setup_g_outputs(ScrnInfoPtr scrn)
     switch (pMga->bios.connector[1]) {
     case MGA_CONNECTOR_HD15:
         output = MgaGOutputDac2Init (scrn, number_vga);
+        break;
+    case MGA_CONNECTOR_DVI:
+        output = MgaGOutputPanel2Init (scrn, number_dvi);
         break;
     default:
         output = NULL;

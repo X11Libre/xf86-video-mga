@@ -644,7 +644,8 @@ Bool MgaGCrtc2Init(ScrnInfoPtr pScrn);
 
 xf86OutputPtr MgaGOutputDac1Init(ScrnInfoPtr pScrn, Bool number);
 xf86OutputPtr MgaGOutputDac2Init(ScrnInfoPtr pScrn, Bool number);
-xf86OutputPtr MgaGOutputPanelInit(ScrnInfoPtr pScrn);
+xf86OutputPtr MgaGOutputPanel1Init(ScrnInfoPtr pScrn, Bool number);
+xf86OutputPtr MgaGOutputPanel2Init(ScrnInfoPtr pScrn, Bool number);
 
 static __inline__ void
 MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)

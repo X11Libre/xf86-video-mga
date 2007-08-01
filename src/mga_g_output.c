@@ -44,7 +44,8 @@ typedef struct {
 
 static void output_dac1_dpms(xf86OutputPtr output, int mode);
 static void output_dac2_dpms(xf86OutputPtr output, int mode);
-static void output_panel_dpms(xf86OutputPtr output, int mode);
+static void output_panel1_dpms(xf86OutputPtr output, int mode);
+static void output_panel2_dpms(xf86OutputPtr output, int mode);
 static void output_save(xf86OutputPtr output);
 static void output_restore(xf86OutputPtr output);
 static void output_panel_restore(xf86OutputPtr output);
@@ -56,8 +57,10 @@ static void output_mode_set(xf86OutputPtr output, DisplayModePtr mode,
                             DisplayModePtr adjusted_mode);
 static void output_dac2_mode_set(xf86OutputPtr output, DisplayModePtr mode,
                                  DisplayModePtr adjusted_mode);
-static void output_panel_mode_set(xf86OutputPtr output, DisplayModePtr mode,
-                                  DisplayModePtr adjusted_mode);
+static void output_panel1_mode_set(xf86OutputPtr output, DisplayModePtr mode,
+                                   DisplayModePtr adjusted_mode);
+static void output_panel2_mode_set(xf86OutputPtr output, DisplayModePtr mode,
+                                   DisplayModePtr adjusted_mode);
 static void output_commit(xf86OutputPtr output);
 static xf86OutputStatus output_detect(xf86OutputPtr output);
 static DisplayModePtr output_get_modes(xf86OutputPtr output);
@@ -91,14 +94,28 @@ static const xf86OutputFuncsRec output_dac2_funcs = {
     .destroy = output_destroy
 };
 
-static const xf86OutputFuncsRec output_panel_funcs = {
-    .dpms = output_panel_dpms,
+static const xf86OutputFuncsRec output_panel1_funcs = {
+    .dpms = output_panel1_dpms,
     .save = output_save,
     .restore = output_panel_restore,
     .mode_valid = output_mode_valid,
     .mode_fixup = output_mode_fixup,
     .prepare = output_prepare,
-    .mode_set = output_panel_mode_set,
+    .mode_set = output_panel1_mode_set,
+    .commit = output_commit,
+    .detect = output_detect,
+    .get_modes = output_get_modes,
+    .destroy = output_destroy
+};
+
+static const xf86OutputFuncsRec output_panel2_funcs = {
+    .dpms = output_panel2_dpms,
+    .save = output_save,
+    .restore = output_panel_restore,
+    .mode_valid = output_mode_valid,
+    .mode_fixup = output_mode_fixup,
+    .prepare = output_prepare,
+    .mode_set = output_panel2_mode_set,
     .commit = output_commit,
     .detect = output_detect,
     .get_modes = output_get_modes,
@@ -205,7 +222,7 @@ output_dac2_dpms(xf86OutputPtr output, int mode)
 }
 
 static void
-output_panel_dpms(xf86OutputPtr output, int mode)
+output_panel1_dpms(xf86OutputPtr output, int mode)
 {
     MGAPtr pMga = MGAPTR(output->scrn);
     CARD8 pwr_ctl, mask;
@@ -218,6 +235,27 @@ output_panel_dpms(xf86OutputPtr output, int mode)
      */
     if (mode == DPMSModeOn)
         outMGAdac(MGA1064_PWR_CTL, pwr_ctl | mask);
+}
+
+static void
+output_panel2_dpms(xf86OutputPtr output, int mode)
+{
+    MGAPtr pMga = MGAPTR(output->scrn);
+    CARD8 pwr_ctl, mask;
+
+    pwr_ctl = inMGAdac(MGA1064_PWR_CTL);
+    mask = MGA1064_PWR_CTL_PANEL_EN;
+
+    if (mode == DPMSModeOn) {
+        outMGAdac(MGA1064_PWR_CTL, pwr_ctl | mask);
+        outMGAdac(MGA1064_DVI_PIPE_CTL, 0x20);
+    } else {
+        /* see above
+         *
+         * outMGAdac(MGA1064_PWR_CTL, pwr_ctl & ~mask);
+         */
+        outMGAdac(MGA1064_DVI_PIPE_CTL, 0x0);
+    }
 }
 
 static void
@@ -320,7 +358,7 @@ get_pan_ctl_value(xf86OutputPtr output, DisplayModePtr mode)
 }
 
 static void
-output_panel_mode_set(xf86OutputPtr output, DisplayModePtr mode,
+output_panel1_mode_set(xf86OutputPtr output, DisplayModePtr mode,
                       DisplayModePtr adjusted_mode)
 {
     MGAPtr pMga = MGAPTR(output->scrn);
@@ -339,7 +377,12 @@ output_panel_mode_set(xf86OutputPtr output, DisplayModePtr mode,
         disp_ctl |= MGA1064_DISP_CTL_PANOUTSEL_CRTC2RGB;
 
     outMGAdac(MGA1064_DISP_CTL, disp_ctl);
+}
 
+static void
+output_panel2_mode_set(xf86OutputPtr output, DisplayModePtr mode,
+                      DisplayModePtr adjusted_mode)
+{
 }
 
 static xf86OutputStatus
@@ -424,17 +467,18 @@ MgaGOutputDac2Init(ScrnInfoPtr scrn, Bool number)
 }
 
 xf86OutputPtr
-MgaGOutputPanelInit(ScrnInfoPtr scrn)
+MgaGOutputPanel1Init(ScrnInfoPtr scrn, Bool number)
 {
     MGAPtr pMga = MGAPTR(scrn);
     xf86OutputPtr output;
     MgaOutputDataPtr data;
+    const char *name = number ? "DVI1" : "DVI";
 
     data = xnfcalloc(sizeof(MgaOutputDataRec), 1);
     if (!data)
         return NULL;
 
-    output = xf86OutputCreate(scrn, &output_panel_funcs, "Panel");
+    output = xf86OutputCreate(scrn, &output_panel1_funcs, name);
     if (!output) {
         xfree(data);
         return NULL;
@@ -443,6 +487,31 @@ MgaGOutputPanelInit(ScrnInfoPtr scrn)
     output->driver_private = data;
 
     data->ddc_bus = pMga->DDC_Bus1;
+
+    return output;
+}
+
+xf86OutputPtr
+MgaGOutputPanel2Init(ScrnInfoPtr scrn, Bool number)
+{
+    MGAPtr pMga = MGAPTR(scrn);
+    xf86OutputPtr output;
+    MgaOutputDataPtr data;
+    const char *name = number ? "DVI2" : "DVI";
+
+    data = xnfcalloc(sizeof(MgaOutputDataRec), 1);
+    if (!data)
+        return NULL;
+
+    output = xf86OutputCreate(scrn, &output_panel2_funcs, name);
+    if (!output) {
+        xfree(data);
+        return NULL;
+    }
+
+    output->driver_private = data;
+
+    data->ddc_bus = pMga->DDC_Bus2;
 
     return output;
 }
