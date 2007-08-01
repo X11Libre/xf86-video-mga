@@ -919,3 +919,24 @@ crtc_destroy(xf86CrtcPtr crtc)
     if (crtc->driver_private)
         xfree (crtc->driver_private);
 }
+
+Bool
+Mga2064CrtcInit(ScrnInfoPtr scrn)
+{
+    xf86CrtcPtr crtc;
+    MgaCrtcDataPtr data;
+
+    data = xnfcalloc (sizeof (MgaCrtcDataRec), 1);
+    if (!data)
+        return FALSE;
+
+    crtc = xf86CrtcCreate (scrn, &crtc_funcs);
+    if (!crtc) {
+        xfree(data);
+        return FALSE;
+    }
+
+    crtc->driver_private = data;
+
+    return TRUE;
+}

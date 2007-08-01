@@ -1076,7 +1076,7 @@ MGAMavenRead(ScrnInfoPtr pScrn, I2CByte reg, I2CByte *val)
 }
 
 static void
-setup_outputs(ScrnInfoPtr scrn)
+setup_g_outputs(ScrnInfoPtr scrn)
 {
     MGAPtr pMga;
     xf86OutputPtr output;
@@ -1126,7 +1126,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     ClockRangePtr clockRanges;
     const char *s;
     int flags24;
-    Bool Default;
+    Bool Default, is_2064 = FALSE;
+    xf86OutputPtr output;
 
     /*
      * Note: This function is only called once at server startup, and
@@ -1529,8 +1530,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGA2064:
     case PCI_CHIP_MGA2164:
     case PCI_CHIP_MGA2164_AGP:
+        is_2064 = TRUE;
 	MGA2064SetupFuncs(pScrn);
-        /* register 2064 CRTC and output */
 	break;
     case PCI_CHIP_MGA1064:
     case PCI_CHIP_MGAG100:
@@ -1748,17 +1749,29 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86CrtcSetSizeRange(pScrn, 320, 200, 2560, 1024);
 
-    /* FIXME:
-     * Obviously, this cannot be done unconditionally.
-     */
-    MgaGCrtc1Init (pScrn);
-    MgaGCrtc2Init (pScrn);
+    if (is_2064)
+        Mga2064CrtcInit (pScrn);
+    else {
+        switch(pMga->Chipset) {
+        case PCI_CHIP_MGAG400:
+        case PCI_CHIP_MGAG550:
+            MgaGCrtc1Init (pScrn);
+            MgaGCrtc2Init (pScrn);
+            break;
+        default:
+            MgaGCrtc1Init (pScrn);
+        }
+    }
 
     if (pMga->i2cInit) {
         pMga->i2cInit(pScrn);
     }
 
-    setup_outputs(pScrn);
+    if (is_2064) {
+        output = Mga2064OutputInit (pScrn);
+        output->possible_crtcs = 1;
+    } else
+        setup_g_outputs (pScrn);
 
     /*
      * fill MGAdac struct

@@ -636,6 +636,9 @@ void MGAG200SESaveMode(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SERestoreMode(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SEHWProtect(ScrnInfoPtr, Bool);
 
+Bool Mga2064CrtcInit(ScrnInfoPtr pScrn);
+xf86OutputPtr Mga2064OutputInit(ScrnInfoPtr pScrn);
+
 Bool MgaGCrtc1Init(ScrnInfoPtr pScrn);
 Bool MgaGCrtc2Init(ScrnInfoPtr pScrn);
 

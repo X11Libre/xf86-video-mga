@@ -172,7 +172,7 @@ output_destroy(xf86OutputPtr output)
 }
 
 xf86OutputPtr
-MgaOutput2064New(ScrnInfoPtr scrn)
+Mga2064OutputInit(ScrnInfoPtr scrn)
 {
     MGAPtr pMga = MGAPTR(scrn);
     xf86OutputPtr output;
