@@ -642,8 +642,8 @@ xf86OutputPtr Mga2064OutputInit(ScrnInfoPtr pScrn);
 Bool MgaGCrtc1Init(ScrnInfoPtr pScrn);
 Bool MgaGCrtc2Init(ScrnInfoPtr pScrn);
 
-xf86OutputPtr MgaGOutputDac1Init(ScrnInfoPtr pScrn);
-xf86OutputPtr MgaGOutputDac2Init(ScrnInfoPtr pScrn);
+xf86OutputPtr MgaGOutputDac1Init(ScrnInfoPtr pScrn, Bool number);
+xf86OutputPtr MgaGOutputDac2Init(ScrnInfoPtr pScrn, Bool number);
 xf86OutputPtr MgaGOutputPanelInit(ScrnInfoPtr pScrn);
 
 static __inline__ void

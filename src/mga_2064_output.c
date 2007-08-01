@@ -182,7 +182,7 @@ Mga2064OutputInit(ScrnInfoPtr scrn)
     if (!data)
         return NULL;
 
-    output = xf86OutputCreate(scrn, &output_funcs, "VGA 1");
+    output = xf86OutputCreate(scrn, &output_funcs, "VGA");
     if (!output) {
         xfree(data);
         return NULL;

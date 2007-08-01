@@ -374,17 +374,18 @@ output_destroy(xf86OutputPtr output)
 }
 
 xf86OutputPtr
-MgaGOutputDac1Init(ScrnInfoPtr scrn)
+MgaGOutputDac1Init(ScrnInfoPtr scrn, Bool number)
 {
     MGAPtr pMga = MGAPTR(scrn);
     xf86OutputPtr output;
     MgaOutputDataPtr data;
+    const char *name = number ? "VGA1" : "VGA";
 
     data = xnfcalloc(sizeof(MgaOutputDataRec), 1);
     if (!data)
         return NULL;
 
-    output = xf86OutputCreate(scrn, &output_dac1_funcs, "VGA1");
+    output = xf86OutputCreate(scrn, &output_dac1_funcs, name);
     if (!output) {
         xfree(data);
         return NULL;
@@ -398,17 +399,18 @@ MgaGOutputDac1Init(ScrnInfoPtr scrn)
 }
 
 xf86OutputPtr
-MgaGOutputDac2Init(ScrnInfoPtr scrn)
+MgaGOutputDac2Init(ScrnInfoPtr scrn, Bool number)
 {
     MGAPtr pMga = MGAPTR(scrn);
     xf86OutputPtr output;
     MgaOutputDataPtr data;
+    const char *name = number ? "VGA2" : "VGA";
 
     data = xnfcalloc(sizeof(MgaOutputDataRec), 1);
     if (!data)
         return NULL;
 
-    output = xf86OutputCreate(scrn, &output_dac2_funcs, "VGA2");
+    output = xf86OutputCreate(scrn, &output_dac2_funcs, name);
     if (!output) {
         xfree(data);
         return NULL;
@@ -432,7 +434,7 @@ MgaGOutputPanelInit(ScrnInfoPtr scrn)
     if (!data)
         return NULL;
 
-    output = xf86OutputCreate(scrn, &output_panel_funcs, "Panel1");
+    output = xf86OutputCreate(scrn, &output_panel_funcs, "Panel");
     if (!output) {
         xfree(data);
         return NULL;

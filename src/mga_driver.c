@@ -1080,6 +1080,7 @@ setup_g_outputs(ScrnInfoPtr scrn)
 {
     MGAPtr pMga;
     xf86OutputPtr output;
+    Bool number_vga = FALSE;
 
     pMga = MGAPTR(scrn);
 
@@ -1093,7 +1094,8 @@ setup_g_outputs(ScrnInfoPtr scrn)
          * or it claims there's no primary output
          * we just assume it's VGA.
          */
-        output = MgaGOutputDac1Init (scrn);
+        number_vga = pMga->bios.connector[1] == MGA_CONNECTOR_HD15;
+        output = MgaGOutputDac1Init (scrn, number_vga);
         break;
     }
 
@@ -1103,7 +1105,7 @@ setup_g_outputs(ScrnInfoPtr scrn)
     /* second output */
     switch (pMga->bios.connector[1]) {
     case MGA_CONNECTOR_HD15:
-        output = MgaGOutputDac2Init (scrn);
+        output = MgaGOutputDac2Init (scrn, number_vga);
         break;
     default:
         output = NULL;
