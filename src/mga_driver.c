@@ -198,12 +198,10 @@ static PciChipsets MGAPciChipsets[] = {
 };
 
 static const OptionInfoRec MGAOptions[] = {
-    { OPTION_SW_CURSOR,		"SWcursor",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_HW_CURSOR,		"HWcursor",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_PCI_RETRY,		"PciRetry",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_SYNC_ON_GREEN,	"SyncOnGreen",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_NOACCEL,		"NoAccel",	OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_SHOWCACHE,		"ShowCache",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_OVERLAY,		"Overlay",	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_MGA_SDRAM,		"MGASDRAM",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_SHADOW_FB,		"ShadowFB",	OPTV_BOOLEAN,	{0}, FALSE },
@@ -213,23 +211,10 @@ static const OptionInfoRec MGAOptions[] = {
     { OPTION_OVERCLOCK_MEM,	"OverclockMem",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_VIDEO_KEY,		"VideoKey",	OPTV_INTEGER,	{0}, FALSE },
     { OPTION_TEXTURED_VIDEO,	"TexturedVideo",OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_CRTC2HALF,		"Crtc2Half",	OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_CRTC2RAM,		"Crtc2Ram",	OPTV_INTEGER,	{0}, FALSE },
     { OPTION_INT10,		"Int10",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_AGP_MODE,		"AGPMode",	OPTV_INTEGER,	{0}, FALSE },
     { OPTION_AGP_SIZE,		"AGPSize",      OPTV_INTEGER,   {0}, FALSE },
-    { OPTION_DIGITAL1,		"DigitalScreen1",OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_DIGITAL2,		"DigitalScreen2",OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_TV,		"TV",		OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_TVSTANDARD,	"TVStandard",	OPTV_ANYSTR,	{0}, FALSE },
-    { OPTION_CABLETYPE,		"CableType",	OPTV_ANYSTR,	{0}, FALSE },
-    { OPTION_SWAPPED_HEAD,	"SwappedHead",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_DRI,		"DRI",		OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_MERGEDFB,		"MergedFB",	OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_HSYNC2,	"Monitor2HSync",	OPTV_ANYSTR,	{0}, FALSE },
-    { OPTION_VREFRESH2,	"Monitor2VRefresh",	OPTV_ANYSTR,	{0}, FALSE },
-    { OPTION_MONITOR2POS,   "Monitor2Position",	OPTV_ANYSTR,	{0}, FALSE },
-    { OPTION_METAMODES,   "MetaModes",  	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_OLDDMA,		"OldDmaInit",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_PCIDMA,		"ForcePciDma",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_ACCELMETHOD,	"AccelMethod",	OPTV_ANYSTR,	{0}, FALSE },
@@ -1455,10 +1440,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->SyncOnGreen = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Sync-on-Green enabled\n");
     }
-    if (xf86ReturnOptValBool(pMga->Options, OPTION_SHOWCACHE, FALSE)) {
-	pMga->ShowCache = TRUE;
-	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ShowCache enabled\n");
-    }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_MGA_SDRAM, FALSE)) {
 	pMga->HasSDRAM = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Has SDRAM\n");
@@ -1513,10 +1494,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_TEXTURED_VIDEO, FALSE)) {
 	pMga->TexturedVideo = TRUE;
-    }
-    if (xf86ReturnOptValBool(pMga->Options, OPTION_MERGEDFB, FALSE)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "\"Merged Framebuffer\" mode not supported.\n");
     }
     if (pMga->FBDev) {
 	/* check for linux framebuffer device */
