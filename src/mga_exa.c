@@ -585,15 +585,6 @@ mgaPrepareComposite(int op, PicturePtr pSrcPict, PicturePtr pMaskPict,
             blendcntl = (blendcntl & ~MGA_SRC_BLEND_MASK) | MGA_SRC_ZERO;
     }
 
-    if (!PICT_FORMAT_A(pSrcPict->format) && mgaBlendOp[op].src_alpha) {
-        int dblend = blendcntl & MGA_DST_BLEND_MASK;
-
-        if (dblend == MGA_DST_SRC_ALPHA)
-            blendcntl = (blendcntl & ~MGA_DST_BLEND_MASK) | MGA_DST_ONE;
-        else if (dblend == MGA_DST_ONE_MINUS_SRC_ALPHA)
-            blendcntl = (blendcntl & ~MGA_DST_BLEND_MASK) | MGA_DST_ZERO;
-    }
-
     WAITFIFO(5);
     OUTREG(MGAREG_FCOL, fcol);
     OUTREG(MGAREG_TDUALSTAGE0, ds0);
