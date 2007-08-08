@@ -122,6 +122,8 @@ static const xf86OutputFuncsRec output_panel2_funcs = {
     .destroy = output_destroy
 };
 
+static int panel_users = 0;
+
 static void
 output_dac1_dpms(xf86OutputPtr output, int mode)
 {
@@ -230,11 +232,15 @@ output_panel1_dpms(xf86OutputPtr output, int mode)
     pwr_ctl = inMGAdac(MGA1064_PWR_CTL);
     mask = MGA1064_PWR_CTL_PANEL_EN;
 
-    /* we could drop MGA1064_PWR_CTL_PANEL_EN here,
-     * but since that affects _both_ panels, it's somewhat useless.
-     */
-    if (mode == DPMSModeOn)
+    if (mode == DPMSModeOn) {
+        panel_users |= 1;
         outMGAdac(MGA1064_PWR_CTL, pwr_ctl | mask);
+    } else {
+        panel_users &= ~1;
+
+        if (!panel_users)
+            outMGAdac(MGA1064_PWR_CTL, pwr_ctl & ~mask);
+    }
 }
 
 static void
@@ -247,13 +253,16 @@ output_panel2_dpms(xf86OutputPtr output, int mode)
     mask = MGA1064_PWR_CTL_PANEL_EN;
 
     if (mode == DPMSModeOn) {
+        panel_users |= 2;
+
         outMGAdac(MGA1064_PWR_CTL, pwr_ctl | mask);
         outMGAdac(MGA1064_DVI_PIPE_CTL, 0x20);
     } else {
-        /* see above
-         *
-         * outMGAdac(MGA1064_PWR_CTL, pwr_ctl & ~mask);
-         */
+        panel_users &= ~2;
+
+        if (!panel_users)
+            outMGAdac(MGA1064_PWR_CTL, pwr_ctl & ~mask);
+
         outMGAdac(MGA1064_DVI_PIPE_CTL, 0x0);
     }
 }
