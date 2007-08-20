@@ -1484,7 +1484,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (pMga->is_G200SE) {
         /* Disable MTRR support on PCIe systems */
+#if 1
+	uint32_t temp;
+
+	pci_device_cfg_read_u32(pMga->PciInfo, & temp, 0xDC);
+#else
         CARD32 temp = pciReadLong(pMga->PciTag, 0xDC);
+#endif
+
         if ((temp & 0x0000FF00) != 0x0) {
             xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Disabling MTRR support.\n");
             pScrn->options = xf86ReplaceBoolOption(pScrn->options, "MTRR", FALSE);
