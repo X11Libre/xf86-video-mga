@@ -792,7 +792,7 @@ MGAProbe(DriverPtr drv, int flags)
     if (flags & PROBE_DETECT)
 	foundScreen = TRUE;
     else for (i = 0; i < numUsed; i++) {
-	ScrnInfoPtr pScrn;
+	ScrnInfoPtr pScrn = NULL;
 	EntityInfoPtr pEnt;
 #ifdef DISABLE_VGA_IO
 	MgaSavePtr smga;
