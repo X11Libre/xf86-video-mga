@@ -608,8 +608,8 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	xf86DrvMsg( pScreen->myNum, X_INFO,
 		    "[agp] Mode 0x%08lx [AGP 0x%04x/0x%04x; Card 0x%04x/0x%04x]\n",
 		    mode, vendor, device,
-		    pMga->PciInfo->vendor_id,
-		    pMga->PciInfo->device_id );
+		    VENDOR_ID(pMga->PciInfo),
+		    DEVICE_ID(pMga->PciInfo));
 
 	if ( drmAgpEnable( pMga->drmFD, mode ) < 0 ) {
 	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not enabled\n" );
@@ -756,7 +756,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	pMGADRIServer->registers.size = MGAIOMAPSIZE;
 
 	if ( drmAddMap( pMga->drmFD,
-			(drm_handle_t)pMga->PciInfo->regions[ pMga->io_bar ].base_addr,
+			(drm_handle_t) MGA_IO_ADDRESS(pMga),
 			pMGADRIServer->registers.size,
 			DRM_REGISTERS, DRM_READ_ONLY,
 			&pMGADRIServer->registers.handle ) < 0 ) {
@@ -851,10 +851,17 @@ static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 
    if (!pMga->irq) {
       pMga->irq = drmGetInterruptFromBusID(pMga->drmFD,
+#ifdef PCIACCESS
 					   ((pMga->PciInfo->domain << 8) |
 					    pMga->PciInfo->bus),
 					   pMga->PciInfo->dev,
-					   pMga->PciInfo->func);
+					   pMga->PciInfo->func
+#else
+	 ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
+	 ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
+	 ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
+#endif
+					   );
 
       if((drmCtlInstHandler(pMga->drmFD, pMga->irq)) != 0) {
 	 xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -1153,10 +1160,15 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    } else {
       pDRIInfo->busIdString = xalloc(64);
       sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
-					    ((pMga->PciInfo->domain << 8) |
-					     pMga->PciInfo->bus),
-					    pMga->PciInfo->dev,
-					    pMga->PciInfo->func );
+#ifdef PCIACCESS
+	       ((pMga->PciInfo->domain << 8) | pMga->PciInfo->bus),
+	       pMga->PciInfo->dev, pMga->PciInfo->func
+#else
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
+#endif
+	       );
    }
    pDRIInfo->ddxDriverMajorVersion = PACKAGE_VERSION_MAJOR;
    pDRIInfo->ddxDriverMinorVersion = PACKAGE_VERSION_MINOR;

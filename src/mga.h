@@ -14,7 +14,9 @@
 #ifndef MGA_H
 #define MGA_H
 
+#ifdef PCIACCESS
 #include <pciaccess.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 
@@ -287,7 +289,11 @@ typedef struct {
 
 #ifdef DISABLE_VGA_IO
 typedef struct mgaSave {
+#ifdef PCIACCESS
     struct pci_device * pvp;
+#else
+    pciVideoPtr pvp;
+#endif
     Bool enable;
 } MgaSave, *MgaSavePtr;
 #endif
@@ -435,7 +441,12 @@ typedef struct {
     EntityInfoPtr	pEnt;
     struct mga_bios_values bios;
     CARD8               BiosOutputMode;
+#ifdef PCIACCESS
     struct pci_device *	PciInfo;
+#else
+    pciVideoPtr		PciInfo;
+    PCITAG		PciTag;
+#endif
     const struct mga_device_attributes * chip_attribs;
     xf86AccessRec	Access;
     int			Chipset;
@@ -471,7 +482,12 @@ typedef struct {
      */
     int                 iload_bar;
 
-
+#ifndef PCIACCESS
+    unsigned long	IOAddress;
+    unsigned long	ILOADAddress;
+    unsigned long	BiosAddress;
+    MessageType		BiosFrom;
+#endif
     unsigned long	FbAddress;
     unsigned char *     IOBase;
     unsigned char *	FbBase;
