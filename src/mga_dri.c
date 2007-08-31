@@ -851,7 +851,7 @@ static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 
    if (!pMga->irq) {
       pMga->irq = drmGetInterruptFromBusID(pMga->drmFD,
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 					   ((pMga->PciInfo->domain << 8) |
 					    pMga->PciInfo->bus),
 					   pMga->PciInfo->dev,
@@ -1160,7 +1160,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    } else {
       pDRIInfo->busIdString = xalloc(64);
       sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	       ((pMga->PciInfo->domain << 8) | pMga->PciInfo->bus),
 	       pMga->PciInfo->dev, pMga->PciInfo->func
 #else

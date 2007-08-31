@@ -67,7 +67,7 @@ ULONG ClientReadConfigSpaceByte(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_read_u8(pMga->PciInfo, pucByte, ulOffset);
 #else
     *pucByte = pciReadByte(pMga->PciTag,ulOffset);
@@ -99,7 +99,7 @@ ULONG ClientReadConfigSpaceDword(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_read_u32(pMga->PciInfo, (uint32_t *) pulDword, ulOffset);
 #else
     *pulDword = pciReadLong(pMga->PciTag,ulOffset);
@@ -131,7 +131,7 @@ ULONG ClientWriteConfigSpaceByte(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_write_u8(pMga->PciInfo, ucByte, ulOffset);
 #else
     pciWriteByte(pMga->PciTag,ulOffset, ucByte);
@@ -163,7 +163,7 @@ ULONG ClientWriteConfigSpaceDword(LPBOARDHANDLE pBoard, ULONG ulOffset,
 
     ASSERT_HANDLER(pBoard);
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_write_u32(pMga->PciInfo, (uint32_t) ulDword, ulOffset);
 #else
     pciWriteLong(pMga->PciTag,ulOffset, ulDword);

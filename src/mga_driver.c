@@ -64,7 +64,7 @@
 #include "xf86PciInfo.h"
 
 /* Drivers that need to access the PCI config space directly need this */
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
 #include "xf86Pci.h"
 #endif
 
@@ -111,7 +111,7 @@
 /* Mandatory functions */
 static const OptionInfoRec *	MGAAvailableOptions(int chipid, int busid);
 static void	MGAIdentify(int flags);
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 static Bool MGAPciProbe(DriverPtr drv, int entity_num,
     struct pci_device * dev, intptr_t match_data);
 #else
@@ -192,7 +192,7 @@ static const struct mga_device_attributes attribs[8] = {
             (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION) },
 };
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 #define MGA_DEVICE_MATCH(d, i) \
     { 0x102B, (d), PCI_MATCH_ANY, PCI_MATCH_ANY, 0, 0, (i) }
 #define MGA_SUBDEVICE_MATCH(d, s, i) \
@@ -264,7 +264,7 @@ _X_EXPORT DriverRec MGA_C_NAME = {
     MGA_VERSION,
     MGA_DRIVER_NAME,
     MGAIdentify,
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     NULL,
 #else
     MGAProbe,
@@ -274,7 +274,7 @@ _X_EXPORT DriverRec MGA_C_NAME = {
     0,
     NULL,
      
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     mga_device_match,
     MGAPciProbe
 #endif
@@ -635,7 +635,7 @@ MGAIdentify(int flags)
 }
 
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 Bool
 MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	    intptr_t match_data)
@@ -978,7 +978,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	it.  At least, my cards don't advertise the documented
 	values (my 8 and 16 Meg G200s have the same values) */
     if (pMga->Primary) { /* can only trust this for primary cards */
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_read_u32(pMga->PciInfo, & biosInfo,
 				PCI_OPTION_REG);
 #else
@@ -1289,7 +1289,7 @@ static void
 VgaIOSave(int i, void *arg)
 {
     MgaSavePtr sMga = arg;
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     PCITAG tag = pciTag(sMga->pvp->bus,sMga->pvp->device,sMga->pvp->func);
 #endif
     uint32_t temp;
@@ -1298,7 +1298,7 @@ VgaIOSave(int i, void *arg)
     ErrorF("mga: VgaIOSave: %d:%d:%d\n", sMga->pvp->bus, sMga->pvp->device,
 	   sMga->pvp->func);
 #endif
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_read_u32(pMga->PciInfo, & temp, PCI_OPTION_REG);
 #else
     temp = pciReadLong(tag, PCI_OPTION_REG);
@@ -1310,7 +1310,7 @@ static void
 VgaIORestore(int i, void *arg)
 {
     MgaSavePtr sMga = arg;
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     PCITAG tag = pciTag(sMga->pvp->bus,sMga->pvp->device,sMga->pvp->func);
 #endif
 
@@ -1318,7 +1318,7 @@ VgaIORestore(int i, void *arg)
     ErrorF("mga: VgaIORestore: %d:%d:%d\n", sMga->pvp->bus, sMga->pvp->device,
 	   sMga->pvp->func);
 #endif
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, sMga->enable,
 			      PCI_OPTION_REG);
 #else
@@ -1338,7 +1338,7 @@ VgaIODisable(void *arg)
 	   BOOLTOSTRING(xf86ResAccessEnter));
 #endif
     /* Turn off the vgaioen bit. */
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, 0x00000000,
 			      PCI_OPTION_REG);
 #else
@@ -1359,7 +1359,7 @@ VgaIOEnable(void *arg)
 #endif
     /* Turn on the vgaioen bit. */
     if (pMga->Primary) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, 0x00000100,
 				  PCI_OPTION_REG);
 #else
@@ -1479,7 +1479,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!vgaHWGetHWRec(pScrn))
 	return FALSE;
 
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     /* Find the PCI info for this screen */
     pMga->PciInfo = xf86GetPciInfoForEntity(pMga->pEnt->index);
     pMga->PciTag = pciTag(pMga->PciInfo->bus, pMga->PciInfo->device,
@@ -1731,7 +1731,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (pMga->is_G200SE) {
         /* Disable MTRR support on PCIe systems */
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	uint32_t temp;
 
 	pci_device_cfg_read_u32(pMga->PciInfo, & temp, 0xDC);
@@ -2022,7 +2022,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     pMga->FbAddress = pMga->PciInfo->regions[pMga->framebuffer_bar].base_addr;
 #else
     pMga->FbAddress = pMga->PciInfo->memBase[pMga->framebuffer_bar] & 0xff800000;
@@ -2031,7 +2031,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Linear framebuffer at 0x%lX\n",
 	       (unsigned long)pMga->FbAddress);
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO registers at 0x%lX\n",
 	       (unsigned long) pMga->PciInfo->regions[pMga->io_bar].base_addr);
 #else
@@ -2042,7 +2042,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
 
     if (pMga->iload_bar != -1) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
 		   "Pseudo-DMA transfer window at 0x%lX\n",
 		   (unsigned long) pMga->PciInfo->regions[pMga->iload_bar].base_addr);
@@ -2057,7 +2057,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
 
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     /*
      * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
      * use the VGA default.  Allow the config file to override this.
@@ -2096,7 +2096,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * Read the BIOS data struct
      */
 
-#if defined(__alpha__) && !defined(PCIACCESS)
+#if defined(__alpha__) && !defined(XSERVER_LIBPCIACCESS)
     /* 
      * Some old Digital-OEMed Matrox Millennium I cards have a VGA
      * disable switch.  If the disable is on, we can't read the BIOS,
@@ -2509,7 +2509,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	     && pMga->chip_attribs->probe_for_sdram) {
 	    uint32_t option_reg;
 	    
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	    pci_device_cfg_read_u32(pMga->PciInfo, & option_reg,
 				    PCI_OPTION_REG);
 #else
@@ -2773,14 +2773,14 @@ static Bool
 MGAMapMem(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     struct pci_device *const dev = pMga->PciInfo;
     int err;
 #endif
 
 
     if (!pMga->FBDev) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	err = pci_device_map_region(dev, 0, TRUE);
 	if (err) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -2838,7 +2838,7 @@ MGAMapMem(ScrnInfoPtr pScrn)
 
     pMga->ILOADBase = NULL;
     if (pMga->iload_bar != -1) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	err = pci_device_map_region(dev, pMga->iload_bar, TRUE);
 	if (err) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -2870,13 +2870,13 @@ static Bool
 MGAUnmapMem(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     struct pci_device * const dev = pMga->PciInfo;
 #endif
 
     
     if (!pMga->FBDev) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_unmap_region(dev, 0);
 	pci_device_unmap_region(dev, 1);
 #else
@@ -2890,13 +2890,13 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     }
 
     if ((pMga->iload_bar != -1)
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	 && (dev->regions[pMga->iload_bar].memory != NULL)
 #else
 	 && (pMga->ILOADBase != NULL)
 #endif
 	) {
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_unmap_region(dev, pMga->iload_bar);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->ILOADBase, 0x800000);
@@ -3540,7 +3540,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     else {
 	fbdevHWSave(pScrn);
 	/* Disable VGA core, and leave memory access on */
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, 0x00000000, 
 				  PCI_OPTION_REG);
 #else

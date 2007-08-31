@@ -409,7 +409,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     CARD8  bios_data[0x20000];
     unsigned offset;
     MGAPtr pMga = MGAPTR(pScrn);
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     Bool pciBIOS = TRUE;
 #endif
     int rlen;
@@ -446,7 +446,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
      * might be controlled by the PCI config space.
      */
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     err = pci_device_read_rom(pMga->PciInfo, bios_data);
 #else
     if (pMga->BiosFrom == X_DEFAULT) {

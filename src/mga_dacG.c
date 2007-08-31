@@ -771,7 +771,7 @@ MGA_NOT_HAL(
 	   
 	   if (!MGAISGx50(pMga)) {
 	       /* restore pci_option register */
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	       pci_device_cfg_write_bits(pMga->PciInfo, optionMask, 
 					 mgaReg->Option, PCI_OPTION_REG);
 
@@ -960,7 +960,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
         mgaReg->PIXPLLCSaved = TRUE;
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option,
 				PCI_OPTION_REG);
 	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option2,
@@ -971,7 +971,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	mgaReg->Option2 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION2);
 #endif
 	if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 		    pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option3,
 					    PCI_MGA_OPTION3);
 #else

@@ -3,7 +3,7 @@
 #ifndef _MGA_MACROS_H_
 #define _MGA_MACROS_H_
 
-#ifdef PCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 #define MGA_IO_ADDRESS(p) (p)->PciInfo->regions[(p)->io_bar].base_addr
 #define VENDOR_ID(p)      (p)->vendor_id
 #define DEVICE_ID(p)      (p)->device_id

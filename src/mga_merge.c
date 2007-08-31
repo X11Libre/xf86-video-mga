@@ -272,7 +272,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	return TRUE;
     }
 
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     pMga->PciTag = pMga1->PciTag;
 #endif
     pMga->Primary = pMga1->Primary;
@@ -372,7 +372,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 
     pMga->FbAddress = pMga1->FbAddress;
     pMga->PciInfo = pMga1->PciInfo;
-#ifndef PCIACCESS
+#ifndef XSERVER_LIBPCIACCESS
     pMga->IOAddress = pMga1->IOAddress;
     pMga->ILOADAddress = pMga1->ILOADAddress;
     pMga->BiosFrom = pMga1->BiosFrom;
