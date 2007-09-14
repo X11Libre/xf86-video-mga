@@ -2775,27 +2775,27 @@ MGAMapMem(ScrnInfoPtr pScrn)
     MGAPtr pMga = MGAPTR(pScrn);
 #ifdef XSERVER_LIBPCIACCESS
     struct pci_device *const dev = pMga->PciInfo;
-    int err;
+    struct pci_mem_region *region;
+    int i, err;
 #endif
 
 
     if (!pMga->FBDev) {
 #ifdef XSERVER_LIBPCIACCESS
-	err = pci_device_map_region(dev, 0, TRUE);
-	if (err) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Unable to map BAR 0.  %s (%d)\n",
-		       strerror(err), err);
-	    return FALSE;
-	}
+        for (i = 0; i < 2; i++) {
+            region = &dev->regions[i];
+            err = pci_device_map_range(dev,
+                                       region->base_addr, region->size,
+                                       PCI_DEV_MAP_FLAG_WRITABLE,
+                                       &region->memory);
 
-	err = pci_device_map_region(dev, 1, TRUE);
-	if (err) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Unable to map BAR 1.  %s (%d)\n",
-		       strerror(err), err);
-	    return FALSE;
-	}
+            if (err) {
+                xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                           "Unable to map BAR %i.  %s (%d)\n",
+                           i, strerror(err), err);
+                return FALSE;
+            }
+        }
 
 	pMga->IOBase = dev->regions[ pMga->io_bar ].memory;
 	pMga->FbBase = dev->regions[ pMga->framebuffer_bar ].memory;
@@ -2839,7 +2839,11 @@ MGAMapMem(ScrnInfoPtr pScrn)
     pMga->ILOADBase = NULL;
     if (pMga->iload_bar != -1) {
 #ifdef XSERVER_LIBPCIACCESS
-	err = pci_device_map_region(dev, pMga->iload_bar, TRUE);
+        region = &dev->regions[pMga->iload_bar];
+        err = pci_device_map_range(dev,
+                                   region->base_addr, region->size,
+                                   PCI_DEV_MAP_FLAG_WRITABLE,
+                                   &region->memory);
 	if (err) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		       "Unable to map BAR 2 (ILOAD region).  %s (%d)\n",
@@ -2872,13 +2876,17 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     MGAPtr pMga = MGAPTR(pScrn);
 #ifdef XSERVER_LIBPCIACCESS
     struct pci_device * const dev = pMga->PciInfo;
+    struct pci_mem_region *region;
+    int i;
 #endif
 
     
     if (!pMga->FBDev) {
 #ifdef XSERVER_LIBPCIACCESS
-	pci_device_unmap_region(dev, 0);
-	pci_device_unmap_region(dev, 1);
+        for (i = 0; i < 2; i++) {
+            region = &dev->regions[i];
+            pci_device_unmap_range(dev, region->memory, region->size);
+        }
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->IOBase, 0x4000);
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->FbBase, pMga->FbMapSize);
@@ -2897,7 +2905,8 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 #endif
 	) {
 #ifdef XSERVER_LIBPCIACCESS
-	pci_device_unmap_region(dev, pMga->iload_bar);
+        region = &dev->regions[pMga->iload_bar];
+        pci_device_unmap_range(dev, region->memory, region->size);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->ILOADBase, 0x800000);
 #endif
