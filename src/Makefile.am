@@ -34,7 +34,9 @@ mga_drv_la_SOURCES = \
          mga_bios.c \
          mga_common.h \
          mga_dac3026.c \
+         mga_dac3026.h \
          mga_dacG.c \
+         mga_dacG.h \
          mga_dga.c \
          mga_driver.c \
          mga_g450pll.c \
