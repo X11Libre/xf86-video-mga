@@ -558,8 +558,8 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	xf86DrvMsg( pScreen->myNum, X_INFO,
 		    "[agp] Mode 0x%08lx [AGP 0x%04x/0x%04x; Card 0x%04x/0x%04x]\n",
 		    mode, vendor, device,
-		    pMga->PciInfo->vendor,
-		    pMga->PciInfo->chipType );
+		    VENDOR_ID(pMga->PciInfo),
+		    DEVICE_ID(pMga->PciInfo));
 
 	if ( drmAgpEnable( pMga->drmFD, mode ) < 0 ) {
 	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not enabled\n" );
@@ -706,7 +706,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	pMGADRIServer->registers.size = MGAIOMAPSIZE;
 
 	if ( drmAddMap( pMga->drmFD,
-			(drm_handle_t)pMga->IOAddress,
+			(drm_handle_t) MGA_IO_ADDRESS(pMga),
 			pMGADRIServer->registers.size,
 			DRM_REGISTERS, DRM_READ_ONLY,
 			&pMGADRIServer->registers.handle ) < 0 ) {
@@ -743,23 +743,16 @@ static Bool MGADRIKernelInit( ScreenPtr pScreen )
    drm_mga_init_t init;
    int ret;
 
+
+   if (!pMga->chip_attribs->dri_capable) {
+       return FALSE;
+   }
+
    memset( &init, 0, sizeof(drm_mga_init_t) );
 
    init.func = MGA_INIT_DMA;
    init.sarea_priv_offset = sizeof(XF86DRISAREARec);
-
-   switch ( pMga->Chipset ) {
-   case PCI_CHIP_MGAG550:
-   case PCI_CHIP_MGAG400:
-      init.chipset = MGA_CARD_TYPE_G400;
-      break;
-   case PCI_CHIP_MGAG200:
-   case PCI_CHIP_MGAG200_PCI:
-      init.chipset = MGA_CARD_TYPE_G200;
-      break;
-   default:
-      return FALSE;
-   }
+   init.chipset = pMga->chip_attribs->dri_chipset;
    init.sgram = !pMga->HasSDRAM;
 
    init.maccess = pMga->MAccess;
@@ -799,20 +792,26 @@ static Bool MGADRIKernelInit( ScreenPtr pScreen )
    return TRUE;
 }
 
+/* FIXME: This function uses the DRM to get the IRQ, but the pci_device
+ * FIXME: structure (PciInfo) already has that information.
+ */
 static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 {
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
 
-   /*   version = drmGetVersion(pMga->drmFD);
-      if ( version ) {
-         if ( version->version_major != 3 ||
-	      version->version_minor < 0 ) {*/
    if (!pMga->irq) {
-      pMga->irq = drmGetInterruptFromBusID(
-	 pMga->drmFD,
+      pMga->irq = drmGetInterruptFromBusID(pMga->drmFD,
+#ifdef XSERVER_LIBPCIACCESS
+					   ((pMga->PciInfo->domain << 8) |
+					    pMga->PciInfo->bus),
+					   pMga->PciInfo->dev,
+					   pMga->PciInfo->func
+#else
 	 ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
 	 ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
-	 ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum);
+	 ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
+#endif
+					   );
 
       if((drmCtlInstHandler(pMga->drmFD, pMga->irq)) != 0) {
 	 xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -1054,13 +1053,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    MGADRIPtr pMGADRI;
    MGADRIServerPrivatePtr pMGADRIServer;
 
-   switch(pMga->Chipset) {
-   case PCI_CHIP_MGAG550:
-   case PCI_CHIP_MGAG400:
-   case PCI_CHIP_MGAG200:
-   case PCI_CHIP_MGAG200_PCI:
-       break;
-   default:
+   if (!pMga->chip_attribs->dri_capable) {
        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[drm] Direct rendering only supported with G200/G400/G450/G550.\n");
        return FALSE;
    }
@@ -1118,9 +1111,15 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    } else {
       pDRIInfo->busIdString = xalloc(64);
       sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
+#ifdef XSERVER_LIBPCIACCESS
+	       ((pMga->PciInfo->domain << 8) | pMga->PciInfo->bus),
+	       pMga->PciInfo->dev, pMga->PciInfo->func
+#else
 	       ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
 	       ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
-	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum );
+	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
+#endif
+	       );
    }
    pDRIInfo->ddxDriverMajorVersion = PACKAGE_VERSION_MAJOR;
    pDRIInfo->ddxDriverMinorVersion = PACKAGE_VERSION_MINOR;
@@ -1358,18 +1357,7 @@ Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
 
    MGADRIIrqInit(pMga, pScreen);
 
-   switch(pMga->Chipset) {
-   case PCI_CHIP_MGAG550:
-   case PCI_CHIP_MGAG400:
-      pMGADRI->chipset = MGA_CARD_TYPE_G400;
-      break;
-   case PCI_CHIP_MGAG200:
-   case PCI_CHIP_MGAG200_PCI:
-      pMGADRI->chipset = MGA_CARD_TYPE_G200;
-      break;
-   default:
-      return FALSE;
-   }
+   pMGADRI->chipset		= pMga->chip_attribs->dri_chipset;
    pMGADRI->width		= pScrn->virtualX;
    pMGADRI->height		= pScrn->virtualY;
    pMGADRI->cpp			= pScrn->bitsPerPixel / 8;
