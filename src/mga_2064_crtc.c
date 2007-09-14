@@ -729,8 +729,13 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     for (i = 0; i < 6; i++)
         OUTREG16(0x1FDE, (state->ExtVga[i] << 8) | i);
 
+#ifdef XSERVER_LIBPCIACCESS
+    pci_device_cfg_write_bits(pMga->PciInfo, OPTION_MASK,
+                              state->Option, PCI_OPTION_REG);
+#else
     pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, OPTION_MASK,
                    state->Option);
+#endif
 
     /* select pixel clock PLL as clock source */
     outTi3026(TVP3026_CLK_SEL, 0, state->DacRegs[3]);
@@ -837,7 +842,11 @@ state_save(xf86CrtcPtr crtc, MgaCrtcStatePtr state, int vga_flags)
     for (i = 0; i < DACREGSIZE; i++)
         state->DacRegs[i] = inTi3026(MGADACregs[i]);
 
+#ifdef XSERVER_LIBPCIACCESS
+    pci_device_cfg_read_u32(pMga->PciInfo, &state->Option, PCI_OPTION_REG);
+#else
     state->Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
+#endif
 
 #ifdef DEBUG
     ErrorF("read: %02X %02X %02X	%02X %02X %02X	%08lX\n",

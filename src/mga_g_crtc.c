@@ -678,6 +678,18 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
 
     if (!MGAISGx50(pMga)) {
         /* restore pci_option register */
+#ifdef XSERVER_LIBPCIACCESS
+        pci_device_cfg_write_bits(pMga->PciInfo, optionMask,
+                                  state->Option, PCI_OPTION_REG);
+
+        if (pMga->Chipset != PCI_CHIP_MGA1064)
+            pci_device_cfg_write_bits(pMga->PciInfo, OPTION2_MASK,
+                                      state->Option2, PCI_MGA_OPTION2);
+
+        if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
+            pci_device_cfg_write_bits(pMga->PciInfo, OPTION3_MASK,
+                                      state->Option3, PCI_MGA_OPTION3);
+#else
         pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, optionMask,
                        state->Option);
 
@@ -688,6 +700,7 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
         if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
             pciSetBitsLong(pMga->PciTag, PCI_MGA_OPTION3, OPTION3_MASK,
                            state->Option3);
+#endif
     }
 
     /* restore CRTCEXT regs */
@@ -767,11 +780,23 @@ state_save(xf86CrtcPtr crtc, MgaCrtcStatePtr state, int vga_flags)
 
     state->PIXPLLCSaved = TRUE;
 
+
+#ifdef XSERVER_LIBPCIACCESS
+    pci_device_cfg_read_u32(pMga->PciInfo, &state->Option,
+                            PCI_OPTION_REG);
+    pci_device_cfg_read_u32(pMga->PciInfo, &state->Option2,
+                            PCI_MGA_OPTION2);
+
+    if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
+        pci_device_cfg_read_u32(pMga->PciInfo, &state->Option3,
+                                PCI_MGA_OPTION3);
+#else
     state->Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
     state->Option2 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION2);
 
     if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
         state->Option3 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION3);
+#endif
 
     for (i = 0; i < 6; i++) {
         OUTREG8(MGAREG_CRTCEXT_INDEX, i);
