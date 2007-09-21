@@ -124,6 +124,30 @@ static const xf86OutputFuncsRec output_panel2_funcs = {
 
 static int panel_users = 0;
 
+/* enable/disable primary output. */
+static void
+output1_dpms(xf86OutputPtr output, int mode)
+{
+    MGAPtr pMga = MGAPTR(output->scrn);
+    CARD8 misc_ctl, disp_ctl, mask;
+
+    misc_ctl = inMGAdac(MGA1064_MISC_CTL);
+    mask = MGA1064_MISC_CTL_DAC_EN;
+
+    if (mode == DPMSModeOn)
+        outMGAdac(MGA1064_MISC_CTL, misc_ctl | mask);
+    else
+        outMGAdac(MGA1064_MISC_CTL, misc_ctl & ~mask);
+
+    disp_ctl = inMGAdac(MGA1064_DISP_CTL);
+    mask = MGA1064_DISP_CTL_DAC1OUTSEL_EN;
+
+    if (mode == DPMSModeOn)
+        outMGAdac(MGA1064_DISP_CTL, disp_ctl | mask);
+    else
+        outMGAdac(MGA1064_DISP_CTL, disp_ctl & ~mask);
+}
+
 static void
 output_dac1_dpms(xf86OutputPtr output, int mode)
 {
@@ -135,7 +159,6 @@ output_dac1_dpms(xf86OutputPtr output, int mode)
      */
 
     MGAPtr pMga = MGAPTR(output->scrn);
-    CARD8 misc_ctl, disp_ctl, mask;
 
 #if 0
     CARD8 val, seq1, crtcext1;
@@ -179,27 +202,7 @@ output_dac1_dpms(xf86OutputPtr output, int mode)
     OUTREG8(MGAREG_CRTCEXT_DATA, crtcext1);
 #endif
 
-    /* enable/disable DAC.
-     *
-     * FIXME:
-     * does this affect DAC2 too?
-     */
-    misc_ctl = inMGAdac(MGA1064_MISC_CTL);
-    mask = MGA1064_MISC_CTL_DAC_EN;
-
-    if (mode == DPMSModeOn)
-        outMGAdac(MGA1064_MISC_CTL, misc_ctl | mask);
-    else
-        outMGAdac(MGA1064_MISC_CTL, misc_ctl & ~mask);
-
-    disp_ctl = inMGAdac(MGA1064_DISP_CTL);
-    mask = MGA1064_DISP_CTL_DAC1OUTSEL_EN;
-
-    if (mode == DPMSModeOn)
-        outMGAdac(MGA1064_DISP_CTL, disp_ctl | mask);
-    else
-        outMGAdac(MGA1064_DISP_CTL, disp_ctl & ~mask);
-
+    output1_dpms(output, mode);
 }
 
 static void
@@ -241,6 +244,8 @@ output_panel1_dpms(xf86OutputPtr output, int mode)
         if (!panel_users)
             outMGAdac(MGA1064_PWR_CTL, pwr_ctl & ~mask);
     }
+
+    output1_dpms(output, mode);
 }
 
 static void
