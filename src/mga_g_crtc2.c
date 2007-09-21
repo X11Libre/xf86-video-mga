@@ -59,6 +59,7 @@ typedef struct {
     CARD32 c2datactl;
 
     /* DAC registers */
+    CARD8 sync_ctl;
     CARD8 pwr_ctl;
 } MgaCrtcState, *MgaCrtcStatePtr;
 
@@ -167,10 +168,10 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state)
 static void
 state_save(xf86CrtcPtr crtc, MgaCrtcStatePtr state)
 {
-    state->clock = MGAG450SavePLLFreq(crtc->scrn, MGA_VIDEO_PLL);
+    MGAPtr pMga = MGAPTR(crtc->scrn);
 
-    // output?
-    //state->sync_ctl = inMGAdac(MGA1064_SYNC_CTL);
+    state->clock = MGAG450SavePLLFreq(crtc->scrn, MGA_VIDEO_PLL);
+    state->sync_ctl = inMGAdac(MGA1064_SYNC_CTL);
 
     // output?
     //state->pwr_ctl = inMGAdac(MGA1064_PWR_CTL);
@@ -264,6 +265,10 @@ crtc_save(xf86CrtcPtr crtc)
 static void
 crtc_restore(xf86CrtcPtr crtc)
 {
+    MgaCrtcDataPtr data = MGACRTCDATAPTR(crtc);
+    MGAPtr pMga = MGAPTR(crtc->scrn);
+
+    outMGAdac(MGA1064_SYNC_CTL, data->saved_state.sync_ctl);
 }
 
 static Bool
@@ -299,12 +304,21 @@ static void
 crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
               DisplayModePtr adjusted_mode, int x, int y)
 {
+    MGAPtr pMga = MGAPTR(crtc->scrn);
     MgaCrtcState state;
 
     memset (&state, 0, sizeof (state));
 
     state_set(crtc, &state, mode, x, y);
     state_restore(crtc, &state);
+
+    /* FIXME:
+     * Don't use magic numbers here. The bits in SYNC_CTL were
+     * documented in mga_dh.c.
+     *
+     * Also I'm not sure whether this is the best place to set SYNC_CTL.
+     */
+    outMGAdac(MGA1064_SYNC_CTL, 0xcc);
 }
 
 static void
