@@ -48,6 +48,7 @@ static void output_panel1_dpms(xf86OutputPtr output, int mode);
 static void output_panel2_dpms(xf86OutputPtr output, int mode);
 static void output_save(xf86OutputPtr output);
 static void output_restore(xf86OutputPtr output);
+static void output_dac2_restore(xf86OutputPtr output);
 static void output_panel_restore(xf86OutputPtr output);
 static int output_mode_valid(xf86OutputPtr output, DisplayModePtr mode);
 static Bool output_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
@@ -83,7 +84,7 @@ static const xf86OutputFuncsRec output_dac1_funcs = {
 static const xf86OutputFuncsRec output_dac2_funcs = {
     .dpms = output_dac2_dpms,
     .save = output_save,
-    .restore = output_restore,
+    .restore = output_dac2_restore,
     .mode_valid = output_mode_valid,
     .mode_fixup = output_mode_fixup,
     .prepare = output_prepare,
@@ -280,6 +281,19 @@ output_save(xf86OutputPtr output)
 static void
 output_restore(xf86OutputPtr output)
 {
+}
+
+static void
+output_dac2_restore(xf86OutputPtr output)
+{
+    MGAPtr pMga = MGAPTR(output->scrn);
+    CARD8 disp_ctl;
+
+    disp_ctl = inMGAdac(MGA1064_DISP_CTL);
+    disp_ctl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
+    disp_ctl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
+
+    outMGAdac(MGA1064_DISP_CTL, disp_ctl);
 }
 
 static void

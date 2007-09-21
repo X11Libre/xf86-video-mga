@@ -264,43 +264,6 @@ crtc_save(xf86CrtcPtr crtc)
 static void
 crtc_restore(xf86CrtcPtr crtc)
 {
-#if 0
-    MGAPtr pMga = MGAPTR(crtc->scrn);
-
-    /* since we cannot save the state in crtc_save(), we just
-     * return to clone mode here.
-     */
-
-    if (pMga->SecondOutput
-            && (xf86IsEntityShared(crtc->scrn->entityList[0]) || pMga->SecondCrtc)
-            && !pMga->MergedFB) {
-        /* Do this branch if
-         * SecondOutput
-         * and not Unshared Primary
-         * and not Merged Mode (usualy means Unshared Primary)
-         */
-        CARD8 disp_ctl = inMGAdac(MGA1064_DISP_CTL);
-
-        disp_ctl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
-        disp_ctl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
-
-        outMGAdac(MGA1064_DISP_CTL, disp_ctl);
-    } else {
-        CARD8 disp_ctl = inMGAdac(MGA1064_DISP_CTL);
-        CARD32 c2ctl = INREG(MGAREG_C2CTL);
-
-        disp_ctl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
-        disp_ctl |= MGA1064_DISP_CTL_DAC1OUTSEL_EN;
-        disp_ctl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
-
-        /* crtcdacsel -> crtc1 */
-        c2ctl &= ~MGAREG_C2CTL_CRTCDACSEL_CRTC2;
-        c2ctl |= MGAREG_C2CTL_CRTCDACSEL_CRTC1;
-
-        outMGAdac(MGA1064_DISP_CTL, disp_ctl);
-        OUTREG(MGAREG_C2CTL, c2ctl);
-    }
-#endif
 }
 
 static Bool
