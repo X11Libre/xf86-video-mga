@@ -327,6 +327,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     MGAPtr pMga = MGAPTR(crtc->scrn);
     MGAFBLayout *pLayout = &pMga->CurrentLayout;
     vgaRegPtr vga = &VGAHWPTR(crtc->scrn)->ModeReg;
+    unsigned int startadd = (y * crtc->scrn->virtualX) + x;
 
     BppShift = pMga->BppShifts[(pLayout->bitsPerPixel >> 3) - 1];
 
@@ -469,6 +470,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     switch (pLayout->bitsPerPixel) {
     case 8:
         state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_8bits;
+        startadd /= 8;
         break;
     case 16:
         state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_16bits;
@@ -478,9 +480,11 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
             state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_15bits;
         }
 
+        startadd /= 4;
         break;
     case 24:
         state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_24bits;
+        startadd /= 8;
         break;
     case 32:
         if (pLayout->Overlay8Plus24) {
@@ -490,10 +494,14 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
         } else
             state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_32_24bits;
 
+        startadd /= 2;
         break;
     default:
         FatalError("MGA: unsupported depth\n");
     }
+
+    /* we only have 20 bits to store the start address */
+    startadd &= 0xfffff;
 
     /*
      * This will initialize all of the generic VGA registers.
@@ -537,6 +545,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     }
 
     state->ExtVga[0] |= (wd & 0x300) >> 4;
+    state->ExtVga[0] |= (startadd >> 16) & 0x0f;
 
     state->ExtVga[1] = (((ht - 4) & 0x100) >> 8) |
                        ((hd & 0x100) >> 7) |
@@ -572,6 +581,9 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
                    ((vs & 0x200) >> 2 );
     vga->CRTC[9] = ((vd & 0x200) >> 4) |
                    ((vd & 0x200) >> 3); /* linecomp */
+
+    vga->CRTC[12] = (startadd & 0xff00) >> 8;
+    vga->CRTC[13] = startadd & 0xff;
 
     vga->CRTC[16] = vs & 0xFF;
     vga->CRTC[17] = (ve & 0x0F) | 0x20;
