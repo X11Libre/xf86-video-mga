@@ -725,7 +725,7 @@ mgaDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h,
 {
     PMGA(pSrc);
 
-    char *src = pSrc->devPrivate.ptr;
+    CARD8 *src = pMga->FbStart + exaGetPixmapOffset(pSrc);
     int src_pitch = exaGetPixmapPitch(pSrc);
 
     int cpp = (pSrc->drawable.bitsPerPixel + 7) / 8;
@@ -734,6 +734,7 @@ mgaDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h,
     src += y * src_pitch + x * cpp;
 
     QUIESCE_DMA(pSrc);
+    exaWaitSync(pSrc->drawable.pScreen);
 
     while (h--) {
 	memcpy (dst, src, bytes);
