@@ -873,6 +873,11 @@ mgaExaInit(ScreenPtr pScreen)
     pExa->maxX = 2048;
     pExa->maxY = 2048;
 
+#if EXA_VERSION_MAJOR > 2 || \
+    (EXA_VERSION_MAJOR == 2 && EXA_VERSION_MINOR > 2)
+    pExa->maxPitchPixels = 4096;
+#endif
+
     pExa->WaitMarker = mgaWaitMarker;
     pExa->PrepareSolid = mgaPrepareSolid;
     pExa->Solid = mgaSolid;
