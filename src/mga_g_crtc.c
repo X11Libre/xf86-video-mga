@@ -725,9 +725,10 @@ state_restore(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
         if (vga_flags & VGA_SR_FONTS)
             MGAG200SERestoreFonts(scrn, vga);
     } else
-        vgaHWRestore(scrn, vga, vga_flags);
+        vgaHWRestore(scrn, vga, vga_flags & ~VGA_SR_CMAP);
 
-    MGAGRestorePalette(scrn, vga->DAC);
+    if (vga_flags & VGA_SR_CMAP)
+        MGAGRestorePalette(scrn, vga->DAC);
 
     /*
      * this is needed to properly restore start address
@@ -853,7 +854,7 @@ crtc_restore(xf86CrtcPtr crtc)
     MgaCrtcDataPtr data = MGACRTCDATAPTR(crtc);
     MGAPtr pMga = MGAPTR(crtc->scrn);
     vgaHWPtr vga = VGAHWPTR(crtc->scrn);
-    int vga_flags = VGA_SR_MODE;
+    int vga_flags = VGA_SR_MODE | VGA_SR_CMAP;
 
     if (pMga->Primary)
         vga_flags |= VGA_SR_FONTS;
