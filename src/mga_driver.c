@@ -2822,11 +2822,6 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pMga->BlockHandler = pScreen->BlockHandler;
     pScreen->BlockHandler = MGABlockHandler;
 
-#if 0
-    if(!pMga->ShadowFB) /* hardware cursor needs to wrap this layer */
-	MGADGAInit(pScreen);
-#endif
-
     if (!pMga->NoAccel) {
 #ifdef USE_EXA
 	if (pMga->Exa)
@@ -3112,8 +3107,6 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
     	xf86DestroyCursorInfoRec(pMga->CursorInfoRec);
     if (pMga->ShadowPtr)
 	xfree(pMga->ShadowPtr);
-    if (pMga->DGAModes)
-	xfree(pMga->DGAModes);
     if (pMga->adaptor)
 	xfree(pMga->adaptor);
     if (pMga->portPrivate)

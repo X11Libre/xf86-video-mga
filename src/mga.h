@@ -463,10 +463,6 @@ typedef struct {
     int			StyleLen;
     XAAInfoRecPtr	AccelInfoRec;
     xf86CursorInfoPtr	CursorInfoRec;
-    DGAModePtr		DGAModes;
-    int			numDGAModes;
-    Bool		DGAactive;
-    int			DGAViewportStatus;
     CARD32		*Atype;
     CARD32		*AtypeNoBLK;
     void		(*PreInit)(ScrnInfoPtr pScrn);
@@ -610,8 +606,6 @@ Bool MGAHWCursorInit(ScreenPtr pScreen);
 
 
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
-
-Bool MGADGAInit(ScreenPtr pScreen);
 
 void MGARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 void MGARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
