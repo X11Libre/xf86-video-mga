@@ -601,7 +601,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     BoxRec AvailFBArea;
     int i;
 
-    pMga->ScratchBuffer = xalloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
+    pMga->ScratchBuffer = xalloc(((pScrn->displayWidth * pScrn->bitsPerPixel) + 127) >> 3);
     if(!pMga->ScratchBuffer) return FALSE;
 
     pMga->AccelInfoRec = infoPtr = XAACreateInfoRec();
@@ -622,7 +622,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 	pMga->AccelFlags |= LARGE_ADDRESSES;
     }
 
-    if (pMga->CurrentLayout.bitsPerPixel == 24) {
+    if (pScrn->bitsPerPixel == 24) {
 	pMga->AccelFlags |= MGA_NO_PLANEMASK;
     }
 
@@ -728,13 +728,13 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 	infoPtr->SubsequentScreenToScreenColorExpandFill =
 		mgaSubsequentScreenToScreenColorExpandFill;
     } 
-    else if ( pMga->CurrentLayout.bitsPerPixel != 24 ) {
+    else if (pScrn->bitsPerPixel != 24 ) {
 	/* Alternate (but slower) planar expansions */
 	infoPtr->SetupForScreenToScreenColorExpandFill =
 	  mgaSetupForPlanarScreenToScreenColorExpandFill;
 	infoPtr->SubsequentScreenToScreenColorExpandFill =
 	  mgaSubsequentPlanarScreenToScreenColorExpandFill;
-	infoPtr->CacheColorExpandDensity = pMga->CurrentLayout.bitsPerPixel;
+	infoPtr->CacheColorExpandDensity = pScrn->bitsPerPixel;
 	infoPtr->CacheMonoStipple = XAAGetCachePlanarMonoStipple();
 
 	/* It's faster to blit the stipples if you have fastbilt 
@@ -800,18 +800,18 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     maxFastBlitMem = (pMga->Interleave ? 4096 : 2048) * 1024;
 
     if(pMga->FbMapSize > maxFastBlitMem) {
-	pMga->MaxFastBlitY = maxFastBlitMem / (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+	pMga->MaxFastBlitY = maxFastBlitMem / (pScrn->displayWidth * pScrn->bitsPerPixel / 8);
     }
 
     switch (pMga->Chipset) {
     case PCI_CHIP_MGAG200_SE_A_PCI:
     case PCI_CHIP_MGAG200_SE_B_PCI:
 	maxlines = (min(pMga->FbUsableSize, 1*1024*1024)) /
-		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+		   (pScrn->displayWidth * pScrn->bitsPerPixel / 8);
 	break;
     default:
 	maxlines = (min(pMga->FbUsableSize, 16*1024*1024)) /
-		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+		   (pScrn->displayWidth * pScrn->bitsPerPixel / 8);
 	break;
     }
 
@@ -977,7 +977,6 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 static void mgaRestoreAccelState(ScrnInfoPtr pScrn)
 {
    MGAPtr pMga = MGAPTR(pScrn);
-   MGAFBLayout *pLayout = &pMga->CurrentLayout;
     unsigned int replicate_fg = 0;
     unsigned int replicate_bg = 0;
     unsigned int replicate_pm = 0;
@@ -986,16 +985,16 @@ static void mgaRestoreAccelState(ScrnInfoPtr pScrn)
    WAITFIFO(12);
    pMga->SrcOrg = 0;
    OUTREG(MGAREG_MACCESS, pMga->MAccess);
-   OUTREG(MGAREG_PITCH, pLayout->displayWidth);
+   OUTREG(MGAREG_PITCH, pScrn->displayWidth);
    OUTREG(MGAREG_YDSTORG, pMga->YDstOrg);
 
 
     common_replicate_colors_and_mask( pMga->FgColor, pMga->BgColor,
-				      pMga->PlaneMask, pLayout->bitsPerPixel,
+				      pMga->PlaneMask, pScrn->bitsPerPixel,
 				      & replicate_fg, & replicate_bg,
 				      & replicate_pm );
 
-    if( (pLayout->bitsPerPixel != 24)
+    if ((pScrn->bitsPerPixel != 24)
 	&& ((pMga->AccelFlags & MGA_NO_PLANEMASK) == 0) ) {
 	OUTREG( MGAREG_PLNWT, replicate_pm );
     }
@@ -1072,7 +1071,6 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
 {
     long maccess = 0;
     MGAPtr pMga = MGAPTR(pScrn);
-    MGAFBLayout *pLayout = &pMga->CurrentLayout;
     CARD32 opmode;
     static const unsigned int maccess_table[5] = {
    /* bpp:  8  16  24  32 */
@@ -1091,12 +1089,12 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
 
     opmode = INREG(MGAREG_OPMODE);
 
-    maccess |= maccess_table[ pLayout->bitsPerPixel / 8 ];
-    if ( pLayout->depth == 15 ) {
+    maccess |= maccess_table[pScrn->bitsPerPixel / 8];
+    if (pScrn->depth == 15) {
         maccess |= (1 << 31);
     }
 
-    opmode |= opmode_table[ pLayout->bitsPerPixel / 8 ];
+    opmode |= opmode_table[pScrn->bitsPerPixel / 8];
 #if X_BYTE_ORDER == X_LITTLE_ENDIAN
     opmode &= ~0x30000;
 #endif
@@ -1116,7 +1114,7 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
 						pMga->FifoSize);
     }
 
-    OUTREG(MGAREG_PITCH, pLayout->displayWidth);
+    OUTREG(MGAREG_PITCH, pScrn->displayWidth);
     OUTREG(MGAREG_YDSTORG, pMga->YDstOrg);
     OUTREG(MGAREG_MACCESS, maccess);
     pMga->MAccess = maccess;
@@ -1190,25 +1188,25 @@ MGADisableClipping(ScrnInfoPtr pScrn)
 
 
 static CARD32
-common_setup_for_pattern_fill( MGAPtr pMga, int fg, int bg, int rop,
+common_setup_for_pattern_fill(ScrnInfoPtr pScrn, int fg, int bg, int rop,
 			       int planemask,
 			       CARD32 * reg_data, unsigned int count,
 			       CARD32 cmd )
 {
+    MGAPtr pMga = MGAPTR(pScrn);
     unsigned int replicate_fg = 0;
     unsigned int replicate_bg = 0;
     unsigned int replicate_pm = 0;
     unsigned int i;
 
-
     common_replicate_colors_and_mask( fg, bg, planemask,
-				      pMga->CurrentLayout.bitsPerPixel,
+				      pScrn->bitsPerPixel,
 				      & replicate_fg, & replicate_bg,
 				      & replicate_pm );
 
 
     if( bg == -1 ) {
-    	if ( (pMga->CurrentLayout.bitsPerPixel == 24) && !RGBEQUAL(fg) ) {
+    	if ((pScrn->bitsPerPixel == 24) && !RGBEQUAL(fg) ) {
             cmd |= MGADWG_TRANSC | pMga->AtypeNoBLK[rop];
 	}
 	else {
@@ -1225,7 +1223,7 @@ common_setup_for_pattern_fill( MGAPtr pMga, int fg, int bg, int rop,
 	 */
 
 	if( ((pMga->AccelFlags & BLK_OPAQUE_EXPANSION) != 0)
-	    && ((pMga->CurrentLayout.bitsPerPixel != 24)
+	    && ((pScrn->bitsPerPixel != 24)
 		|| (RGBEQUAL(fg) && RGBEQUAL(bg))) ) {
 	    cmd |= pMga->Atype[rop];
 	}
@@ -1239,7 +1237,7 @@ common_setup_for_pattern_fill( MGAPtr pMga, int fg, int bg, int rop,
 
     SET_FOREGROUND_REPLICATED( fg, replicate_fg );
     SET_PLANEMASK_REPLICATED( planemask, replicate_pm,
-			      pMga->CurrentLayout.bitsPerPixel );
+			      pScrn->bitsPerPixel );
 
     /* FIXME: Is this the right order? */
 
@@ -1304,7 +1302,7 @@ void mgaDoSetupForScreenToScreenCopy( ScrnInfoPtr pScrn, int xdir, int ydir,
     OUTREG(MGAREG_SGN, pMga->BltScanDirection);
 
     SET_PLANEMASK_REPLICATED( planemask, replicated_mask, bpp );
-    OUTREG(MGAREG_AR5, ydir * pMga->CurrentLayout.displayWidth);
+    OUTREG(MGAREG_AR5, ydir * pScrn->displayWidth);
 }
 
 
@@ -1312,10 +1310,8 @@ void mgaSetupForScreenToScreenCopy( ScrnInfoPtr pScrn, int xdir, int ydir,
 				    int rop, unsigned int planemask,
 				    int trans )
 {
-    MGAPtr pMga = MGAPTR(pScrn);
-
     mgaDoSetupForScreenToScreenCopy( pScrn, xdir, ydir, rop, planemask, trans,
-				     pMga->CurrentLayout.bitsPerPixel );
+				     pScrn->bitsPerPixel );
 }
 
 
@@ -1328,7 +1324,7 @@ void mgaSubsequentScreenToScreenCopy( ScrnInfoPtr pScrn,
 
     if (pMga->AccelFlags & LARGE_ADDRESSES) {
 	const unsigned int display_bit_width =
-	  (pMga->CurrentLayout.displayWidth * pMga->CurrentLayout.bitsPerPixel);
+	  (pScrn->displayWidth * pScrn->bitsPerPixel);
 
 	SrcOrg = ((srcY & ~1023) * display_bit_width) >> 9;
 	DstOrg = ((dstY & ~1023) * display_bit_width) >> 9;
@@ -1355,7 +1351,7 @@ void mgaSubsequentScreenToScreenCopy( ScrnInfoPtr pScrn,
 	    OUTREG(MGAREG_SRCORG, (SrcOrg << 6) + pMga->realSrcOrg);
  	}
 	if(SrcOrg) {
-	    SrcOrg = (SrcOrg << 9) / pMga->CurrentLayout.bitsPerPixel;
+	    SrcOrg = (SrcOrg << 9) / pScrn->bitsPerPixel;
 	    end -= SrcOrg;
 	    start -= SrcOrg;
 	}
@@ -1397,7 +1393,7 @@ void mgaSubsequentScreenToScreenCopy_FastBlit( ScrnInfoPtr pScrn,
 
     /* we assume the driver asserts screen pitches such that
 	we can always use fastblit for scrolling */
-    if(((srcX ^ dstX) & masks[ pMga->CurrentLayout.bitsPerPixel / 8 ]) == 0) {
+    if(((srcX ^ dstX) & masks[pScrn->bitsPerPixel / 8]) == 0) {
 	if(pMga->MaxFastBlitY) {
 	   if(pMga->BltScanDirection & BLIT_UP) {
 		if((srcY >= pMga->MaxFastBlitY) ||
@@ -1418,9 +1414,9 @@ void mgaSubsequentScreenToScreenCopy_FastBlit( ScrnInfoPtr pScrn,
 	    static const unsigned shift_tab[5] = {
 		0, 6, 5, 6, 4
 	    };
-	    const unsigned shift = shift_tab[pMga->CurrentLayout.bitsPerPixel / 8];
+	    const unsigned shift = shift_tab[pScrn->bitsPerPixel / 8];
 	    
-	   if (pMga->CurrentLayout.bitsPerPixel == 24) {
+	   if (pScrn->bitsPerPixel == 24) {
 	       tmp_dstX *= 3;
 	       tmp_fxright = fxright * 3 + 2;
 	   }
@@ -1428,7 +1424,7 @@ void mgaSubsequentScreenToScreenCopy_FastBlit( ScrnInfoPtr pScrn,
            if( (tmp_dstX & (1 << shift)) 
 	       && (((tmp_fxright >> shift) - (tmp_dstX >> shift)) & 7) == 7) {
 	       fxright = (tmp_fxright | (1 << shift));
-	       if (pMga->CurrentLayout.bitsPerPixel == 24) {
+	       if (pScrn->bitsPerPixel == 24) {
 		   fxright /= 3;
 	       }
 
@@ -1520,10 +1516,8 @@ void mgaDoSetupForSolidFill( ScrnInfoPtr pScrn, int color, int rop,
 void mgaSetupForSolidFill( ScrnInfoPtr pScrn, int color, int rop,
 			   unsigned int planemask )
 {
-    MGAPtr pMga = MGAPTR(pScrn);
-
     mgaDoSetupForSolidFill( pScrn, color, rop, planemask, 
-			    pMga->CurrentLayout.bitsPerPixel );
+			    pScrn->bitsPerPixel);
 }
 
 void mgaSubsequentSolidFillRect( ScrnInfoPtr pScrn, 
@@ -1626,7 +1620,7 @@ void mgaSetupForMono8x8PatternFill( ScrnInfoPtr pScrn,
     regs[2] = MGAREG_PAT1;
     regs[3] = paty;
 
-    pMga->PatternRectCMD = common_setup_for_pattern_fill( pMga, fg, bg, rop,
+    pMga->PatternRectCMD = common_setup_for_pattern_fill(pScrn, fg, bg, rop,
 							  planemask, regs, 2,
 							  (MGADWG_TRAP
 							   | MGADWG_ARZERO
@@ -1706,7 +1700,7 @@ void mgaSetupForScanlineCPUToScreenColorExpandFill( ScrnInfoPtr pScrn,
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    (void) common_setup_for_pattern_fill( pMga, fg, bg, rop,
+    (void) common_setup_for_pattern_fill( pScrn, fg, bg, rop,
 					  planemask, NULL, 0,
 					  MGADWG_ILOAD | MGADWG_LINEAR 
 					  | MGADWG_SGNZERO | MGADWG_SHIFTZERO
@@ -1832,7 +1826,7 @@ void mgaSetupForScanlineImageWrite( ScrnInfoPtr pScrn, int rop,
     MGAPtr pMga = MGAPTR(pScrn);
     unsigned int replicate_pm = 0;
 
-    switch( pMga->CurrentLayout.bitsPerPixel ) {
+    switch (pScrn->bitsPerPixel) {
     case 8:
 	replicate_pm = REPLICATE_8( planemask );
 	break;
@@ -1852,7 +1846,7 @@ void mgaSetupForScanlineImageWrite( ScrnInfoPtr pScrn, int rop,
     WAITFIFO(3);
     OUTREG(MGAREG_AR5, 0);
     SET_PLANEMASK_REPLICATED( planemask, replicate_pm,
-			      pMga->CurrentLayout.bitsPerPixel );
+			      pScrn->bitsPerPixel );
     OUTREG(MGAREG_DWGCTL, MGADWG_ILOAD | MGADWG_BFCOL | MGADWG_SHIFTZERO |
 			MGADWG_SGNZERO | pMga->AtypeNoBLK[rop]);
 }
@@ -1866,7 +1860,7 @@ void mgaSubsequentScanlineImageWriteRect( ScrnInfoPtr pScrn,
 
     pMga->AccelFlags |= CLIPPER_ON;
     pMga->expandRows = h;
-    pMga->expandDWORDs = ((w * pMga->CurrentLayout.bitsPerPixel) + 31) >> 5;
+    pMga->expandDWORDs = ((w * pScrn->bitsPerPixel) + 31) >> 5;
 
     WAITFIFO(5);
     OUTREG(MGAREG_CXBNDRY, 0xFFFF0000 | ((x + skipleft) & 0xFFFF));
@@ -1920,7 +1914,7 @@ void mgaSetupForDashedLine( ScrnInfoPtr pScrn,
 
 
     common_replicate_colors_and_mask( fg, bg, planemask,
-				      pMga->CurrentLayout.bitsPerPixel,
+				      pScrn->bitsPerPixel,
 				      & replicate_fg, & replicate_bg,
 				      & replicate_pm );
 
@@ -1938,7 +1932,7 @@ void mgaSetupForDashedLine( ScrnInfoPtr pScrn,
     }
 
     SET_PLANEMASK_REPLICATED( planemask, replicate_pm,
-			      pMga->CurrentLayout.bitsPerPixel );
+			      pScrn->bitsPerPixel );
     SET_FOREGROUND_REPLICATED( fg, replicate_fg );
 
 
@@ -1958,7 +1952,7 @@ void mgaSetupForDashedLine( ScrnInfoPtr pScrn,
 	pMga->AccelFlags |= NICE_DASH_PATTERN;
 
 	if( bg == -1 ) {
-	    if ( (pMga->CurrentLayout.bitsPerPixel == 24) && !RGBEQUAL(fg) ) {
+	    if ((pScrn->bitsPerPixel == 24) && !RGBEQUAL(fg)) {
 		pMga->NiceDashCMD |= MGADWG_TRANSC | pMga->AtypeNoBLK[rop];
 	    }
 	    else {
@@ -1973,7 +1967,7 @@ void mgaSetupForDashedLine( ScrnInfoPtr pScrn,
 	     */
 
 	    if( ((pMga->AccelFlags & BLK_OPAQUE_EXPANSION) != 0)
-		&& ((pMga->CurrentLayout.bitsPerPixel != 24)
+		&& ((pScrn->bitsPerPixel != 24)
 		    || (RGBEQUAL(fg) && RGBEQUAL(bg))) ) {
 		pMga->NiceDashCMD |= pMga->Atype[rop];
 	    }
@@ -2050,7 +2044,7 @@ void mgaSetupForPlanarScreenToScreenColorExpandFill( ScrnInfoPtr pScrn,
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    (void) common_setup_for_pattern_fill( pMga, fg, bg, 0, planemask, regs, 1,
+    (void) common_setup_for_pattern_fill( pScrn, fg, bg, 0, planemask, regs, 1,
 					  mgaCMD );
 }
 
@@ -2088,11 +2082,11 @@ void mgaSetupForScreenToScreenColorExpandFill( ScrnInfoPtr pScrn,
     CARD32 regs[2];
    
     regs[0] = MGAREG_AR5;
-    regs[1] = pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel;
+    regs[1] = pScrn->displayWidth * pScrn->bitsPerPixel;
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    (void) common_setup_for_pattern_fill( pMga, fg, bg, rop, planemask,
+    (void) common_setup_for_pattern_fill( pScrn, fg, bg, rop, planemask,
 					  regs, 1,
 					  MGADWG_BITBLT | MGADWG_SGNZERO 
 					  | MGADWG_SHIFTZERO );
@@ -2106,7 +2100,7 @@ void mgaSubsequentScreenToScreenColorExpandFill( ScrnInfoPtr pScrn,
 {
     MGAPtr pMga = MGAPTR(pScrn);
     const unsigned int display_bit_width =
-      (pMga->CurrentLayout.displayWidth * pMga->CurrentLayout.bitsPerPixel);
+      (pScrn->displayWidth * pScrn->bitsPerPixel);
     int start, end, next, num;
     Bool resetDstOrg = FALSE;
 
@@ -2129,7 +2123,7 @@ void mgaSubsequentScreenToScreenColorExpandFill( ScrnInfoPtr pScrn,
     }
 
     w--;
-    start = (XYADDRESS(srcx, srcy) * pMga->CurrentLayout.bitsPerPixel)
+    start = (XYADDRESS(srcx, srcy) * pScrn->bitsPerPixel)
       + skipleft;
     end = start + w + (display_bit_width * (h - 1));
 

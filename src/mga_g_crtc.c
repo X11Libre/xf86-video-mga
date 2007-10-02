@@ -325,11 +325,10 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     int hd, hs, he, ht, vd, vs, ve, vt, wd;
     int BppShift;
     MGAPtr pMga = MGAPTR(crtc->scrn);
-    MGAFBLayout *pLayout = &pMga->CurrentLayout;
     vgaRegPtr vga = &VGAHWPTR(crtc->scrn)->ModeReg;
     unsigned int startadd = (y * crtc->scrn->virtualX) + x;
 
-    BppShift = pMga->BppShifts[(pLayout->bitsPerPixel >> 3) - 1];
+    BppShift = pMga->BppShifts[(crtc->scrn->bitsPerPixel >> 3) - 1];
 
     for (i = 0; i < sizeof(state->DacRegs); i++)
         state->DacRegs[i] = initDAC[i];
@@ -467,7 +466,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
        polling to keep them from occuring */
     state->Option &= ~0x20000000;
 
-    switch (pLayout->bitsPerPixel) {
+    switch (crtc->scrn->bitsPerPixel) {
     case 8:
         state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_8bits;
         startadd /= 8;
@@ -475,8 +474,8 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     case 16:
         state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_16bits;
 
-        if ((pLayout->weight.red == 5) && (pLayout->weight.green == 5)
-            && (pLayout->weight.blue == 5)) {
+        if ((crtc->scrn->weight.red == 5) && (crtc->scrn->weight.green == 5)
+            && (crtc->scrn->weight.blue == 5)) {
             state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_15bits;
         }
 
@@ -487,7 +486,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
         startadd /= 8;
         break;
     case 32:
-        if (pLayout->Overlay8Plus24) {
+        if (pMga->Overlay8Plus24) {
             state->DacRegs[MGA1064_MUL_CTL] = MGA1064_MUL_CTL_32bits;
             state->DacRegs[MGA1064_COL_KEY_MSK_LSB] = 0xFF;
             state->DacRegs[MGA1064_COL_KEY_LSB] = pMga->colorKey;
@@ -529,10 +528,10 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
     if ((ht & 0x07) == 0x06 || (ht & 0x07) == 0x04)
         ht++;
 
-    if (pLayout->bitsPerPixel == 24)
-        wd = (pLayout->displayWidth * 3) >> (4 - BppShift);
+    if (crtc->scrn->bitsPerPixel == 24)
+        wd = (crtc->scrn->displayWidth * 3) >> (4 - BppShift);
     else
-        wd = pLayout->displayWidth >> (4 - BppShift);
+        wd = crtc->scrn->displayWidth >> (4 - BppShift);
 
     state->ExtVga[0] = 0;
     state->ExtVga[5] = 0;
@@ -557,7 +556,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state,
                        ((vs & 0xc00) >> 5) |
                        ((vd & 0x400) >> 3); /* linecomp */
 
-    if (pLayout->bitsPerPixel == 24)
+    if (crtc->scrn->bitsPerPixel == 24)
         state->ExtVga[3] = (((1 << BppShift) * 3) - 1) | 0x80;
     else
         state->ExtVga[3] = ((1 << BppShift) - 1) | 0x80;

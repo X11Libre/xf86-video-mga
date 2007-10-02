@@ -359,8 +359,6 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
    pMga->haveQuiescense = 1;
 
    if ( pMga->directRenderingEnabled ) {
-      MGAFBLayout *pLayout = &pMga->CurrentLayout;
-
       MGAWaitForIdleDMA( pScrn );
 
         /* FIXME what about EXA? */
@@ -368,7 +366,7 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
         if (!pMga->Exa && pMga->AccelInfoRec) {
       WAITFIFO( 11 );
       OUTREG( MGAREG_MACCESS, pMga->MAccess );
-      OUTREG( MGAREG_PITCH, pLayout->displayWidth );
+      OUTREG(MGAREG_PITCH, pScrn->displayWidth);
 
       pMga->PlaneMask = ~0;
       OUTREG( MGAREG_PLNWT, pMga->PlaneMask );

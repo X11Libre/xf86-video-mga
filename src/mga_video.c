@@ -597,7 +597,7 @@ MGAAllocateMemory(
 #endif /* USE_EXA */
 #ifdef USE_XAA
    FBLinearPtr linear = *mem_struct;
-   int cpp = pMga->CurrentLayout.bitsPerPixel / 8;
+   int cpp = pScrn->bitsPerPixel / 8;
 
    /* XAA allocates in units of pixels at the screen bpp, so adjust size
     * appropriately.

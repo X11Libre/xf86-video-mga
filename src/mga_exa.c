@@ -781,7 +781,7 @@ init_dri(ScrnInfoPtr pScrn)
     }
 
     maxlines = (min(pMga->FbUsableSize, mb * 1024 * 1024)) /
-               (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
+               (pScrn->displayWidth * pScrn->bitsPerPixel / 8);
 
     dri->frontOffset = 0;
     dri->frontPitch = widthBytes;

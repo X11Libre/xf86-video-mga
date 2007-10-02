@@ -76,7 +76,7 @@ void MGAGLoadPalette(
 ){
     MGAPtr pMga = MGAPTR(pScrn);
 
-    if((pMga->CurrentLayout.Overlay8Plus24) && (pVisual->nplanes != 8)) 
+    if((pMga->Overlay8Plus24) && (pVisual->nplanes != 8)) 
 	return;
 
      if(pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550){ 

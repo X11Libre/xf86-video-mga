@@ -400,7 +400,7 @@ state_set_pclk(ScrnInfoPtr scrn, MgaCrtcStatePtr state, long f_out, int bpp)
 	 * First we figure out lm, ln, and z.
 	 * Things are different in packed pixel mode (24bpp) though.
 	 */
-	 if ( pMga->CurrentLayout.bitsPerPixel == 24 ) {
+	 if (scrn->bitsPerPixel == 24) {
 
 		/* ln:lm = ln:3 */
 		lm = 65 - 3;
@@ -450,7 +450,7 @@ state_set_pclk(ScrnInfoPtr scrn, MgaCrtcStatePtr state, long f_out, int bpp)
 	}
 
         /* Values for the loop clock PLL registers */
-        if ( pMga->CurrentLayout.bitsPerPixel == 24 ) {
+        if (scrn->bitsPerPixel == 24 ) {
             /* Packed pixel mode values */
             state->DacClk[ 3 ] = ( ln & 0x3f ) | 0x80;
             state->DacClk[ 4 ] = ( lm & 0x3f ) | 0x80;
@@ -478,12 +478,11 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state, DisplayModePtr mode)
     const unsigned char* initDAC;
     MGAPtr pMga = MGAPTR(scrn);
     MGARamdacPtr MGAdac = &pMga->Dac;
-    MGAFBLayout *layout = &pMga->CurrentLayout;
     vgaRegPtr pVga = &VGAHWPTR(scrn)->ModeReg;
 
-    BppShift = pMga->BppShifts[(layout->bitsPerPixel >> 3) - 1];
+    BppShift = pMga->BppShifts[(scrn->bitsPerPixel >> 3) - 1];
 
-    switch (layout->bitsPerPixel) {
+    switch (scrn->bitsPerPixel) {
     case 8:
         initDAC = MGADACbpp8;
         break;
@@ -494,7 +493,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state, DisplayModePtr mode)
         initDAC = MGADACbpp24;
         break;
     case 32:
-        if(layout->Overlay8Plus24)
+        if (pMga->Overlay8Plus24)
             initDAC = MGADACbpp8plus24;
         else
             initDAC = MGADACbpp32;
@@ -511,19 +510,19 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state, DisplayModePtr mode)
             index_1d = i;
     }
 
-    if ((layout->bitsPerPixel == 32) && layout->Overlay8Plus24) {
+    if ((scrn->bitsPerPixel == 32) && pMga->Overlay8Plus24) {
         state->DacRegs[9] = pMga->colorKey;
         state->DacRegs[10] = pMga->colorKey;
     }
 
-    if ((layout->bitsPerPixel == 16) && (layout->weight.red == 5) &&
-        (layout->weight.green == 5) && (layout->weight.blue == 5))
+    if ((scrn->bitsPerPixel == 16) && (scrn->weight.red == 5) &&
+        (scrn->weight.green == 5) && (scrn->weight.blue == 5))
         state->DacRegs[1] &= ~0x01;
 
     if (pMga->Interleave)
         state->DacRegs[2] += 1;
 
-    if (layout->bitsPerPixel == 24) {
+    if (scrn->bitsPerPixel == 24) {
         int silicon_rev;
 
         /* we need to set DacRegs[0] differently based on the silicon
@@ -568,10 +567,10 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state, DisplayModePtr mode)
     if ((ht & 0x07) == 0x06 || (ht & 0x07) == 0x04)
         ht++;
 
-    if (layout->bitsPerPixel == 24)
-        wd = (layout->displayWidth * 3) >> (4 - BppShift);
+    if (scrn->bitsPerPixel == 24)
+        wd = (scrn->displayWidth * 3) >> (4 - BppShift);
     else
-        wd = layout->displayWidth >> (4 - BppShift);
+        wd = scrn->displayWidth >> (4 - BppShift);
 
     state->ExtVga[0] = 0;
     state->ExtVga[5] = 0;
@@ -597,7 +596,7 @@ state_set(xf86CrtcPtr crtc, MgaCrtcStatePtr state, DisplayModePtr mode)
                        ((vd & 0xc00) >> 7) |
                        ((vs & 0xc00) >> 5);
 
-    if (layout->bitsPerPixel == 24)
+    if (scrn->bitsPerPixel == 24)
         state->ExtVga[3] = (((1 << BppShift) * 3) - 1) | 0x80;
     else
         state->ExtVga[3] = ((1 << BppShift) - 1) | 0x80;

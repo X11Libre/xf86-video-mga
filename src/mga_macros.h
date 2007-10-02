@@ -41,7 +41,7 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
    }
 
 #define XYADDRESS(x,y) \
-    ((y) * pMga->CurrentLayout.displayWidth + (x) + pMga->YDstOrg)
+    ((y) * pScrn->displayWidth + (x) + pMga->YDstOrg)
 
 #define MAKEDMAINDEX(index)  ((((index) >> 2) & 0x7f) | (((index) >> 6) & 0x80))
 

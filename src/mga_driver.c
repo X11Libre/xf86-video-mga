@@ -2286,15 +2286,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
        }
     }
 #endif
-    pMga->CurrentLayout.bitsPerPixel = pScrn->bitsPerPixel;
-    pMga->CurrentLayout.depth = pScrn->depth;
-    pMga->CurrentLayout.displayWidth = pScrn->displayWidth;
-    pMga->CurrentLayout.weight.red = pScrn->weight.red;
-    pMga->CurrentLayout.weight.green = pScrn->weight.green;
-    pMga->CurrentLayout.weight.blue = pScrn->weight.blue;
-    pMga->CurrentLayout.Overlay8Plus24 = pMga->Overlay8Plus24;
-    pMga->CurrentLayout.mode = pScrn->currentMode;
-	
 
     xf86SetPrimInitDone(pScrn->entityList[0]);
     
@@ -2832,15 +2823,6 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	    MGAStormAccelInit(pScreen);
 #endif
     }
-
-    pMga->CurrentLayout.bitsPerPixel = pScrn->bitsPerPixel;
-    pMga->CurrentLayout.depth = pScrn->depth;
-    pMga->CurrentLayout.displayWidth = pScrn->displayWidth;
-    pMga->CurrentLayout.weight.red = pScrn->weight.red;
-    pMga->CurrentLayout.weight.green = pScrn->weight.green;
-    pMga->CurrentLayout.weight.blue = pScrn->weight.blue;
-    pMga->CurrentLayout.Overlay8Plus24 = pMga->Overlay8Plus24;
-    pMga->CurrentLayout.mode = pScrn->currentMode;
 
     if (!MGAEnterVT(scrnIndex, 0))
         return FALSE;

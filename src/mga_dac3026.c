@@ -315,7 +315,7 @@ void MGA3026LoadPalette(
     MGAPtr pMga = MGAPTR(pScrn);
     int i, index;
 
-    if(pMga->CurrentLayout.Overlay8Plus24 && (pVisual->nplanes != 8))
+    if (pMga->Overlay8Plus24 && (pVisual->nplanes != 8))
 	return;
 
     if (pVisual->nplanes == 16) {

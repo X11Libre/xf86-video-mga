@@ -222,16 +222,6 @@ typedef struct {
     void	(*PreInit)(ScrnInfoPtr);
 } MGARamdacRec, *MGARamdacPtr;
 
-
-typedef struct {
-    int bitsPerPixel;
-    int depth;
-    int displayWidth;
-    rgb weight;
-    Bool Overlay8Plus24;
-    DisplayModePtr mode;
-} MGAFBLayout;
-
 /* Card-specific driver information */
 
 typedef struct {
@@ -484,7 +474,6 @@ typedef struct {
     int			videoKey;
     int			fifoCount;
     int			Rotate;
-    MGAFBLayout		CurrentLayout;
     Bool		DrawTransparent;
     int			MaxBlitDWORDS;
     Bool		TexturedVideo;
