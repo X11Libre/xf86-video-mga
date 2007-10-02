@@ -322,11 +322,6 @@ mgaCheckSourceTexture(int tmu, PicturePtr pPict)
     int w = pPict->pDrawable->width;
     int h = pPict->pDrawable->height;
 
-    if ((w > 2047) || (h > 2047)){
-        DEBUG_MSG(("Picture w/h too large (%dx%d)\n", w, h));
-        return FALSE;
-    }
-
     if (!mgaGetTexFormat(pPict)) {
         DEBUG_MSG(("Unsupported picture format 0x%x\n", pPict->format));
         return FALSE;
