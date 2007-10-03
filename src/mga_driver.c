@@ -2883,7 +2883,7 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
         pci_device_unmap_range(dev, pMga->IOBase, 
 			       dev->regions[pMga->io_bar].size);
         pci_device_unmap_range(dev, pMga->FbBase, 
-			       dev->regions[pMga->fb_bar].size);
+			       dev->regions[pMga->framebuffer_bar].size);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->IOBase, 0x4000);
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->FbBase, pMga->FbMapSize);
