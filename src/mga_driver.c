@@ -2880,8 +2880,10 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     
     if (!pMga->FBDev) {
 #ifdef XSERVER_LIBPCIACCESS
-        pci_device_unmap_range(dev, pMga->IOBase, 0x4000);
-        pci_device_unmap_range(dev, pMga->FbBase, pMga->FbMapSize);
+        pci_device_unmap_range(dev, pMga->IOBase, 
+			       dev->regions[pMga->io_bar].size);
+        pci_device_unmap_range(dev, pMga->FbBase, 
+			       dev->regions[pMga->fb_bar].size);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->IOBase, 0x4000);
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->FbBase, pMga->FbMapSize);
@@ -2894,7 +2896,8 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 
     if ((pMga->iload_bar != -1) && (pMga->ILOADBase != NULL)) {
 #ifdef XSERVER_LIBPCIACCESS
-        pci_device_unmap_range(dev, pMga->ILOADBase, 0x800000);
+        pci_device_unmap_range(dev, pMga->ILOADBase,
+			       dev->regions[pMga->iload_bar].size);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->ILOADBase, 0x800000);
 #endif
