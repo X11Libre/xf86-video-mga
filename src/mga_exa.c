@@ -758,6 +758,7 @@ mgaWaitMarker(ScreenPtr pScreen, int marker)
     while (INREG (MGAREG_Status) & 0x10000);
 }
 
+#ifdef XF86DRI
 static void
 init_dri(ScrnInfoPtr pScrn)
 {
@@ -831,6 +832,7 @@ init_dri(ScrnInfoPtr pScrn)
                        MGA_BUFFER_ALIGN) & ~MGA_BUFFER_ALIGN;
     dri->backPitch = widthBytes;
 }
+#endif /* XF86DRI */
 
 Bool
 mgaExaInit(ScreenPtr pScreen)
@@ -891,8 +893,10 @@ mgaExaInit(ScreenPtr pScreen)
     pExa->UploadToScreen = mgaUploadToScreen;
     pExa->DownloadFromScreen = mgaDownloadFromScreen;
 
+#ifdef XF86DRI
     if (pMga->directRenderingEnabled)
         init_dri(pScrn);
+#endif
 
     return exaDriverInit(pScreen, pExa);
 }
