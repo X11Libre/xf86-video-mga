@@ -4286,6 +4286,13 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     MGAPtr pMga = MGAPTR(pScrn);
 
+    if (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) {
+	if (mode->HDisplay > 1600)
+	    return MODE_VIRTUAL_X;
+	if (mode->VDisplay > 1200)
+	    return MODE_VIRTUAL_Y;
+    }
+
     lace = 1 + ((mode->Flags & V_INTERLACE) != 0);
 
     if ((mode->CrtcHDisplay <= 2048) &&
