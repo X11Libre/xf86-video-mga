@@ -794,6 +794,7 @@ MGAProbe(DriverPtr drv, int flags)
     else for (i = 0; i < numUsed; i++) {
 	ScrnInfoPtr pScrn = NULL;
 	EntityInfoPtr pEnt;
+	int attrib_no;
 #ifdef DISABLE_VGA_IO
 	MgaSavePtr smga;
 #endif
@@ -844,46 +845,46 @@ MGAProbe(DriverPtr drv, int flags)
 
             switch (pEnt->chipset) {
             case PCI_CHIP_MGA2064:
-                i = 0;
+                attrib_no = 0;
                 break;
 
             case PCI_CHIP_MGA1064: 
-                i = 1;
+                attrib_no = 1;
                 break;
 
             case PCI_CHIP_MGA2164:
             case PCI_CHIP_MGA2164_AGP:
-                i = 2;
+                attrib_no = 2;
                 break;
 
             case PCI_CHIP_MGAG100:
             case PCI_CHIP_MGAG100_PCI:
-                i = 3;
+                attrib_no = 3;
                 break;
 
             case PCI_CHIP_MGAG200:
             case PCI_CHIP_MGAG200_PCI:
-                i = 4;
+                attrib_no = 4;
                 break;
 
             case PCI_CHIP_MGAG400:
-                i = 5;
+                attrib_no = 5;
                 break;
 
             case PCI_CHIP_MGAG550:
-                i = 6;
+                attrib_no = 6;
                 break;
 
             case PCI_CHIP_MGAG200_SE_A_PCI:
             case PCI_CHIP_MGAG200_SE_B_PCI:
-                i = 7;
+                attrib_no = 7;
                 break;
 
 	    default:
 		return FALSE;
             }
 
-	    pMga->chip_attribs = & attribs[i];
+	    pMga->chip_attribs = & attribs[attrib_no];
 
 	    if (pMga->chip_attribs->dual_head_possible) {
 		MGAEntPtr pMgaEnt = NULL;
