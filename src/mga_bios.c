@@ -147,6 +147,14 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 	break;
 
     case PCI_CHIP_MGAG200_SE_A_PCI:
+	bios->system.max_freq = 230000;
+	bios->system.min_freq = 50000;
+	bios->pixel.max_freq  = 230000;
+	bios->pll_ref_freq = 27050;
+	bios->mem_clock = 50000;
+	bios->host_interface = MGA_HOST_PCI;
+	break;
+
     case PCI_CHIP_MGAG200_SE_B_PCI:
 	bios->system.max_freq = 114000;
 	bios->system.min_freq = 50000;
