@@ -3424,7 +3424,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (pMga->is_G200SE) {
 	VRTemp = pScrn->videoRam;
 	FBTemp = pMga->FbMapSize;
-	pScrn->videoRam = 4096;
+	pScrn->videoRam = 8192;
 	pMga->FbMapSize = pScrn->videoRam * 1024;
     }
     
