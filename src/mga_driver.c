@@ -1690,11 +1690,13 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	/* Check that the returned depth is one we support */
 	switch (pScrn->depth) {
 	case 8:
-	case 15:
 	case 16:
 	case 24:
 	    /* OK */
 	    break;
+	case 15:
+	    if (pMga->Chipset != PCI_CHIP_MGAG200_SE_A_PCI)
+		break;
 	default:
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		       "Given depth (%d) is not supported by this driver\n",
