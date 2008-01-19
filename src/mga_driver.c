@@ -3237,7 +3237,10 @@ MGA_HAL(
     MGA_NOT_HAL(
 	if (pMga->is_G200SE) {
             OUTREG8(0x1FDE, 0x06);
-            OUTREG8(0x1FDF, 0x14);
+	    if (pMga->reg_1e24 == 0x01)
+		OUTREG8(0x1FDF, 0x03);
+	    else 
+		OUTREG8(0x1FDF, 0x14);
         }
     );
 
