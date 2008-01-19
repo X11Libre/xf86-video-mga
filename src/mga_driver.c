@@ -969,6 +969,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
     int ProbeSize = 8192;
+    int ProbeSizeOffset = 0x1000;
     int SizeFound = 2048;
     CARD32 biosInfo = 0;
     CARD8 seq1;
@@ -1016,6 +1017,7 @@ MGACountRam(ScrnInfoPtr pScrn)
     case PCI_CHIP_MGAG200_SE_A_PCI:
     case PCI_CHIP_MGAG200_SE_B_PCI:
 	ProbeSize = 4096;
+	ProbeSizeOffset = 0x800;
 	break;
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
@@ -1053,9 +1055,16 @@ MGACountRam(ScrnInfoPtr pScrn)
 
 	base = pMga->FbBase;
 
-	/* XXX bad place for this */
 	if (pMga->is_G200SE)
 	    pMga->reg_1e24 = INREG(0x1e24); /* stash the model for later */
+	if (pMga->reg_1e24 == 0x01) {
+	    MGAUnmapMem(pScrn);
+	    ProbeSize = 16384;
+	    ProbeSizeOffset = 0x10000;
+	    pMga->FbMapSize = ProbeSize * 1024;
+	    MGAMapMem(pScrn);
+	    base = pMga->FbBase;
+	}
 
 	if (pMga->is_G200SE) {
 	    OUTREG8(MGAREG_SEQ_INDEX, 0x01);
@@ -1087,7 +1096,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	    base[1] = 0;
 
 	    for (Offset = 0x100000; Offset < (ProbeSize * 1024);
-		    Offset += 0x1000) {
+		    Offset += ProbeSizeOffset) {
 		FirstMemoryVal1 = base[Offset];
 		FirstMemoryVal2 = base[Offset+1];
 		SecondMemoryVal1 = base[Offset+0x100];
