@@ -454,6 +454,7 @@ typedef struct {
 
     int is_Gx50:1;
     int is_G200SE:1;
+    CARD32		reg_1e24;   /* model revision on g200se */
 
     Bool		Primary;
     Bool		Interleave;

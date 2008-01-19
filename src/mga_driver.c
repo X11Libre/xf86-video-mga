@@ -1053,6 +1053,10 @@ MGACountRam(ScrnInfoPtr pScrn)
 
 	base = pMga->FbBase;
 
+	/* XXX bad place for this */
+	if (pMga->is_G200SE)
+	    pMga->reg_1e24 = INREG(0x1e24); /* stash the model for later */
+
 	if (pMga->is_G200SE) {
 	    OUTREG8(MGAREG_SEQ_INDEX, 0x01);
 	    seq1 = INREG8(MGAREG_SEQ_DATA);
@@ -4276,6 +4280,28 @@ MGAFreeScreen(int scrnIndex, int flags)
 
 }
 
+#ifndef HAVE_XF86MODEBANDWIDTH
+
+#define MODE_BANDWIDTH MODE_BAD
+
+/** Calculates the memory bandwidth (in MiB/sec) of a mode. */
+static unsigned int
+xf86ModeBandwidth(DisplayModePtr mode, int depth)
+{
+    float a_active, a_total, active_percent, pixels_per_second;
+    int bytes_per_pixel = (depth + 7) / 8;
+
+    if (!mode->HTotal || !mode->VTotal || !mode->Clock)
+	return 0;
+
+    a_active = mode->HDisplay * mode->VDisplay;
+    a_total = mode->HTotal * mode->VTotal;
+    active_percent = a_active / a_total;
+    pixels_per_second = active_percent * mode->Clock * 1000.0;
+
+    return (unsigned int)(pixels_per_second * bytes_per_pixel / (1024 * 1024));
+}
+#endif
 
 /* Checks if a mode is suitable for the selected chipset. */
 
@@ -4292,6 +4318,9 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 	    return MODE_VIRTUAL_X;
 	if (mode->VDisplay > 1200)
 	    return MODE_VIRTUAL_Y;
+	if (pMga->reg_1e24 == 0x01 &&
+	    xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 256)
+	    return MODE_BANDWIDTH;
     }
 
     lace = 1 + ((mode->Flags & V_INTERLACE) != 0);
