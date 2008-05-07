@@ -1829,6 +1829,13 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     /* For compatibility, accept this too (as an override) */
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_SW_CURSOR, FALSE)) {
+    from = X_CONFIG;
+    pMga->HWCursor = FALSE;
+    }
+    xf86DrvMsg(pScrn->scrnIndex, from, "Using %s cursor\n",
+        pMga->HWCursor ? "HW" : "SW");
+
     if (xf86ReturnOptValBool(pMga->Options, OPTION_NOACCEL, FALSE)) {
 	pMga->NoAccel = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
