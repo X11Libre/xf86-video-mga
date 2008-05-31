@@ -428,6 +428,9 @@ struct mga_device_attributes {
     } BARs:2;
     
     uint32_t accel_flags;
+    
+    /** Default BIOS values. */
+    struct mga_bios_values default_bios_values;
 };
 
 typedef struct {

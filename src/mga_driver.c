@@ -155,39 +155,180 @@ static int MGAEntityIndex = -1;
 
 #include "mga_merge.h"
 
-static const struct mga_device_attributes attribs[8] = {
+static const struct mga_device_attributes attribs[] = {
     /* 2064 */
     [0] = { 1, 0, 0, 1, 0, 0, 0, 0, old_BARs,  
-	    (BLK_OPAQUE_EXPANSION | FASTBLT_BUG | USE_LINEAR_EXPANSION) },
+	    (BLK_OPAQUE_EXPANSION | FASTBLT_BUG | USE_LINEAR_EXPANSION),
+	{
+	    { 0, 0 },          /* System VCO frequencies */
+	    { 50000, 220000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    14318,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
 
     /* 1064 */
     [1] = { 0, 1, 0, 0, 1, 0, 0, 0, probe_BARs,
-            (USE_LINEAR_EXPANSION) },
+            (USE_LINEAR_EXPANSION),
+	{
+	    /* There used to be code in MGARamdacInit (mga_dacG.c) that would
+	     * set this to 170000 if the chip revision was less than 3.  Is
+	     * that needed here?
+	     */
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    14318,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
 
-    /* 2164, 2164 AGP */
+    /* 2164 */
     [2] = { 1, 0, 0, 1, 0, 0, 0, 0, new_BARs,
             (BLK_OPAQUE_EXPANSION | TRANSC_SOLID_FILL | USE_RECTS_FOR_LINES
-	     | USE_LINEAR_EXPANSION) },
-    
-    /* G100 */
-    [3] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
-            (MGA_NO_PLANEMASK | USE_LINEAR_EXPANSION) },
+	     | USE_LINEAR_EXPANSION),
+	{
+	    { 0, 0 },          /* System VCO frequencies */
+	    { 50000, 220000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    14318,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
 
-    /* G200 */
-    [4] = { 0, 1, 0, 0, 1, 1, 1, 1, new_BARs,
-            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION) },
+    /* 2164 AGP */
+    [3] = { 1, 0, 0, 1, 0, 0, 0, 0, new_BARs,
+            (BLK_OPAQUE_EXPANSION | TRANSC_SOLID_FILL | USE_RECTS_FOR_LINES
+	     | USE_LINEAR_EXPANSION),
+	{
+	    { 0, 0 },          /* System VCO frequencies */
+	    { 50000, 220000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    14318,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_AGP_1x    /* Host interface */
+	}
+    },
+
+    /* G100 PCI */
+    [4] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
+            (MGA_NO_PLANEMASK | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
+
+    /* G100 AGP */
+    [5] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
+            (MGA_NO_PLANEMASK | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_AGP_1x    /* Host interface */
+	}
+    },
+
+    /* G200 PCI */
+    [6] = { 0, 1, 0, 0, 1, 1, 1, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
+
+    /* G200 AGP */
+    [7] = { 0, 1, 0, 0, 1, 1, 1, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,             /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_AGP_2x    /* Host interface */
+	}
+    },
 
     /* G400 / G450 */
-    [5] = { 0, 1, 1, 0, 1, 1, 2, 1, new_BARs,
-            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION) },
+    [8] = { 0, 1, 1, 0, 1, 1, 2, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 252000 }, /* System VCO frequencies */
+	    { 50000, 252000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    200000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_AGP_4x    /* Host interface */
+	}
+    },
 
     /* G550 */
-    [6] = { 0, 1, 1, 0, 1, 1, 2, 1, new_BARs,
-            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION) },
+    [9] = { 0, 1, 1, 0, 1, 1, 2, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 256000, 600000 }, /* System VCO frequencies */
+	    { 256000, 600000 }, /* Pixel VCO frequencies */
+	    { 256000, 600000 }, /* Video VCO frequencies */
+	    284000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_AGP_4x    /* Host interface */
+	}
+    },
 
-    /* G200SE */
-    [7] = { 0, 1, 0, 0, 1, 0, 0, 1, new_BARs,
-            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION) },
+    /* G200SE A PCI */
+    [10] = { 0, 1, 0, 0, 1, 0, 0, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    50000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
+
+    /* G200SE B PCI */
+    [11] = { 0, 1, 0, 0, 1, 0, 0, 1, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 114000 }, /* System VCO frequencies */
+	    { 50000, 114000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    45000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	}
+    },
 };
 
 #ifdef XSERVER_LIBPCIACCESS
@@ -197,19 +338,19 @@ static const struct mga_device_attributes attribs[8] = {
     { 0x102B, (d), 0x102B, (s), 0, 0, (i) }
 
 static const struct pci_id_match mga_device_match[] = {
-    MGA_DEVICE_MATCH( PCI_CHIP_MGA2064,     0 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGA1064,     1 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGA2164,     2 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGA2164_AGP, 2 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG100,     3 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG100_PCI, 3 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG200,     4 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_PCI, 4 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG400,     5 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG550,     6 ),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGA2064,     0),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGA1064,     1),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGA2164,     2),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGA2164_AGP, 3),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG100,     4),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG100_PCI, 5),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG200,     6),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_PCI, 7),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG400,     8),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG550,     9),
 
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_SE_A_PCI, 7 ),
-    MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_SE_B_PCI, 7 ),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_SE_A_PCI, 10),
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_SE_B_PCI, 11),
 
     { 0, 0, 0 },
 };
@@ -844,31 +985,43 @@ MGAProbe(DriverPtr drv, int flags)
                 break;
 
             case PCI_CHIP_MGA2164:
-            case PCI_CHIP_MGA2164_AGP:
                 attrib_no = 2;
                 break;
-
-            case PCI_CHIP_MGAG100:
-            case PCI_CHIP_MGAG100_PCI:
+		
+            case PCI_CHIP_MGA2164_AGP:
                 attrib_no = 3;
                 break;
 
-            case PCI_CHIP_MGAG200:
-            case PCI_CHIP_MGAG200_PCI:
+            case PCI_CHIP_MGAG100:
                 attrib_no = 4;
                 break;
 
-            case PCI_CHIP_MGAG400:
+            case PCI_CHIP_MGAG100_PCI:
                 attrib_no = 5;
                 break;
 
-            case PCI_CHIP_MGAG550:
+            case PCI_CHIP_MGAG200:
                 attrib_no = 6;
                 break;
 
-            case PCI_CHIP_MGAG200_SE_A_PCI:
-            case PCI_CHIP_MGAG200_SE_B_PCI:
+            case PCI_CHIP_MGAG200_PCI:
                 attrib_no = 7;
+                break;
+
+            case PCI_CHIP_MGAG400:
+                attrib_no = 8;
+                break;
+
+            case PCI_CHIP_MGAG550:
+                attrib_no = 9;
+                break;
+
+            case PCI_CHIP_MGAG200_SE_A_PCI:
+                attrib_no = 10;
+                break;
+
+            case PCI_CHIP_MGAG200_SE_B_PCI:
+                attrib_no = 11;
                 break;
 
 	    default:
