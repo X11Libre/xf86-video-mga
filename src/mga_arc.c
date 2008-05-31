@@ -52,12 +52,6 @@ in this Software without prior written authorization from The Open Group.
 #include "mga_macros.h"
 
 
-/* 
-   This is only faster than cfb for stuff other than GXcopy.  
-   And even then, only when pci_retries are on.  
-*/
-
-
 #define DRAW_POINT(x, y) { \
 	tmp = x; \
 	OUTREG(MGAREG_FXBNDRY, (tmp) | (((tmp) + 1) << 16)); \

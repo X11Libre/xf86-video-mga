@@ -466,13 +466,8 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		pReg->DacRegs[ MGA1064_MUL_CTL ] = MGA1064_MUL_CTL_24bits;
 		break;
 	case 32:
-		if(pLayout->Overlay8Plus24) {
-		   pReg->DacRegs[ MGA1064_MUL_CTL ] = MGA1064_MUL_CTL_32bits;
-		   pReg->DacRegs[ MGA1064_COL_KEY_MSK_LSB ] = 0xFF;
-		   pReg->DacRegs[ MGA1064_COL_KEY_LSB ] = pMga->colorKey;
-		} else 
-		   pReg->DacRegs[ MGA1064_MUL_CTL ] = MGA1064_MUL_CTL_32_24bits;
-		break;
+	    pReg->DacRegs[ MGA1064_MUL_CTL ] = MGA1064_MUL_CTL_32_24bits;
+	    break;
 	default:
 		FatalError("MGA: unsupported depth\n");
 	}
@@ -648,9 +643,6 @@ void MGAGLoadPalette(
     VisualPtr pVisual
 ){
     MGAPtr pMga = MGAPTR(pScrn);
-
-    if((pMga->CurrentLayout.Overlay8Plus24) && (pVisual->nplanes != 8)) 
-	return;
 
      if(pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550){ 
 	 /* load them at the retrace in the block handler instead to 

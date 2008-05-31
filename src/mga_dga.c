@@ -329,7 +329,6 @@ MGA_SetMode(
       pMga->CurrentLayout.weight.red = BitsSet(pMode->red_mask);
       pMga->CurrentLayout.weight.green = BitsSet(pMode->green_mask);
       pMga->CurrentLayout.weight.blue = BitsSet(pMode->blue_mask);
-      pMga->CurrentLayout.Overlay8Plus24 = FALSE;
       /* MGAModeInit() will set the mode field */
 
       pScrn->SwitchMode(index, pMode->mode, 0);

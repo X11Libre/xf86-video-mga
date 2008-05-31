@@ -27,7 +27,6 @@
 #include "servermd.h"
 
 #ifdef XF86DRI
-#include "cfb.h"
 #include "GL/glxtokens.h"
 #endif
 
@@ -312,11 +311,6 @@ Bool MGASetupForCPUToScreenAlphaTextureFaked( ScrnInfoPtr pScrn, int op,
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
-    if(pMga->Overlay8Plus24) {
-        WAITFIFO(1);
-        SET_PLANEMASK_REPLICATED( 0x00ffffff, 0xffffffff, 32 );
-    }
-
     pitch = (width + 15) & ~15;
     sizeNeeded = pitch * height;
     if(pScrn->bitsPerPixel == 16)
@@ -400,11 +394,6 @@ MGASetupForCPUToScreenAlphaTexture (
     log2h = GetPowerOfTwo(height);
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
-
-    if(pMga->Overlay8Plus24) {
-        WAITFIFO(1);
-        SET_PLANEMASK_REPLICATED( 0x00ffffff, 0xffffffff, 32 );
-    }
 
     pitch = (width + 15) & ~15;
     sizeNeeded = (pitch * height) >> 1;
@@ -504,11 +493,6 @@ MGASetupForCPUToScreenTexture (
     log2h = GetPowerOfTwo(height);
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
-
-    if(pMga->Overlay8Plus24) {
-        WAITFIFO(1);
-        SET_PLANEMASK_REPLICATED( 0x00ffffff, 0xffffffff, 32 );
-    }
 
     pitch = (width + 15) & ~15;
     sizeNeeded = pitch * height;

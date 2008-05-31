@@ -266,7 +266,6 @@ typedef struct {
     int depth;
     int displayWidth;
     rgb weight;
-    Bool Overlay8Plus24;
     DisplayModePtr mode;
 } MGAFBLayout;
 
@@ -506,7 +505,6 @@ typedef struct {
     Bool		HWCursor;
     Bool		UsePCIRetry;
     Bool		ShowCache;
-    Bool		Overlay8Plus24;
     Bool		ShadowFB;
     unsigned char *	ShadowPtr;
     int			ShadowPitch;

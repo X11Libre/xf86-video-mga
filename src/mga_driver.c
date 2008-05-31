@@ -96,8 +96,6 @@
 #include "shadowfb.h"
 #include "fbdevhw.h"
 
-#include "cfb8_32.h"
-
 #ifdef XF86DRI
 #include "dri.h"
 #endif
@@ -357,12 +355,6 @@ static const char *fbSymbols[] = {
     NULL
 };
 
-static const char *xf8_32bppSymbols[] = {
-    "cfb8_32ScreenInit",
-    "xf86Overlay8Plus32Init",
-    NULL
-};
-
 #ifdef USE_EXA
 static const char *exaSymbols[] = {
     "exaDriverInit",
@@ -559,9 +551,8 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 #ifdef USE_EXA
                           exaSymbols,
 #endif
-			  xf8_32bppSymbols, ramdacSymbols,
-			  ddcSymbols, i2cSymbols, shadowSymbols,
-			  fbdevHWSymbols, vbeSymbols,
+			  ramdacSymbols, ddcSymbols, i2cSymbols,
+			  shadowSymbols, fbdevHWSymbols, vbeSymbols,
 			  fbSymbols, int10Symbols,
 #ifdef XF86DRI
 			  drmSymbols, driSymbols,
@@ -1874,27 +1865,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86GetOptValFreq(pMga->Options, OPTION_SET_MCLK, OPTUNITS_MHZ, &real)) {
 	pMga->MemClk = (int)(real * 1000.0);
     }
-    if ((s = xf86GetOptValString(pMga->Options, OPTION_OVERLAY))) {
-      if (!*s || !xf86NameCmp(s, "8,24") || !xf86NameCmp(s, "24,8")) {
-	if(pScrn->bitsPerPixel == 32 && pMga->SecondCrtc == FALSE) {
-	    pMga->Overlay8Plus24 = TRUE;
-	    if(!xf86GetOptValInteger(
-			pMga->Options, OPTION_COLOR_KEY,&(pMga->colorKey)))
-		pMga->colorKey = TRANSPARENCY_KEY;
-	    pScrn->colorKey = pMga->colorKey;
-	    pScrn->overlayFlags = OVERLAY_8_32_PLANAR;
-	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-				"PseudoColor overlay enabled\n");
-	} else {
-	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-	         "Option \"Overlay\" is only supported in 32 bits per pixel on"
-		 "the first CRTC\n");
-	}
-      } else {
-	  xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-		"\"%s\" is not a valid value for Option \"Overlay\"\n", s);
-      }
-    }
 
     if(xf86GetOptValInteger(pMga->Options, OPTION_VIDEO_KEY, &(pMga->videoKey))) {
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "video key set to 0x%x\n",
@@ -2667,19 +2637,11 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
 
     /* Load the required framebuffer */
-    if (pMga->Overlay8Plus24) {
-	if (!xf86LoadSubModule(pScrn, "xf8_32bpp")) {
-	    MGAFreeRec(pScrn);
-	    return FALSE;
-	}
-	xf86LoaderReqSymLists(xf8_32bppSymbols, NULL);
-    } else {
-	if (!xf86LoadSubModule(pScrn, "fb")) {
-	    MGAFreeRec(pScrn);
-	    return FALSE;
-	}
-	xf86LoaderReqSymLists(fbSymbols, NULL);
+    if (!xf86LoadSubModule(pScrn, "fb")) {
+	MGAFreeRec(pScrn);
+	return FALSE;
     }
+    xf86LoaderReqSymLists(fbSymbols, NULL);
 
 
     /* Load XAA if needed */
@@ -2735,7 +2697,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     pMga->CurrentLayout.weight.red = pScrn->weight.red;
     pMga->CurrentLayout.weight.green = pScrn->weight.green;
     pMga->CurrentLayout.weight.blue = pScrn->weight.blue;
-    pMga->CurrentLayout.Overlay8Plus24 = pMga->Overlay8Plus24;
     pMga->CurrentLayout.mode = pScrn->currentMode;
 	
 
@@ -3215,13 +3176,6 @@ MGA_HAL(
 			  pMga->FbCursorOffset >> 18);
 		outMGAdac(MGA1064_CURSOR_CTL, 0x00);
 	      }
-	      if (pMga->Overlay8Plus24 == TRUE) {
-    		  outMGAdac(MGA1064_MUL_CTL, MGA1064_MUL_CTL_32bits);
-    		  outMGAdac(MGA1064_COL_KEY_MSK_LSB,0xFF);
-    		  outMGAdac(MGA1064_COL_KEY_LSB,pMga->colorKey);
-  		  outMGAdac(MGA1064_COL_KEY_MSK_MSB,0xFF);
-  		  outMGAdac(MGA1064_COL_KEY_MSB,0xFF);
-	      }		
 	    }
     );	/* MGA_HAL */
 #endif
@@ -3612,14 +3566,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     /* Setup the visuals we support. */
 
-    /* All MGA support DirectColor and can do overlays in 32bpp */
-    if(pMga->Overlay8Plus24 && (pScrn->bitsPerPixel == 32)) {
-	if (!miSetVisualTypes(8, PseudoColorMask | GrayScaleMask,
-			      pScrn->rgbBits, PseudoColor))
-		return FALSE;
-	if (!miSetVisualTypes(24, TrueColorMask, pScrn->rgbBits, TrueColor))
-		return FALSE;
-    } else if (pMga->SecondCrtc) {
+    /* All MGA support DirectColor */
+    if (pMga->SecondCrtc) {
 	/* No DirectColor on the second head */
 	if (!miSetVisualTypes(pScrn->depth, TrueColorMask, pScrn->rgbBits,
 			      TrueColor))
@@ -3665,9 +3613,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 #ifdef XF86DRI
      /*
-      * Setup DRI after visuals have been established, but before cfbScreenInit
-      * is called.   cfbScreenInit will eventually call into the drivers
-      * InitGLXVisuals call back.
+      * Setup DRI after visuals have been established.
+      *
       * The DRI does not work when textured video is enabled at this time.
       */
     if (pMga->is_G200SE) {
@@ -3710,19 +3657,10 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 #endif
 
 
-    if (pMga->Overlay8Plus24) {
-	ret = cfb8_32ScreenInit(pScreen, FBStart,
-			width, height,
-			pScrn->xDpi, pScrn->yDpi,
-			displayWidth);
-    } else {
-	ret = fbScreenInit(pScreen, FBStart, width, height,
-			   pScrn->xDpi, pScrn->yDpi,
-			   displayWidth, pScrn->bitsPerPixel);
-    }
-
-    if (!ret)
+    if (!fbScreenInit(pScreen, FBStart, width, height, pScrn->xDpi,
+		      pScrn->yDpi, displayWidth, pScrn->bitsPerPixel)) {
 	return FALSE;
+    }
 
 
     if (pScrn->bitsPerPixel > 8) {
@@ -3741,9 +3679,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
 
     /* must be after RGB ordering fixed */
-    if (!pMga->Overlay8Plus24)
-	fbPictureInit (pScreen, 0, 0);
-    
+    fbPictureInit (pScreen, 0, 0);
+
     xf86SetBlackWhitePixels(pScreen);
 
     pMga->BlockHandler = pScreen->BlockHandler;
@@ -3803,11 +3740,6 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	NULL, f))
 	return FALSE;
 
-    if(pMga->Overlay8Plus24) { /* Must come after colormap initialization */
-	if(!xf86Overlay8Plus32Init(pScreen))
-	    return FALSE;
-    }
-
     if(pMga->ShadowFB) {
 	RefreshAreaFuncPtr refreshArea = MGARefreshArea;
 
@@ -3837,7 +3769,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 #ifdef XF86DRI
     if (pMga->directRenderingEnabled) {
-       /* Now that mi, cfb, drm and others have done their thing,
+       /* Now that mi, drm and others have done their thing,
 	* complete the DRI setup.
 	*/
        pMga->directRenderingEnabled = MGADRIFinishScreenInit(pScreen);

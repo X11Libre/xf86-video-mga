@@ -335,7 +335,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     pMga->ShowCache = pMga1->ShowCache;
     pMga->HasSDRAM = pMga1->HasSDRAM;
     pMga->MemClk = pMga1->MemClk;
-    pMga->Overlay8Plus24 = pMga1->Overlay8Plus24;
     pMga->colorKey = pMga1->colorKey;
     pScrn->colorKey = pScrn1->colorKey;
     pScrn->overlayFlags = pScrn1->overlayFlags;
@@ -626,7 +625,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     pMga->CurrentLayout.weight.red = pScrn->weight.red;
     pMga->CurrentLayout.weight.green = pScrn->weight.green;
     pMga->CurrentLayout.weight.blue = pScrn->weight.blue;
-    pMga->CurrentLayout.Overlay8Plus24 = pMga->Overlay8Plus24;
     pMga->CurrentLayout.mode = pScrn->currentMode;
 
 
