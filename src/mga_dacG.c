@@ -1246,50 +1246,42 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
 	/* Then try to set up MAVEN bus. */
 	pMga->Maven_Bus = mgag_create_i2c_bus("MAVEN", 2, pScrn->scrnIndex);
 	if (pMga->Maven_Bus != NULL) {
-		    Bool failed = FALSE;
-			/* Try to detect the MAVEN. */
-		    if (xf86I2CProbeAddress(pMga->Maven_Bus, MAVEN_READ) == TRUE) {
-			I2CDevPtr dp = xf86CreateI2CDevRec();
-			if (dp) {
-				I2CByte maven_ver;
+	    pMga->Maven = NULL;
+	    pMga->Maven_Version = 0;
 
-				pMga->Maven = dp;
-				dp->DevName = "MGA-TVO";
-				dp->SlaveAddr = MAVEN_WRITE;
-				dp->pI2CBus = pMga->Maven_Bus;
-				if (!xf86I2CDevInit(dp)) {
-					xf86DestroyI2CDevRec(dp, TRUE);
-					pMga->Maven = NULL;
-					failed = TRUE;
-				}
-				if (MGAMavenRead(pScrn, 0xB2, &maven_ver)) {
-					if (maven_ver < 0x14) {  /* heuristic stolen from matroxfb */
-						xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MAVEN revision MGA-TVO-B detected (0x%x)\n", maven_ver);
-						pMga->Maven_Version = 'B';
-					}
-					else {
-						xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MAVEN revision MGA-TVO-C detected (0x%x)\n", maven_ver);
-						pMga->Maven_Version = 'C';
-					}
-				}
-				else {
-					xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Failed to determine MAVEN hardware version!\n");
-				}
-			}
-			else {
-				failed = TRUE;
+	    /* Try to detect the MAVEN. */
+	    if (xf86I2CProbeAddress(pMga->Maven_Bus, MAVEN_READ)) {
+		I2CDevPtr dp = xf86CreateI2CDevRec();
+		if (dp) {
+		    I2CByte maven_ver;
+
+		    dp->DevName = "MGA-TVO";
+		    dp->SlaveAddr = MAVEN_WRITE;
+		    dp->pI2CBus = pMga->Maven_Bus;
+		    if (!xf86I2CDevInit(dp)) {
+			xf86DestroyI2CDevRec(dp, TRUE);
+		    } else {
+			pMga->Maven = dp;
+			if (MGAMavenRead(pScrn, 0xB2, &maven_ver)) {
+			    /* heuristic stolen from matroxfb */
+			    pMga->Maven_Version = (maven_ver < 0x14)
+				? 'B' : 'C';
+
+			    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+				       "MAVEN revision MGA-TVO-%c detected (0x%x)\n",
+				       pMga->Maven_Version, maven_ver);
+			} else {
+			    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Failed to determine MAVEN hardware version!\n");
 			}
 		    }
-		    else {
-			    failed = TRUE;
-		    }
-
-		    if (failed) {
-		    	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Failed to register MGA-TVO I2C device!\n");
-			pMga->Maven = NULL;
-			pMga->Maven_Version = 0;
-		   }
+		}
 	    }
+
+	    if (pMga->Maven == NULL) {
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+			   "Failed to register MGA-TVO I2C device!\n");
+	    }
+	}
     }
 
     return TRUE;
