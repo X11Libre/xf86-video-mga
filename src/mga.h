@@ -431,6 +431,10 @@ struct mga_device_attributes {
     
     /** Default BIOS values. */
     struct mga_bios_values default_bios_values;
+    
+    /** Default memory probe offset / size values. */
+    unsigned probe_size;
+    unsigned probe_offset;
 };
 
 typedef struct {

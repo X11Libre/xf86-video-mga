@@ -167,7 +167,9 @@ static const struct mga_device_attributes attribs[] = {
 	    14318,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* 1064 */
@@ -185,7 +187,9 @@ static const struct mga_device_attributes attribs[] = {
 	    14318,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* 2164 */
@@ -200,7 +204,9 @@ static const struct mga_device_attributes attribs[] = {
 	    14318,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* 2164 AGP */
@@ -215,7 +221,9 @@ static const struct mga_device_attributes attribs[] = {
 	    14318,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_AGP_1x    /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* G100 PCI */
@@ -229,7 +237,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* G100 AGP */
@@ -243,7 +253,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_AGP_1x    /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* G200 PCI */
@@ -257,7 +269,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* G200 AGP */
@@ -271,7 +285,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_AGP_2x    /* Host interface */
-	}
+	},
+
+	8192, 0x1000,          /* Memory probe size & offset values */
     },
 
     /* G400 / G450 */
@@ -285,7 +301,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_AGP_4x    /* Host interface */
-	}
+	},
+
+	32768, 0x1000,         /* Memory probe size & offset values */
     },
 
     /* G550 */
@@ -299,7 +317,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_AGP_4x    /* Host interface */
-	}
+	},
+
+	32768, 0x1000,         /* Memory probe size & offset values */
     },
 
     /* G200SE A PCI */
@@ -313,7 +333,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	4096, 0x800,           /* Memory probe size & offset values */
     },
 
     /* G200SE B PCI */
@@ -327,7 +349,9 @@ static const struct mga_device_attributes attribs[] = {
 	    27050,             /* PLL reference frequency */
 	    0,                 /* Supports fast bitblt? */
 	    MGA_HOST_PCI       /* Host interface */
-	}
+	},
+
+	4096, 0x800,           /* Memory probe size & offset values */
     },
 };
 
@@ -1112,8 +1136,8 @@ static int
 MGACountRam(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-    int ProbeSize = 8192;
-    int ProbeSizeOffset = 0x1000;
+    int ProbeSize = pMga->chip_attribs->probe_size;
+    int ProbeSizeOffset = pMga->chip_attribs->probe_offset;
     int SizeFound = 2048;
     CARD32 biosInfo = 0;
     CARD8 seq1;
@@ -1156,12 +1180,6 @@ MGACountRam(ScrnInfoPtr pScrn)
 		return 32768;
 	    }
 	}
-	ProbeSize = 32768;
-	break;
-    case PCI_CHIP_MGAG200_SE_A_PCI:
-    case PCI_CHIP_MGAG200_SE_B_PCI:
-	ProbeSize = 4096;
-	ProbeSizeOffset = 0x800;
 	break;
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
@@ -1173,15 +1191,11 @@ MGACountRam(ScrnInfoPtr pScrn)
 		return 16384;
 	    }
 	}
-	ProbeSize = 8192;
 	break;
     case PCI_CHIP_MGAG100:
     case PCI_CHIP_MGAG100_PCI:
 	if(biosInfo) /* I'm not sure if the docs are correct */
 	    return (biosInfo & (1 << 12)) ? 16384 : 8192;
-    case PCI_CHIP_MGA1064:
-    case PCI_CHIP_MGA2064:
-	ProbeSize = 8192;
         break;
     default:
         break;
