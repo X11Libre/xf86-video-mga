@@ -1119,12 +1119,18 @@ MGAGUseHWCursor(ScreenPtr pScrn, CursorPtr pCurs)
  * Be careful, DDC1 and DDC2 refer to protocols, DDC_P1 and DDC_P2 refer to
  * DDC data coming in on which videoport on the card 
  */
-static const int DDC_P1_SDA_MASK = (1 << 1);
-static const int DDC_P1_SCL_MASK = (1 << 3);
-static const int DDC_P2_SDA_MASK = (1 << 0);
-static const int DDC_P2_SCL_MASK = (1 << 2);
-static const int MAVEN_SDA_MASK = (1 << 4);
-static const int MAVEN_SCL_MASK = (1 << 5);
+#define DDC_P1_SDA_MASK (1 << 1)
+#define DDC_P1_SCL_MASK (1 << 3)
+
+static const struct mgag_i2c_private {
+    unsigned sda_mask;
+    unsigned scl_mask;
+} i2c_priv[] = {
+    { (1 << 1), (1 << 3) },
+    { (1 << 0), (1 << 2) },
+    { (1 << 4), (1 << 5) },
+};
+
 
 static unsigned int
 MGAG_ddc1Read(ScrnInfoPtr pScrn)
@@ -1149,17 +1155,19 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
 }
 
 static void
-MGAG_I2CGetBits(I2CBusPtr b, int *clock, int *data, int my_scl_mask, int my_sda_mask)
+MGAG_I2CGetBits(I2CBusPtr b, int *clock, int *data)
 {
   ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
   MGAPtr pMga = MGAPTR(pScrn);
+    const struct mgag_i2c_private *p =
+	(struct mgag_i2c_private *) b->DriverPrivate.ptr;
   unsigned char val;
   
    /* Get the result. */
    val = inMGAdac(MGA1064_GEN_IO_DATA);
    
-   *clock = (val & my_scl_mask) != 0;
-   *data  = (val & my_sda_mask) != 0;
+   *clock = (val & p->scl_mask) != 0;
+   *data  = (val & p->sda_mask) != 0;
 #ifdef DEBUG
   ErrorF("MGAG_I2CGetBits(%p,...) val=0x%x, returns clock %d, data %d\n", b, val, *clock, *data);
 #endif
@@ -1171,57 +1179,49 @@ MGAG_I2CGetBits(I2CBusPtr b, int *clock, int *data, int my_scl_mask, int my_sda_
  * to high. High signal is maintained by a 15k Ohm pull-up resistor.
  */
 static void
-MGAG_I2CPutBits(I2CBusPtr b, int clock, int data, int my_scl_mask, int my_sda_mask)
+MGAG_I2CPutBits(I2CBusPtr b, int clock, int data)
 {
   ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex]; 
   MGAPtr pMga = MGAPTR(pScrn);
+    const struct mgag_i2c_private *p =
+	(struct mgag_i2c_private *) b->DriverPrivate.ptr;
   unsigned char drv, val;
 
-  val = (clock ? my_scl_mask : 0) | (data ? my_sda_mask : 0);
-  drv = ((!clock) ? my_scl_mask : 0) | ((!data) ? my_sda_mask : 0);
+  val = (clock ? p->scl_mask : 0) | (data ? p->sda_mask : 0);
+  drv = ((!clock) ? p->scl_mask : 0) | ((!data) ? p->sda_mask : 0);
 
   /* Write the values */
-  outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(my_scl_mask | my_sda_mask) , drv);
-  outMGAdacmsk(MGA1064_GEN_IO_DATA, ~(my_scl_mask | my_sda_mask) , val);
+  outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(p->scl_mask | p->sda_mask) , drv);
+  outMGAdacmsk(MGA1064_GEN_IO_DATA, ~(p->scl_mask | p->sda_mask) , val);
 #ifdef DEBUG
   ErrorF("MGAG_I2CPutBits(%p, %d, %d) val=0x%x\n", b, clock, data, val);
 #endif
 }
 
-/* FIXME, can we use some neater way besides these silly stubs? */
 
-static void
-MGAG_DDC_P1_I2CPutBits(I2CBusPtr b, int clock, int data)
+static I2CBusPtr
+mgag_create_i2c_bus(const char *name, unsigned bus_index, unsigned scrn_index)
 {
-	MGAG_I2CPutBits(b, clock, data, DDC_P1_SCL_MASK, DDC_P1_SDA_MASK);
-}
-static void
-MGAG_DDC_P2_I2CPutBits(I2CBusPtr b, int clock, int data)
-{
-	MGAG_I2CPutBits(b, clock, data, DDC_P2_SCL_MASK, DDC_P2_SDA_MASK);
-}
-static void
-MGAG_MAVEN_I2CPutBits(I2CBusPtr b, int clock, int data)
-{
-	MGAG_I2CPutBits(b, clock, data, MAVEN_SCL_MASK, MAVEN_SDA_MASK);
-}
+    I2CBusPtr I2CPtr = xf86CreateI2CBusRec();
 
-static void
-MGAG_DDC_P1_I2CGetBits(I2CBusPtr b, int *clock, int *data)
-{
-	MGAG_I2CGetBits(b, clock, data, DDC_P1_SCL_MASK, DDC_P1_SDA_MASK);
-}
-static void
-MGAG_DDC_P2_I2CGetBits(I2CBusPtr b, int *clock, int *data)
-{
-	MGAG_I2CGetBits(b, clock, data, DDC_P2_SCL_MASK, DDC_P2_SDA_MASK);
-}
-static void
-MGAG_MAVEN_I2CGetBits(I2CBusPtr b, int *clock, int *data)
-{
-	MGAG_I2CGetBits(b, clock, data, MAVEN_SCL_MASK, MAVEN_SDA_MASK);
+    if (I2CPtr != NULL) {
+	I2CPtr->BusName = name;
+	I2CPtr->scrnIndex = scrn_index;
+	I2CPtr->I2CPutBits = MGAG_I2CPutBits;
+	I2CPtr->I2CGetBits = MGAG_I2CGetBits;
+	I2CPtr->AcknTimeout = 5;
+	I2CPtr->DriverPrivate.ptr = & i2c_priv[bus_index];
+
+	if (!xf86I2CBusInit(I2CPtr)) {
+	    xf86DestroyI2CBusRec(I2CPtr, TRUE, TRUE);
+	    I2CPtr = NULL;
+	}
+    }
+    
+    return I2CPtr;
 }
 
+	
 Bool
 MGAG_i2cInit(ScrnInfoPtr pScrn)
 {
@@ -1229,65 +1229,23 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
     I2CBusPtr I2CPtr;
 
     if (pMga->SecondCrtc == FALSE) {
-	    I2CPtr = xf86CreateI2CBusRec();
-	    if(!I2CPtr) return FALSE;
+	pMga->DDC_Bus1 = mgag_create_i2c_bus("DDC P1", 0, pScrn->scrnIndex);
+	return (pMga->DDC_Bus1 != NULL);
+    } else {
+	/* We have a dual head setup on G-series, set up DDC #2. */
+	pMga->DDC_Bus2 = mgag_create_i2c_bus("DDC P2", 1, pScrn->scrnIndex);
 
-	    pMga->DDC_Bus1 = I2CPtr;
-
-	    I2CPtr->BusName    = "DDC P1";
-	    I2CPtr->scrnIndex  = pScrn->scrnIndex;
-	    I2CPtr->I2CPutBits = MGAG_DDC_P1_I2CPutBits;
-	    I2CPtr->I2CGetBits = MGAG_DDC_P1_I2CGetBits;
-	    I2CPtr->AcknTimeout = 5;
-
-	    if (!xf86I2CBusInit(I2CPtr)) {
-		xf86DestroyI2CBusRec(pMga->DDC_Bus1, TRUE, TRUE);
-		pMga->DDC_Bus1 = NULL;
-		return FALSE;
+	if (pMga->DDC_Bus2 != NULL) {
+	    /* 0xA0 is DDC EEPROM address */
+	    if (!xf86I2CProbeAddress(pMga->DDC_Bus2, 0xA0)) {
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC #2 unavailable -> TV cable connected or no monitor connected!\n");
+		pMga->Crtc2IsTV = TRUE;  /* assume for now.  We need to fix HAL interactions. */
 	    }
-    }
-    else {
-    /* We have a dual head setup on G-series, set up DDC #2. */
-	    I2CPtr = xf86CreateI2CBusRec();
-	    if(!I2CPtr) return FALSE;
-
-	    pMga->DDC_Bus2 = I2CPtr;
-
-	    I2CPtr->BusName    = "DDC P2";
-	    I2CPtr->scrnIndex  = pScrn->scrnIndex;
-	    I2CPtr->I2CPutBits = MGAG_DDC_P2_I2CPutBits;
-	    I2CPtr->I2CGetBits = MGAG_DDC_P2_I2CGetBits;
-	    I2CPtr->AcknTimeout = 5;
-
-	    if (!xf86I2CBusInit(I2CPtr)) {
-		    xf86DestroyI2CBusRec(pMga->DDC_Bus2, TRUE, TRUE);
-		    pMga->DDC_Bus2 = NULL;
-	    }
-	    else {
-		    if (!xf86I2CProbeAddress(pMga->DDC_Bus2, 0xA0)) {  /* 0xA0 is DDC EEPROM address */
-			    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC #2 unavailable -> TV cable connected or no monitor connected!\n");
-			    pMga->Crtc2IsTV = TRUE;  /* assume for now.  We need to fix HAL interactions. */
-		    }
-	    }
+	}
 
 	/* Then try to set up MAVEN bus. */
-
-	    I2CPtr = xf86CreateI2CBusRec();
-	    if(!I2CPtr) return FALSE;
-	    pMga->Maven_Bus = I2CPtr;
-
-	    I2CPtr->BusName    = "MAVEN";
-	    I2CPtr->scrnIndex  = pScrn->scrnIndex;
-	    I2CPtr->I2CPutBits = MGAG_MAVEN_I2CPutBits;
-	    I2CPtr->I2CGetBits = MGAG_MAVEN_I2CGetBits;
-	    I2CPtr->StartTimeout = 5;
-
-	    if (!xf86I2CBusInit(I2CPtr)) {
-		    xf86DestroyI2CBusRec(pMga->Maven_Bus, TRUE, TRUE);
-		    pMga->Maven_Bus = NULL;
-		    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Failed to register MAVEN I2C bus!\n");
-	    }
-	    else {
+	pMga->Maven_Bus = mgag_create_i2c_bus("MAVEN", 2, pScrn->scrnIndex);
+	if (pMga->Maven_Bus != NULL) {
 		    Bool failed = FALSE;
 			/* Try to detect the MAVEN. */
 		    if (xf86I2CProbeAddress(pMga->Maven_Bus, MAVEN_READ) == TRUE) {
