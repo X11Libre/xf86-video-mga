@@ -62,8 +62,9 @@ static void MGAGLoadPalette(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
 static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
 
 static void
-MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
+    MGAPtr pMga = MGAPTR(pScrn);
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
     unsigned int ulFPermitedDelta;
@@ -73,22 +74,41 @@ MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     unsigned int ulTestM;
     unsigned int ulTestN;
     unsigned int ulPLLFreqRef;
+    unsigned int ulTestPStart;
+    unsigned int ulTestNStart;
+    unsigned int ulTestNEnd;
+    unsigned int ulTestMEnd;
 
-    ulVCOMax        = 320000;
-    ulVCOMin        = 160000;
-    ulPLLFreqRef    = 25000;
+    if (pMga->is_G200SE) {
+        ulVCOMax        = 320000;
+        ulVCOMin        = 160000;
+        ulPLLFreqRef    = 25000;
+        ulTestPStart    = 8;
+        ulTestNStart    = 17;
+        ulTestNEnd      = 32;
+        ulTestMEnd      = 32;
+
+    } else if (pMga->is_G200EV) {
+        ulVCOMax        = 550000;
+        ulVCOMin        = 150000;
+        ulPLLFreqRef    = 50000;
+        ulTestPStart    = 16;
+        ulTestNStart    = 1;
+        ulTestNEnd      = 256;
+        ulTestMEnd      = 16;
+    }
 
     ulFDelta = 0xFFFFFFFF;
     /* Permited delta is 0.5% as VESA Specification */
     ulFPermitedDelta = lFo * 5 / 1000;  
 
     /* Then we need to minimize the M while staying within 0.5% */
-    for (ulTestP = 8; ulTestP > 0; ulTestP >>= 1) {
+    for (ulTestP = ulTestPStart; ulTestP > 0; ulTestP--) {
 	if ((lFo * ulTestP) > ulVCOMax) continue;
 	if ((lFo * ulTestP) < ulVCOMin) continue;
 
-	for (ulTestN = 17; ulTestN <= 256; ulTestN++) {
-	    for (ulTestM = 1; ulTestM <= 32; ulTestM++) {
+	for (ulTestN = ulTestNStart; ulTestN <= ulTestNEnd; ulTestN++) {
+	    for (ulTestM = 1; ulTestM <= ulTestMEnd; ulTestM++) {
 		ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
 		if (ulComputedFo > lFo)
 		    ulFTmpDelta = ulComputedFo - lFo;
@@ -104,8 +124,82 @@ MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 	    }
 	}
     }
+#if DEBUG
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "lFo=%ld n=0x%x m=0x%x p=0x%x \n",
+		   lFo, *N, *M, *P );
+#endif
 }
 
+static void
+MGAG200EVPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
+{
+    MGAPtr pMga = MGAPTR(pScrn);
+
+    unsigned long ulFallBackCounter;
+    unsigned char ucTempByte, ucPixCtrl;
+    unsigned char ucM;
+    unsigned char ucN;
+    unsigned char ucP;
+    unsigned char ucS;
+
+    // Set pixclkdis to 1
+    ucPixCtrl = inMGAdac(MGA1064_PIX_CLK_CTL);
+    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_DIS;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+
+    // Select PLL Set C
+    ucTempByte = INREG8(MGAREG_MISC_READ);
+    ucTempByte |= 0x3<<2; //select MGA pixel clock
+    OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+
+    // Set pixlock to 0
+    ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
+    outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte & ~0x40);
+
+    //    Set pix_stby to 1
+    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_POW_DOWN;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+
+    // Program the Pixel PLL Register
+    outMGAdac(MGA1064_EV_PIX_PLLC_M, mgaReg->PllM);
+    outMGAdac(MGA1064_EV_PIX_PLLC_N, mgaReg->PllN);
+    outMGAdac(MGA1064_EV_PIX_PLLC_P, mgaReg->PllP);
+
+    // Wait 50 us
+    usleep(50);
+
+    // Set pix_stby to 0
+    ucPixCtrl &= ~MGA1064_PIX_CLK_CTL_CLK_POW_DOWN;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+
+    // Wait 500 us
+    usleep(500);
+
+    // Select the pixel PLL by setting pixclksel to 1
+    ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
+    ucTempByte &= ~MGA1064_PIX_CLK_CTL_SEL_MSK;
+    ucTempByte |= MGA1064_PIX_CLK_CTL_SEL_PLL;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
+
+    // Set pixlock to 1
+    ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte | 0x40);
+
+    // Reset dotclock rate bit.
+    ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
+    ucTempByte |= 0x3<<2; //select MGA pixel clock
+    OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
+
+    OUTREG8(MGAREG_SEQ_INDEX, 1);
+    ucTempByte = INREG8(MGAREG_SEQ_DATA);
+    OUTREG8(MGAREG_SEQ_DATA, ucTempByte & ~0x8);
+
+    // Set pixclkdis to 0
+    ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
+    ucTempByte &= ~MGA1064_PIX_CLK_CTL_CLK_DIS;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
+}
 
 /**
  * Calculate the PLL settings (m, n, p, s).
@@ -237,12 +331,17 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	}
 
 	if (pMga->is_G200SE) {
-	    MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
+	    MGAG200IPComputePLLParam(pScrn, f_out, &m, &n, &p);
 
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = p;
-	} else {
+	} else if (pMga->is_G200EV) {
+	    MGAG200IPComputePLLParam(pScrn, f_out, &m, &n, &p);
+	    pReg->PllM = m;
+	    pReg->PllN = n;
+	    pReg->PllP = p;
+        } else {
 	    /* Do the calculations for m, n, p and s */
 	    MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
 
@@ -420,6 +519,17 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		    pReg->Option = 0x40049120;
 	        pReg->Option2 = 0x00008000;
 		break;
+        case PCI_CHIP_MGAG200_EV_PCI:
+                pReg->DacRegs[MGA1064_PIX_CLK_CTL] =
+                    MGA1064_PIX_CLK_CTL_SEL_PLL;
+
+                pReg->DacRegs[MGA1064_MISC_CTL] =
+                    MGA1064_MISC_CTL_VGA8 |
+                    MGA1064_MISC_CTL_DAC_RAM_CS;
+
+                pReg->Option = 0x00000120;
+                pReg->Option2 = 0x0000b000;
+                break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
 	default:
@@ -758,6 +868,10 @@ MGA_NOT_HAL(
 	      if (pMga->is_G200SE
 		  && ((i == 0x2C) || (i == 0x2D) || (i == 0x2E)))
 	         continue;
+	      if ( (pMga->is_G200EV) &&
+		   (i >= 0x44) && (i <= 0x4E))
+	         continue;
+
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
 	   
@@ -790,6 +904,10 @@ MGA_NOT_HAL(
 				mgaReg->Option3);
 #endif
 	   }
+
+           if (pMga->is_G200EV) {
+               MGAG200EVPIXPLLSET(pScrn, mgaReg);
+           }
 );	/* MGA_NOT_HAL */
 #ifdef USEMGAHAL
           /* 
@@ -821,6 +939,12 @@ MGA_NOT_HAL(
 	   }
   	   MGAGRestorePalette(pScrn, vgaReg->DAC); 
 	   
+
+           if (pMga->is_G200EV) {
+               OUTREG16(MGAREG_CRTCEXT_INDEX, 6);
+               OUTREG16(MGAREG_CRTCEXT_DATA, 0);
+           }
+
 	   /*
 	    * this is needed to properly restore start address
 	    */
@@ -949,6 +1073,12 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 */
 	for (i = 0; i < DACREGSIZE; i++)
 		mgaReg->DacRegs[i] = inMGAdac(i);
+
+        if (pMga->is_G200EV) {
+            mgaReg->PllM = inMGAdac(MGA1064_EV_PIX_PLLC_M);
+            mgaReg->PllN = inMGAdac(MGA1064_EV_PIX_PLLC_N);
+            mgaReg->PllP = inMGAdac(MGA1064_EV_PIX_PLLC_P);
+        }
 
         mgaReg->PIXPLLCSaved = TRUE;
 
@@ -1129,6 +1259,7 @@ static const struct mgag_i2c_private {
     { (1 << 1), (1 << 3) },
     { (1 << 0), (1 << 2) },
     { (1 << 4), (1 << 5) },
+    { (1 << 0), (1 << 1) },  /* G200EV I2C bits */
 };
 
 
@@ -1229,7 +1360,9 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
     I2CBusPtr I2CPtr;
 
     if (pMga->SecondCrtc == FALSE) {
-	pMga->DDC_Bus1 = mgag_create_i2c_bus("DDC P1", 0, pScrn->scrnIndex);
+	pMga->DDC_Bus1 = mgag_create_i2c_bus("DDC P1",
+					     pMga->is_G200EV ? 3 : 0,
+					     pScrn->scrnIndex);
 	return (pMga->DDC_Bus1 != NULL);
     } else {
 	/* We have a dual head setup on G-series, set up DDC #2. */

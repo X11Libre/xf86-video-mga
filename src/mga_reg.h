@@ -221,6 +221,9 @@
 #define MGADWG_TRANSC		( 0x01 << 30 )
 #define MGAREG_MISC_WRITE	0x3c2
 #define MGAREG_MISC_READ	0x3cc
+#define MGAREG_MEM_MISC_WRITE       0x1fc2
+#define MGAREG_MEM_MISC_READ        0x1fcc
+
 #define MGAREG_MISC_IOADSEL	(0x1 << 0)
 #define MGAREG_MISC_RAMMAPEN	(0x1 << 1)
 #define MGAREG_MISC_CLK_SEL_VGA25	(0x0 << 2)
@@ -407,6 +410,12 @@
 #define MGA1064_VID_PLL_P       0x8D
 #define MGA1064_VID_PLL_M       0x8E
 #define MGA1064_VID_PLL_N       0x8F
+
+/* Modified for G200 Maxim (G200EV) */
+#define MGA1064_EV_PIX_PLLC_M	0xb6
+#define MGA1064_EV_PIX_PLLC_N	0xb7
+#define MGA1064_EV_PIX_PLLC_P	0xb8
+
 
 #define MGA1064_DISP_CTL        0x8a
 #define MGA1064_DISP_CTL_DAC1OUTSEL_MASK       0x01

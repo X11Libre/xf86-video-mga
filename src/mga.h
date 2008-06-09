@@ -124,6 +124,10 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define PCI_CHIP_MGAG200_SE_B_PCI 0x0524
 #endif
 
+#ifndef PCI_CHIP_MGAG200_EV_PCI
+#define PCI_CHIP_MGAG200_EV_PCI 0x0530
+#endif
+
 /*
  * Read/write to the DAC via MMIO 
  */
@@ -195,6 +199,9 @@ typedef struct {
     CARD32		Option3;
     long                Clock;
     Bool                PIXPLLCSaved;
+    unsigned char       PllM;
+    unsigned char       PllN;
+    unsigned char       PllP;
 } MGARegRec, *MGARegPtr;
 
 /* For programming the second CRTC */
@@ -460,6 +467,7 @@ typedef struct {
 
     int is_Gx50:1;
     int is_G200SE:1;
+    int is_G200EV:1;
     CARD32		reg_1e24;   /* model revision on g200se */
 
     Bool		Primary;

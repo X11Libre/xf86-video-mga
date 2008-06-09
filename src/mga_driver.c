@@ -353,6 +353,22 @@ static const struct mga_device_attributes attribs[] = {
 
 	4096, 0x800,           /* Memory probe size & offset values */
     },
+
+    /* G200EV */
+    [12] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 230000 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    45000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	},
+
+	8192, 0x4000,          /* Memory probe size & offset values */
+    },
 };
 
 #ifdef XSERVER_LIBPCIACCESS
@@ -376,6 +392,8 @@ static const struct pci_id_match mga_device_match[] = {
     MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_SE_A_PCI, 10),
     MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_SE_B_PCI, 11),
 
+    MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_EV_PCI, 12),
+
     { 0, 0, 0 },
 };
 #endif
@@ -392,6 +410,7 @@ static SymTabRec MGAChipsets[] = {
     { PCI_CHIP_MGAG200_PCI,	"mgag200 PCI" },
     { PCI_CHIP_MGAG200_SE_A_PCI,	"mgag200 SE A PCI" },
     { PCI_CHIP_MGAG200_SE_B_PCI,	"mgag200 SE B PCI" },
+    { PCI_CHIP_MGAG200_EV_PCI,	"mgag200 Maxim" },
     { PCI_CHIP_MGAG400,		"mgag400" },
     { PCI_CHIP_MGAG550,		"mgag550" },
     {-1,			NULL }
@@ -409,6 +428,8 @@ static PciChipsets MGAPciChipsets[] = {
     { PCI_CHIP_MGAG200_SE_B_PCI, PCI_CHIP_MGAG200_SE_B_PCI,
 	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG200_SE_A_PCI, PCI_CHIP_MGAG200_SE_A_PCI,
+	(resRange*)RES_SHARED_VGA },
+    { PCI_CHIP_MGAG200_EV_PCI, PCI_CHIP_MGAG200_EV_PCI,
 	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG400,	    PCI_CHIP_MGAG400,	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG550,	    PCI_CHIP_MGAG550,	(resRange*)RES_SHARED_VGA },
@@ -1048,6 +1069,10 @@ MGAProbe(DriverPtr drv, int flags)
                 attrib_no = 11;
                 break;
 
+            case PCI_CHIP_MGAG200_EV_PCI:
+                attrib_no = 12;
+                break;
+
 	    default:
 		return FALSE;
             }
@@ -1240,7 +1265,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp | 0x80);
 
 	/* apparently the G200SE doesn't have a BIOS to read */
-	if (pMga->is_G200SE) {
+	if (pMga->is_G200SE || pMga->is_G200EV) {
 	    CARD32 MemoryAt0, MemoryAt1, Offset;
 	    CARD32 FirstMemoryVal1, FirstMemoryVal2;
 	    CARD32 SecondMemoryVal1, SecondMemoryVal2;
@@ -1736,6 +1761,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	|| (pMga->Chipset == PCI_CHIP_MGAG550);
     pMga->is_G200SE = (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI)
 	|| (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI);
+    pMga->is_G200EV = (pMga->Chipset == PCI_CHIP_MGAG200_EV_PCI);
 
 #ifdef USEMGAHAL
     if (pMga->chip_attribs->HAL_chipset) {
@@ -2150,6 +2176,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGAG200_PCI:
     case PCI_CHIP_MGAG200_SE_A_PCI:
     case PCI_CHIP_MGAG200_SE_B_PCI:
+    case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
 	MGAGSetupFuncs(pScrn);
@@ -2373,6 +2400,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	  case PCI_CHIP_MGAG200_PCI:
 	  case PCI_CHIP_MGAG200_SE_A_PCI:
 	  case PCI_CHIP_MGAG200_SE_B_PCI:
+	  case PCI_CHIP_MGAG200_EV_PCI:
 	    pMga->SrcOrg = 0;
 	    pMga->DstOrg = 0;
 	    break;
@@ -2550,6 +2578,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	case PCI_CHIP_MGAG200_PCI:
 	case PCI_CHIP_MGAG200_SE_A_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
+	case PCI_CHIP_MGAG200_EV_PCI:
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
 	   maxPitch = 4096;
@@ -4444,6 +4473,9 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 	if (pMga->reg_1e24 == 0x01 &&
 	    xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 256)
 	    return MODE_BANDWIDTH;
+    } else if (pMga->is_G200EV
+	       && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 327)) {
+	return MODE_BANDWIDTH;
     }
 
     lace = 1 + ((mode->Flags & V_INTERLACE) != 0);
