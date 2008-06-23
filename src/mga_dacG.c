@@ -1259,7 +1259,7 @@ static const struct mgag_i2c_private {
     { (1 << 1), (1 << 3) },
     { (1 << 0), (1 << 2) },
     { (1 << 4), (1 << 5) },
-    { (1 << 0), (1 << 1) },  /* G200EV I2C bits */
+    { (1 << 0), (1 << 1) },  /* G200SE and G200EV I2C bits */
 };
 
 
@@ -1361,8 +1361,8 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
 
     if (pMga->SecondCrtc == FALSE) {
 	pMga->DDC_Bus1 = mgag_create_i2c_bus("DDC P1",
-					     pMga->is_G200EV ? 3 : 0,
-					     pScrn->scrnIndex);
+		(pMga->is_G200EV || pMga->is_G200SE) ? 3 : 0,
+		pScrn->scrnIndex);
 	return (pMga->DDC_Bus1 != NULL);
     } else {
 	/* We have a dual head setup on G-series, set up DDC #2. */

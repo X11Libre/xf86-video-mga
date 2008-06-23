@@ -1358,9 +1358,6 @@ MGAdoDDC(ScrnInfoPtr pScrn)
   hwp = VGAHWPTR(pScrn);
   pMga = MGAPTR(pScrn);
 
-  if (pMga->is_G200SE)
-      return NULL; /* boo hiss */
-
   /* Load DDC if we have the code to use it */
   /* This gives us DDC1 */
   if (pMga->ddc1Read || pMga->i2cInit) {
