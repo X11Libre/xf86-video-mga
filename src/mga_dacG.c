@@ -2,13 +2,6 @@
  * MGA-1064, MGA-G100, MGA-G200, MGA-G400, MGA-G550 RAMDAC driver
  */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dacG.c,v 1.54tsi Exp $ */
-
-/*
- * This is a first cut at a non-accelerated version to work with the
- * new server design (DHD).
- */                     
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

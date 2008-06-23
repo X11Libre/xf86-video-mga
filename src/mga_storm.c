@@ -1,5 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99tsi Exp $ */
-
 #define PSZ 8
 
 #ifdef HAVE_CONFIG_H
