@@ -319,6 +319,7 @@
 
 #define MGA1064_INDEX		0x00
 #define MGA1064_WADR_PAL	0x00
+#define MGA1064_SPAREREG        0x00
 #define MGA1064_COL_PAL		0x01
 #define MGA1064_PIX_RD_MSK	0x02
 #define MGA1064_RADR_PAL	0x03
@@ -382,6 +383,16 @@
 #define MGA1064_SYS_PLL_N	0x2d
 #define MGA1064_SYS_PLL_P	0x2e
 #define MGA1064_SYS_PLL_STAT	0x2f
+
+#define MGA1064_REMHEADCTL     0x30
+#define MGA1064_REMHEADCTL_CLKDIS ( 0x01 << 0 )
+#define MGA1064_REMHEADCTL_CLKSL_OFF ( 0x00 << 1 )
+#define MGA1064_REMHEADCTL_CLKSL_PLL ( 0x01 << 1 )
+#define MGA1064_REMHEADCTL_CLKSL_PCI ( 0x02 << 1 )
+#define MGA1064_REMHEADCTL_CLKSL_MSK ( 0x03 << 1 )
+
+#define MGA1064_REMHEADCTL2     0x31
+
 #define MGA1064_ZOOM_CTL	0x38
 #define MGA1064_SENSE_TST	0x3a
 
@@ -411,7 +422,12 @@
 #define MGA1064_VID_PLL_M       0x8E
 #define MGA1064_VID_PLL_N       0x8F
 
-/* Modified for G200 Maxim (G200EV) */
+/* Modified PLL for G200 Winbond (G200WB) */
+#define MGA1064_WB_PIX_PLLC_M	0xb7
+#define MGA1064_WB_PIX_PLLC_N	0xb6
+#define MGA1064_WB_PIX_PLLC_P	0xb8
+
+/* Modified PLL for G200 Maxim (G200EV) */
 #define MGA1064_EV_PIX_PLLC_M	0xb6
 #define MGA1064_EV_PIX_PLLC_N	0xb7
 #define MGA1064_EV_PIX_PLLC_P	0xb8

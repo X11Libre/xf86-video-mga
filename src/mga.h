@@ -85,7 +85,8 @@ typedef enum {
     OPTION_METAMODES,
     OPTION_OLDDMA,
     OPTION_PCIDMA,
-    OPTION_ACCELMETHOD
+    OPTION_ACCELMETHOD,
+    OPTION_KVM
 } MGAOpts;
 
 
@@ -122,6 +123,10 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 
 #ifndef PCI_CHIP_MGAG200_SE_B_PCI
 #define PCI_CHIP_MGAG200_SE_B_PCI 0x0524
+#endif
+
+#ifndef PCI_CHIP_MGAG200_WINBOND_PCI
+#define PCI_CHIP_MGAG200_WINBOND_PCI 0x0532
 #endif
 
 #ifndef PCI_CHIP_MGAG200_EV_PCI
@@ -467,7 +472,11 @@ typedef struct {
 
     int is_Gx50:1;
     int is_G200SE:1;
+    int is_G200WB:1;
     int is_G200EV:1;
+
+    int KVM;
+
     CARD32		reg_1e24;   /* model revision on g200se */
 
     Bool		Primary;
