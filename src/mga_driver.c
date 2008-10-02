@@ -2492,6 +2492,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Set the min pixel clock */
     pMga->MinClock = 17750;
+    if (pMga->is_G200WB){
+	pMga->MinClock = 18750;
+    }
     xf86DrvMsg(pScrn->scrnIndex, X_DEFAULT, "Min pixel clock is %d MHz\n",
 	       pMga->MinClock / 1000);
     /*
