@@ -122,12 +122,12 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 		if (ulFTmpDelta < ulFDelta) {
 			ulFDelta = ulFTmpDelta;
 			if (pMga->is_G200WB) {
-				*M = (ulTestM - 1) | (((ulTestN -1) >> 1) & 0x80);
+				*M = (CARD8)(ulTestM - 1) | (CARD8)(((ulTestN -1) >> 1) & 0x80);
 			} else {
 				*M = ulTestM - 1;
 			}
-		    *N = ulTestN - 1;
-		    *P = ulTestP - 1;
+		    *N = (CARD8)(ulTestN - 1);
+		    *P = (CARD8)(ulTestP - 1);
 		}
 	    }
 	}

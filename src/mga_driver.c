@@ -427,8 +427,8 @@ static SymTabRec MGAChipsets[] = {
     { PCI_CHIP_MGAG200_PCI,	"mgag200 PCI" },
     { PCI_CHIP_MGAG200_SE_A_PCI,	"mgag200 SE A PCI" },
     { PCI_CHIP_MGAG200_SE_B_PCI,	"mgag200 SE B PCI" },
-    { PCI_CHIP_MGAG200_EV_PCI,	"mgag200 Maxim" },
-    { PCI_CHIP_MGAG200_WINBOND_PCI,	"mgag200 Winbond" },
+    { PCI_CHIP_MGAG200_EV_PCI,	"mgag200 EV Maxim" },
+    { PCI_CHIP_MGAG200_WINBOND_PCI,	"mgag200 eW Nuvoton" },
     { PCI_CHIP_MGAG400,		"mgag400" },
     { PCI_CHIP_MGAG550,		"mgag550" },
     {-1,			NULL }
@@ -4508,11 +4508,13 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 	    xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 256)
 	    return MODE_BANDWIDTH;
     } else if (pMga->is_G200WB){
+        if (mode->Flags & V_DBLSCAN)
+            return MODE_NO_DBLESCAN;
 	if (pMga->KVM && mode->HDisplay > 1280)
 	    return MODE_VIRTUAL_X;
 	if (pMga->KVM && mode->VDisplay > 1024)
 	    return MODE_VIRTUAL_Y;
-	if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 315)
+	if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 318.77)
 	    return MODE_BANDWIDTH;
     } else if (pMga->is_G200EV
 	       && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 327)) {
