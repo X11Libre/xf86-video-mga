@@ -82,7 +82,7 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
         ulTestNEnd      = 32;
         ulTestMStart    = 1;
         ulTestMEnd      = 32;
-    } else if (pMga->is_G200EV) {
+    } else { /* pMga->is_G200EV */
         ulVCOMax        = 550000;
         ulVCOMin        = 150000;
         ulPLLFreqRef    = 50000;
@@ -91,15 +91,6 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
         ulTestNEnd      = 256;
         ulTestMStart    = 1;
         ulTestMEnd      = 16;
-    } else if (pMga->is_G200WB) {
-        ulVCOMax        = 680000;
-        ulVCOMin        = 150000;
-        ulPLLFreqRef    = 48000;
-        ulTestPStart    = 8;
-        ulTestNStart    = 1;
-        ulTestNEnd      = 512;
-        ulTestMStart    = 3;
-        ulTestMEnd      = 25;
     }
 
     ulFDelta = 0xFFFFFFFF;
@@ -120,14 +111,70 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 		    ulFTmpDelta = lFo - ulComputedFo;
 
 		if (ulFTmpDelta < ulFDelta) {
-			ulFDelta = ulFTmpDelta;
-			if (pMga->is_G200WB) {
-				*M = (CARD8)(ulTestM - 1) | (CARD8)(((ulTestN -1) >> 1) & 0x80);
-			} else {
-				*M = ulTestM - 1;
-			}
+		    ulFDelta = ulFTmpDelta;
+		    *M = (CARD8)(ulTestM - 1);
 		    *N = (CARD8)(ulTestN - 1);
 		    *P = (CARD8)(ulTestP - 1);
+		}
+	    }
+	}
+    }
+#if DEBUG
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "lFo=%ld n=0x%x m=0x%x p=0x%x \n",
+		   lFo, *N, *M, *P );
+#endif
+}
+
+static void
+MGAG200WBComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulVCOMax, ulVCOMin;
+    unsigned int ulTestP;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulPLLFreqRef;
+    unsigned int ulTestPStart;
+    unsigned int ulTestNStart;
+    unsigned int ulTestNEnd;
+    unsigned int ulTestMStart;
+    unsigned int ulTestMEnd;
+
+    ulVCOMax        = 550000;
+    ulVCOMin        = 150000;
+    ulPLLFreqRef    = 48000;
+    ulTestPStart    = 1;
+    ulTestNStart    = 1;
+    ulTestNEnd      = 150;
+    ulTestMStart    = 1;
+    ulTestMEnd      = 16;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = lFo * 5 / 1000;
+
+    /* Then we need to minimize the M while staying within 0.5% */
+    for (ulTestP = ulTestPStart; ulTestP < 9; ulTestP++) {
+	if ((lFo * ulTestP) > ulVCOMax) continue;
+	if ((lFo * ulTestP) < ulVCOMin) continue;
+
+        for (ulTestM = ulTestMStart; ulTestM <= ulTestMEnd; ulTestM++) {
+	   for (ulTestN = ulTestNStart; ulTestN <= ulTestNEnd; ulTestN++) {
+		ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
+		if (ulComputedFo > lFo)
+			ulFTmpDelta = ulComputedFo - lFo;
+		else
+			ulFTmpDelta = lFo - ulComputedFo;
+
+		if (ulFTmpDelta < ulFDelta) {
+			ulFDelta = ulFTmpDelta;
+        		*M = (CARD8)(ulTestM - 1) | (CARD8)(((ulTestN -1) >> 1) & 0x80);
+			*N = (CARD8)(ulTestN - 1);
+			*P = (CARD8)(ulTestP - 1);
 		}
 	    }
 	}
@@ -144,12 +191,7 @@ MGAG200EVPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
 {
     MGAPtr pMga = MGAPTR(pScrn);
 
-    unsigned long ulFallBackCounter;
     unsigned char ucTempByte, ucPixCtrl;
-    unsigned char ucM;
-    unsigned char ucN;
-    unsigned char ucP;
-    unsigned char ucS;
 
     // Set pixclkdis to 1
     ucPixCtrl = inMGAdac(MGA1064_PIX_CLK_CTL);
@@ -214,99 +256,133 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
 {
     MGAPtr pMga = MGAPTR(pScrn);
 
-    unsigned long ulFallBackCounter;
-    unsigned char ucTempByte, ucPixCtrl;
-    unsigned char ucM;
-    unsigned char ucN;
-    unsigned char ucP;
-    unsigned char ucS;
+    unsigned long ulLoopCount, ulLockCheckIterations = 0, ulTempCount, ulVCount;
+    unsigned char ucTempByte, ucPixCtrl, ucPLLLocked = FALSE;
 
-    // Set pixclkdis to 1
-    ucPixCtrl = inMGAdac(MGA1064_PIX_CLK_CTL);
-    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_DIS;
-    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+    while(ulLockCheckIterations <= 32 && ucPLLLocked == FALSE)
+    {
+        if(ulLockCheckIterations > 0)
+        {
+            OUTREG8(MGAREG_CRTCEXT_INDEX, 0x1E);
+            ucTempByte = INREG8(MGAREG_CRTCEXT_DATA);
+            if(ucTempByte < 0xFF)
+            {
+                OUTREG8(MGAREG_CRTCEXT_DATA, ucTempByte+1);
+            }
+        }
 
-    ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
-    ucTempByte |= MGA1064_REMHEADCTL_CLKDIS;
-    outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
+        // Set pixclkdis to 1
+        ucPixCtrl = inMGAdac(MGA1064_PIX_CLK_CTL);
+        ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_DIS;
+        outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
 
-    // Select PLL Set C
-    ucTempByte = INREG8(MGAREG_MISC_READ);
-    ucTempByte |= 0x3<<2; //select MGA pixel clock
-    OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+        ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
+        ucTempByte |= MGA1064_REMHEADCTL_CLKDIS;
+        outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
 
-    // Set pixlock to 0
-    ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
-    outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte & ~0x40);
+        // Select PLL Set C
+        ucTempByte = INREG8(MGAREG_MISC_READ);
+        ucTempByte |= 0x3<<2; //select MGA pixel clock
+        OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
 
-    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_POW_DOWN | 0x80;
-    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+        // Set pixlock to 0
+        ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
+        outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte & ~0x40);
 
-    // Wait 500 us
-    usleep(500);
+        ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_POW_DOWN | 0x80;
+        outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
 
-    // Reset the PLL
-    //   When we are varying the output frequency by more than 
-    //   10%, we must reset the PLL. However to be prudent, we
-    //   will reset it each time that we are changing it.
-    ucTempByte = inMGAdac(MGA1064_VREF_CTL);
-    ucTempByte &= ~0x04;
-    outMGAdac(MGA1064_VREF_CTL, ucTempByte );
+        // Wait 500 us
+        usleep(500);
 
-    // Wait 50 us
-    usleep(50);
+        // Reset the PLL
+        //   When we are varying the output frequency by more than 
+        //   10%, we must reset the PLL. However to be prudent, we
+        //   will reset it each time that we are changing it.
+        ucTempByte = inMGAdac(MGA1064_VREF_CTL);
+        ucTempByte &= ~0x04;
+        outMGAdac(MGA1064_VREF_CTL, ucTempByte );
 
-    // Program the Pixel PLL Register
-    outMGAdac(MGA1064_WB_PIX_PLLC_M, mgaReg->PllM);
-    outMGAdac(MGA1064_WB_PIX_PLLC_N, mgaReg->PllN);
-    outMGAdac(MGA1064_WB_PIX_PLLC_P, mgaReg->PllP);
+        // Wait 50 us
+        usleep(50);
 
-    // Wait 50 us
-    usleep(50);
+        // Program the Pixel PLL Register
+        outMGAdac(MGA1064_WB_PIX_PLLC_M, mgaReg->PllM);
+        outMGAdac(MGA1064_WB_PIX_PLLC_N, mgaReg->PllN);
+        outMGAdac(MGA1064_WB_PIX_PLLC_P, mgaReg->PllP);
 
-    ucTempByte = INREG8(MGAREG_MISC_READ);
-    OUTREG8(MGAREG_MISC_WRITE, ucTempByte & ~0x08);
+        // Wait 50 us
+        usleep(50);
 
-    // Wait 50 us
-    usleep(50);
+        ucTempByte = INREG8(MGAREG_MISC_READ);
+        OUTREG8(MGAREG_MISC_WRITE, ucTempByte & ~0x04);
 
-    OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+        // Wait 50 us
+        usleep(50);
 
-    // Wait 500 us
-    usleep(500);
+        OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
 
-    // Turning the PLL on
-    ucTempByte = inMGAdac(MGA1064_VREF_CTL);
-    ucTempByte |= 0x04;
-    outMGAdac(MGA1064_VREF_CTL, ucTempByte );
+        // Wait 500 us
+        usleep(500);
 
-    // Wait 500 us
-    usleep(500);
+        // Turning the PLL on
+        ucTempByte = inMGAdac(MGA1064_VREF_CTL);
+        ucTempByte |= 0x04;
+        outMGAdac(MGA1064_VREF_CTL, ucTempByte );
 
-    // Select the pixel PLL by setting pixclksel to 1
-    ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
-    ucTempByte &= ~MGA1064_PIX_CLK_CTL_SEL_MSK;
-    ucTempByte |= MGA1064_PIX_CLK_CTL_SEL_PLL;
-    outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
+        // Wait 500 us
+        usleep(500);
 
-    ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
-    ucTempByte &= ~MGA1064_REMHEADCTL_CLKSL_MSK;
-    ucTempByte |= MGA1064_REMHEADCTL_CLKSL_PLL;
-    outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
+        // Select the pixel PLL by setting pixclksel to 1
+        ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
+        ucTempByte &= ~MGA1064_PIX_CLK_CTL_SEL_MSK;
+        ucTempByte |= MGA1064_PIX_CLK_CTL_SEL_PLL;
+        outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
 
-    // Set pixlock to 1
-    ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
-    outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte | 0x40);
+        ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
+        ucTempByte &= ~MGA1064_REMHEADCTL_CLKSL_MSK;
+        ucTempByte |= MGA1064_REMHEADCTL_CLKSL_PLL;
+        outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
 
-    // Reset dotclock rate bit.
-    OUTREG8(MGAREG_SEQ_INDEX, 1);
-    ucTempByte = INREG8(MGAREG_SEQ_DATA);
-    OUTREG8(MGAREG_SEQ_DATA, ucTempByte & ~0x8);
+        // Set pixlock to 1
+        ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
+        outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte | 0x40);
 
-    // Set pixclkdis to 0
-    ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
-    ucTempByte &= ~MGA1064_PIX_CLK_CTL_CLK_DIS;
-    outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
+        // Reset dotclock rate bit.
+        OUTREG8(MGAREG_SEQ_INDEX, 1);
+        ucTempByte = INREG8(MGAREG_SEQ_DATA);
+        OUTREG8(MGAREG_SEQ_DATA, ucTempByte & ~0x8);
+
+        // Set pixclkdis to 0
+        ucTempByte = inMGAdac(MGA1064_PIX_CLK_CTL);
+        ucTempByte &= ~MGA1064_PIX_CLK_CTL_CLK_DIS;
+        outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
+
+        // Poll VCount. If it increments twice inside 150us, 
+        // we assume that the PLL has locked.
+        ulLoopCount = 0;
+        ulVCount = INREG(MGAREG_VCOUNT);
+
+        while(ulLoopCount < 30 && ucPLLLocked == FALSE)
+        {
+            ulTempCount = INREG(MGAREG_VCOUNT);
+
+            if(ulTempCount < ulVCount)
+            {
+                ulVCount = 0;
+            }
+            if ((ucTempByte - ulVCount) > 2)
+            {
+                ucPLLLocked = TRUE;
+            }
+            else
+            {
+                usleep(5);
+            }
+            ulLoopCount++;
+        }
+        ulLockCheckIterations++;
+    }
 
     // Set remclkdis to 0
     ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
@@ -537,12 +613,19 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = p;
-	} else if (pMga->is_G200EV || pMga->is_G200WB) {
+	} else if (pMga->is_G200EV) {
 	    MGAG200IPComputePLLParam(pScrn, f_out, &m, &n, &p);
+
 	    pReg->PllM = m;
 	    pReg->PllN = n;
 	    pReg->PllP = p;
-	} else {
+	} else if (pMga->is_G200WB) {
+	    MGAG200WBComputePLLParam(pScrn, f_out, &m, &n, &p);
+
+	    pReg->PllM = m;
+	    pReg->PllN = n;
+	    pReg->PllP = p;
+        } else {
 	    /* Do the calculations for m, n, p and s */
 	    MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
 
