@@ -111,10 +111,10 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 		    ulFTmpDelta = lFo - ulComputedFo;
 
 		if (ulFTmpDelta < ulFDelta) {
-		    ulFDelta = ulFTmpDelta;
-		    *M = (CARD8)(ulTestM - 1);
-		    *N = (CARD8)(ulTestN - 1);
-		    *P = (CARD8)(ulTestP - 1);
+			ulFDelta = ulFTmpDelta;
+			*M = ulTestM - 1;
+			*N = (CARD8)(ulTestN - 1);
+			*P = (CARD8)(ulTestP - 1);
 		}
 	    }
 	}
@@ -199,9 +199,9 @@ MGAG200EVPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
     outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
 
     // Select PLL Set C
-    ucTempByte = INREG8(MGAREG_MISC_READ);
+    ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
     ucTempByte |= 0x3<<2; //select MGA pixel clock
-    OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+    OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
 
     // Set pixlock to 0
     ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
@@ -281,9 +281,9 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
 
         // Select PLL Set C
-        ucTempByte = INREG8(MGAREG_MISC_READ);
+        ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
         ucTempByte |= 0x3<<2; //select MGA pixel clock
-        OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+        OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
 
         // Set pixlock to 0
         ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
@@ -314,13 +314,13 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         // Wait 50 us
         usleep(50);
 
-        ucTempByte = INREG8(MGAREG_MISC_READ);
-        OUTREG8(MGAREG_MISC_WRITE, ucTempByte & ~0x04);
+        ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
+        OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
 
         // Wait 50 us
         usleep(50);
 
-        OUTREG8(MGAREG_MISC_WRITE, ucTempByte);
+        OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
 
         // Wait 500 us
         usleep(500);
@@ -1586,9 +1586,17 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
 {
   MGAPtr pMga = MGAPTR(pScrn);
   unsigned char val;
-  
+  int i2c_index;
+
+  if (pMga->is_G200SE || pMga->is_G200WB || pMga->is_G200EV)
+    i2c_index = 3;
+  else
+    i2c_index = 0;
+
+  const struct mgag_i2c_private *p = & i2c_priv[i2c_index];
+ 
   /* Define the SDA as an input */
-  outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(DDC_P1_SCL_MASK | DDC_P1_SDA_MASK), 0);
+  outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(p->scl_mask | p->sda_mask), 0);
 
   /* wait for Vsync */
   if (pMga->is_G200SE) {
@@ -1599,7 +1607,7 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
   }
 
   /* Get the result */
-  val = (inMGAdac(MGA1064_GEN_IO_DATA) & DDC_P1_SDA_MASK);
+  val = (inMGAdac(MGA1064_GEN_IO_DATA) & p->sda_mask);
   return val;
 }
 
@@ -1675,7 +1683,6 @@ Bool
 MGAG_i2cInit(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-    I2CBusPtr I2CPtr;
 
     if (pMga->SecondCrtc == FALSE) {
         int i2c_index;
