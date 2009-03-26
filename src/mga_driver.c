@@ -1284,6 +1284,38 @@ MGACountRam(ScrnInfoPtr pScrn)
 	    usleep(20000);
 	}
 
+        if (pMga->is_G200WB) {
+            CARD32 Option, MaxMapSize;
+
+#ifdef XSERVER_LIBPCIACCESS
+            pci_device_cfg_read_u32(pMga->PciInfo, &Option, 
+                                    PCI_OPTION_REG);
+            MaxMapSize = pMga->PciInfo->regions[0].size;
+#else
+            Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
+            MaxMapSize = 1UL << pciGetBaseSize(pMga->PciTag, 0, TRUE,
+                                            NULL);
+#endif
+            Option = (Option & 0x3000000) >> 24 ;
+
+            if (Option == 2)
+                ProbeSize = 4*1024;
+            else if(Option == 1)
+                ProbeSize = 8*1024;
+            else if(Option == 0)
+                ProbeSize = 16*1024;
+
+            if (ProbeSize * 1024 > MaxMapSize)
+                xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+                        "Fb size from config space doesn't fit option register\n");
+            else {
+                MGAUnmapMem(pScrn);
+                pMga->FbMapSize = ProbeSize * 1024;
+                MGAMapMem(pScrn);
+                base = pMga->FbBase;
+            }
+        }
+
 	/* turn MGA mode on - enable linear frame buffer (CRTCEXT3) */
 	OUTREG8(MGAREG_CRTCEXT_INDEX, 3);
 	tmp = INREG8(MGAREG_CRTCEXT_DATA);
