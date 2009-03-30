@@ -1293,8 +1293,7 @@ MGACountRam(ScrnInfoPtr pScrn)
             MaxMapSize = pMga->PciInfo->regions[0].size;
 #else
             Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
-            MaxMapSize = 1UL << pciGetBaseSize(pMga->PciTag, 0, TRUE,
-                                            NULL);
+            MaxMapSize = 1UL << pMga->PciInfo->size[0];
 #endif
             Option = (Option & 0x3000000) >> 24 ;
 
