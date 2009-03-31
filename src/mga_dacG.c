@@ -55,9 +55,8 @@ static void MGAGLoadPalette(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
 static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
 
 static void
-MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
-    MGAPtr pMga = MGAPTR(pScrn);
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
     unsigned int ulFPermitedDelta;
@@ -67,43 +66,68 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     unsigned int ulTestM;
     unsigned int ulTestN;
     unsigned int ulPLLFreqRef;
-    unsigned int ulTestPStart;
-    unsigned int ulTestNStart;
-    unsigned int ulTestNEnd;
-    unsigned int ulTestMStart;
-    unsigned int ulTestMEnd;
 
-    if (pMga->is_G200SE) {
-        ulVCOMax        = 320000;
-        ulVCOMin        = 160000;
-        ulPLLFreqRef    = 25000;
-        ulTestPStart    = 8;
-        ulTestNStart    = 17;
-        ulTestNEnd      = 32;
-        ulTestMStart    = 1;
-        ulTestMEnd      = 32;
-    } else { /* pMga->is_G200EV */
-        ulVCOMax        = 550000;
-        ulVCOMin        = 150000;
-        ulPLLFreqRef    = 50000;
-        ulTestPStart    = 16;
-        ulTestNStart    = 1;
-        ulTestNEnd      = 256;
-        ulTestMStart    = 1;
-        ulTestMEnd      = 16;
-    }
+    ulVCOMax        = 320000;
+    ulVCOMin        = 160000;
+    ulPLLFreqRef    = 25000;
 
     ulFDelta = 0xFFFFFFFF;
     /* Permited delta is 0.5% as VESA Specification */
     ulFPermitedDelta = lFo * 5 / 1000;  
 
     /* Then we need to minimize the M while staying within 0.5% */
-    for (ulTestP = ulTestPStart; ulTestP > 0; ulTestP--) {
+    for (ulTestP = 8; ulTestP > 0; ulTestP >>= 1) {
+        if ((lFo * ulTestP) > ulVCOMax) continue;
+        if ((lFo * ulTestP) < ulVCOMin) continue;
+
+        for (ulTestN = 17; ulTestN <= 256; ulTestN++) {
+            for (ulTestM = 1; ulTestM <= 32; ulTestM++) {
+                ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
+                if (ulComputedFo > lFo)
+                    ulFTmpDelta = ulComputedFo - lFo;
+                else
+                    ulFTmpDelta = lFo - ulComputedFo;
+
+                if (ulFTmpDelta < ulFDelta) {
+                    ulFDelta = ulFTmpDelta;
+                    *M = ulTestM - 1;
+                    *N = ulTestN - 1;
+                    *P = ulTestP - 1;
+                }
+            }
+        }
+    }
+}
+
+static void
+MGAG200EVComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulTestP;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulVCOMax;
+    unsigned int ulVCOMin;
+    unsigned int ulPLLFreqRef;
+
+    ulVCOMax        = 550000;
+    ulVCOMin        = 150000;
+    ulPLLFreqRef    = 50000;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = lFo * 5 / 1000;  
+
+    /* Then we need to minimize the M while staying within 0.5% */
+    for (ulTestP = 16; ulTestP > 0; ulTestP--) {
 	if ((lFo * ulTestP) > ulVCOMax) continue;
 	if ((lFo * ulTestP) < ulVCOMin) continue;
 
-	for (ulTestN = ulTestNStart; ulTestN <= ulTestNEnd; ulTestN++) {
-	    for (ulTestM = ulTestMStart; ulTestM <= ulTestMEnd; ulTestM++) {
+	for (ulTestN = 1; ulTestN <= 256; ulTestN++) {
+	    for (ulTestM = 1; ulTestM <= 16; ulTestM++) {
 		ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
 		if (ulComputedFo > lFo)
 		    ulFTmpDelta = ulComputedFo - lFo;
@@ -112,7 +136,7 @@ MGAG200IPComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 
 		if (ulFTmpDelta < ulFDelta) {
 			ulFDelta = ulFTmpDelta;
-			*M = ulTestM - 1;
+			*M = (CARD8)(ulTestM - 1);
 			*N = (CARD8)(ulTestN - 1);
 			*P = (CARD8)(ulTestP - 1);
 		}
@@ -601,6 +625,7 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 
 	/* Pixel clock values */
 	int m, n, p, s;
+        m = n = p = s = 0;
 
 	if(MGAISGx50(pMga)) {
 	    pReg->Clock = f_out;
@@ -608,13 +633,13 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	}
 
 	if (pMga->is_G200SE) {
-	    MGAG200IPComputePLLParam(pScrn, f_out, &m, &n, &p);
+	    MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
 
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = p;
 	} else if (pMga->is_G200EV) {
-	    MGAG200IPComputePLLParam(pScrn, f_out, &m, &n, &p);
+	    MGAG200EVComputePLLParam(pScrn, f_out, &m, &n, &p);
 
 	    pReg->PllM = m;
 	    pReg->PllN = n;
