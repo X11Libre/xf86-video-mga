@@ -1346,7 +1346,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 		base[Offset+0x100] = 0x55;
 		base[Offset+0x101] = 0xaa;
 
-		OUTREG(MGAREG_CRTC_INDEX, 0);
+		OUTREG8(MGAREG_CRTC_INDEX, 0);
 		usleep(8);
 
 		TestMemoryLocA = base[Offset];
