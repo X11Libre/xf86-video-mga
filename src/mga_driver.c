@@ -2638,9 +2638,13 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	case PCI_CHIP_MGAG100_PCI:
 	   maxPitch = 2048;
 	   break;
+	case PCI_CHIP_MGAG200_SE_A_PCI:
+	   if (pScrn->videoRam < 2048){
+	       maxPitch = 1024;
+	   }
+	   break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
-	case PCI_CHIP_MGAG200_SE_A_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
         case PCI_CHIP_MGAG200_WINBOND_PCI:
 	case PCI_CHIP_MGAG200_EV_PCI:
@@ -2664,6 +2668,10 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	   xfree(linePitches);
     }
 
+    /* Some X compute displayWidth from inferred virtual without
+       checking pitch limit. */
+    if(pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI && pScrn->videoRam < 2048)
+        pScrn->displayWidth = 1024;
 
     if (i < 1 && pMga->FBDev) {
 	fbdevHWUseBuildinMode(pScrn);
