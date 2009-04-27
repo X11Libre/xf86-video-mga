@@ -1907,8 +1907,106 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
     }
 
-   
-    
+    if (!(pMga->Options = xalloc(sizeof(MGAOptions))))
+	return FALSE;
+    memcpy(pMga->Options, MGAOptions, sizeof(MGAOptions));
+
+    /* ajv changes to reflect actual values. see sdk pp 3-2. */
+    /* these masks just get rid of the crap in the lower bits */
+
+    /* For the 2064 and older rev 1064, base0 is the MMIO and base1 is
+     * the framebuffer.
+     */
+
+    switch (pMga->chip_attribs->BARs) {
+    case old_BARs:
+	pMga->framebuffer_bar = 1;
+	pMga->io_bar = 0;
+	pMga->iload_bar = -1;
+	break;
+    case probe_BARs:
+	if (pMga->ChipRev < 3) {
+	    pMga->framebuffer_bar = 1;
+	    pMga->io_bar = 0;
+	    pMga->iload_bar = 2;
+	    break;
+	}
+	/* FALLTHROUGH */
+    case new_BARs:
+	pMga->framebuffer_bar = 0;
+	pMga->io_bar = 1;
+	pMga->iload_bar = 2;
+	break;
+    }
+
+#ifdef XSERVER_LIBPCIACCESS
+    pMga->FbAddress = pMga->PciInfo->regions[pMga->framebuffer_bar].base_addr;
+#else
+    pMga->FbAddress = pMga->PciInfo->memBase[pMga->framebuffer_bar] & 0xff800000;
+#endif
+
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Linear framebuffer at 0x%lX\n",
+	       (unsigned long)pMga->FbAddress);
+
+#ifdef XSERVER_LIBPCIACCESS
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO registers at 0x%lX\n",
+	       (unsigned long) pMga->PciInfo->regions[pMga->io_bar].base_addr);
+#else
+    pMga->IOAddress = pMga->PciInfo->memBase[pMga->io_bar] & 0xffffc000;
+
+    xf86DrvMsg(pScrn->scrnIndex, from, "MMIO registers at 0x%lX\n",
+	       (unsigned long)pMga->IOAddress);
+#endif
+
+    if (pMga->iload_bar != -1) {
+#ifdef XSERVER_LIBPCIACCESS
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+		   "Pseudo-DMA transfer window at 0x%lX\n",
+		   (unsigned long) pMga->PciInfo->regions[pMga->iload_bar].base_addr);
+#else
+	if (pMga->PciInfo->memBase[2] != 0) {
+	    pMga->ILOADAddress = pMga->PciInfo->memBase[2] & 0xffffc000;
+	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+		       "Pseudo-DMA transfer window at 0x%lX\n",
+		       (unsigned long)pMga->ILOADAddress);
+	}
+#endif
+    }
+
+#ifndef XSERVER_LIBPCIACCESS
+    /*
+     * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
+     * use the VGA default.  Allow the config file to override this.
+     */
+
+    pMga->BiosFrom = X_NONE;
+    if (pMga->device->BiosBase != 0) {
+	/* XXX This isn't used */
+	pMga->BiosAddress = pMga->device->BiosBase;
+	pMga->BiosFrom = X_CONFIG;
+    } else {
+	/* details: rombase sdk pp 4-15 */
+	if (pMga->PciInfo->biosBase != 0) {
+	    pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
+	    pMga->BiosFrom = X_PROBED;
+	} else if (pMga->Primary) {
+	    pMga->BiosAddress = 0xc0000;
+	    pMga->BiosFrom = X_DEFAULT;
+	}
+    }
+    if (pMga->BiosAddress) {
+	xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom, "BIOS at 0x%lX\n",
+		   (unsigned long)pMga->BiosAddress);
+    }
+#endif
+
+    if (xf86RegisterResources(pMga->pEnt->index, NULL, ResExclusive)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		"xf86RegisterResources() found resource conflicts\n");
+	MGAFreeRec(pScrn);
+	return FALSE;
+    }
+
     /*
      * The first thing we should figure out is the depth, bpp, etc.
      * Our default depth is 8, so pass it to the helper function.
@@ -1920,6 +2018,32 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (pMga->SecondCrtc)
 	flags24 = Support32bppFb;
+
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_FBDEV, FALSE)) {
+	pMga->FBDev = TRUE;
+	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
+		"Using framebuffer device\n");
+	/* check for linux framebuffer device */
+	if (!xf86LoadSubModule(pScrn, "fbdevhw"))
+	    return FALSE;
+	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
+	if (!fbdevHWInit(pScrn, pMga->PciInfo, NULL))
+	    return FALSE;
+    }
+
+    /*
+     * If the user has specified the amount of memory in the XF86Config
+     * file, we respect that setting.
+     */
+    from = X_PROBED;
+    if (pMga->device->videoRam != 0) {
+	pScrn->videoRam = pMga->device->videoRam;
+	from = X_CONFIG;
+    } else if (pMga->FBDev) {
+	pScrn->videoRam = fbdevHWGetVidmem(pScrn)/1024;
+    } else {
+	pScrn->videoRam = MGACountRam(pScrn);
+    }
 
     if (pMga->is_G200SE)
 	pScrn->confScreen->defaultdepth = 16;
@@ -1971,9 +2095,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     xf86CollectOptions(pScrn, NULL);
 
     /* Process the options */
-    if (!(pMga->Options = xalloc(sizeof(MGAOptions))))
-	return FALSE;
-    memcpy(pMga->Options, MGAOptions, sizeof(MGAOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pMga->Options);
 
     if (pMga->is_G200SE) {
@@ -2122,11 +2243,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
 		"Using \"Shadow Framebuffer\" - acceleration disabled\n");
     }
-    if (xf86ReturnOptValBool(pMga->Options, OPTION_FBDEV, FALSE)) {
-	pMga->FBDev = TRUE;
-	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-		"Using framebuffer device\n");
-    }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_OVERCLOCK_MEM, FALSE)) {
 	pMga->OverclockMem = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Overclocking memory\n");
@@ -2170,12 +2286,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         } /* ISMGAGx50() */
     }
     if (pMga->FBDev) {
-	/* check for linux framebuffer device */
-	if (!xf86LoadSubModule(pScrn, "fbdevhw"))
-	    return FALSE;
-	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
-	if (!fbdevHWInit(pScrn, pMga->PciInfo, NULL))
-	    return FALSE;
 	pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
 	pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
 	pScrn->EnterVT       = MGAEnterVTFBDev;
@@ -2233,105 +2343,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	break;
     }
 
-    /* ajv changes to reflect actual values. see sdk pp 3-2. */
-    /* these masks just get rid of the crap in the lower bits */
-
-    /* For the 2064 and older rev 1064, base0 is the MMIO and base1 is
-     * the framebuffer.
-     */
-
-    switch (pMga->chip_attribs->BARs) {
-    case old_BARs:
-	pMga->framebuffer_bar = 1;
-	pMga->io_bar = 0;
-	pMga->iload_bar = -1;
-	break;
-    case probe_BARs:
-	if (pMga->ChipRev < 3) {
-	    pMga->framebuffer_bar = 1;
-	    pMga->io_bar = 0;
-	    pMga->iload_bar = 2;
-	    break;
-	}
-	/* FALLTHROUGH */
-    case new_BARs:
-	pMga->framebuffer_bar = 0;
-	pMga->io_bar = 1;
-	pMga->iload_bar = 2;
-	break;
-    }
-
-
-#ifdef XSERVER_LIBPCIACCESS
-    pMga->FbAddress = pMga->PciInfo->regions[pMga->framebuffer_bar].base_addr;
-#else
-    pMga->FbAddress = pMga->PciInfo->memBase[pMga->framebuffer_bar] & 0xff800000;
-#endif
-
-    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Linear framebuffer at 0x%lX\n",
-	       (unsigned long)pMga->FbAddress);
-
-#ifdef XSERVER_LIBPCIACCESS
-    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO registers at 0x%lX\n",
-	       (unsigned long) pMga->PciInfo->regions[pMga->io_bar].base_addr);
-#else
-    pMga->IOAddress = pMga->PciInfo->memBase[pMga->io_bar] & 0xffffc000;
-
-    xf86DrvMsg(pScrn->scrnIndex, from, "MMIO registers at 0x%lX\n",
-	       (unsigned long)pMga->IOAddress);
-#endif
-
-    if (pMga->iload_bar != -1) {
-#ifdef XSERVER_LIBPCIACCESS
-	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		   "Pseudo-DMA transfer window at 0x%lX\n",
-		   (unsigned long) pMga->PciInfo->regions[pMga->iload_bar].base_addr);
-#else
-	if (pMga->PciInfo->memBase[2] != 0) {
-	    pMga->ILOADAddress = pMga->PciInfo->memBase[2] & 0xffffc000;
-	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		       "Pseudo-DMA transfer window at 0x%lX\n",
-		       (unsigned long)pMga->ILOADAddress);
-	}
-#endif
-    }
-
-
-#ifndef XSERVER_LIBPCIACCESS
-    /*
-     * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
-     * use the VGA default.  Allow the config file to override this.
-     */
-
-    pMga->BiosFrom = X_NONE;
-    if (pMga->device->BiosBase != 0) {
-	/* XXX This isn't used */
-	pMga->BiosAddress = pMga->device->BiosBase;
-	pMga->BiosFrom = X_CONFIG;
-    } else {
-	/* details: rombase sdk pp 4-15 */
-	if (pMga->PciInfo->biosBase != 0) {
-	    pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
-	    pMga->BiosFrom = X_PROBED;
-	} else if (pMga->Primary) {
-	    pMga->BiosAddress = 0xc0000;
-	    pMga->BiosFrom = X_DEFAULT;
-	}
-    }
-    if (pMga->BiosAddress) {
-	xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom, "BIOS at 0x%lX\n",
-		   (unsigned long)pMga->BiosAddress);
-    }
-#endif
-
-
-    if (xf86RegisterResources(pMga->pEnt->index, NULL, ResExclusive)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		"xf86RegisterResources() found resource conflicts\n");
-	MGAFreeRec(pScrn);
-	return FALSE;
-    }
-
     /*
      * Read the BIOS data struct
      */
@@ -2378,20 +2389,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      */
     if ( (!pMga->Primary && !pMga->FBDev) || xf86IsPc98() )
         MGASoftReset(pScrn);
-
-    /*
-     * If the user has specified the amount of memory in the XF86Config
-     * file, we respect that setting.
-     */
-    from = X_PROBED;
-    if (pMga->device->videoRam != 0) {
-	pScrn->videoRam = pMga->device->videoRam;
-	from = X_CONFIG;
-    } else if (pMga->FBDev) {
-	pScrn->videoRam = fbdevHWGetVidmem(pScrn)/1024;
-    } else {
-	pScrn->videoRam = MGACountRam(pScrn);
-    }
 
     if (pScrn->videoRam == 0) {
 	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
