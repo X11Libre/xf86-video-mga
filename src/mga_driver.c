@@ -492,7 +492,6 @@ static const OptionInfoRec MGAOptions[] = {
     { OPTION_SYNC_ON_GREEN,	"SyncOnGreen",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_NOACCEL,		"NoAccel",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_SHOWCACHE,		"ShowCache",	OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_OVERLAY,		"Overlay",	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_MGA_SDRAM,		"MGASDRAM",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_SHADOW_FB,		"ShadowFB",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_FBDEV,		"UseFBDev",	OPTV_BOOLEAN,	{0}, FALSE },
@@ -1916,17 +1915,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * We support both 24bpp and 32bpp layouts, so indicate that.
      */
 
-    /* Prefer 24bpp fb unless the Overlay option is set, or DRI is
-     * supported.
-     */
-    flags24 = Support24bppFb | Support32bppFb | SupportConvert32to24;
-    s = xf86TokenToOptName(MGAOptions, OPTION_OVERLAY);
-#ifndef XF86DRI
-    if (!(xf86FindOption(pScrn->confScreen->options, s) ||
-	  xf86FindOption(pMga->device->options, s))) {
-	flags24 |= PreferConvert32to24;
-    }
-#endif
+    /* Prefer 32bpp */
+    flags24 = Support24bppFb | Support32bppFb | PreferConvert24to32;
 
     if (pMga->SecondCrtc)
 	flags24 = Support32bppFb;
