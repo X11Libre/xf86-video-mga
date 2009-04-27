@@ -2045,7 +2045,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pScrn->videoRam = MGACountRam(pScrn);
     }
 
-    if (pMga->is_G200SE)
+    if (pMga->is_G200SE && pScrn->videoRam < 2048)
 	pScrn->confScreen->defaultdepth = 16;
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24)) {
