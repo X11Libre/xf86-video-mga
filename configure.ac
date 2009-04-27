@@ -109,10 +109,16 @@ CFLAGS="$XORG_CFLAGS"
 AC_CHECK_DECL(XSERVER_LIBPCIACCESS,
               [XSERVER_LIBPCIACCESS=yes], [XSERVER_LIBPCIACCESS=no],
               [#include "xorg-server.h"])
+CFLAGS="$save_CFLAGS"
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="$XORG_CFLAGS"
 AC_CHECK_DECL(xf86ModeBandwidth,
 	      [AC_DEFINE(HAVE_XF86MODEBANDWIDTH, 1, [Have xf86ModeBandwidth])],
 	      [],
-	      [#include "xf86Modes.h"])
+	      [#include <X11/extensions/randr.h>
+	       #include "xorg-server.h"
+	       #include "xf86Modes.h"])
 CFLAGS="$save_CFLAGS"
 
 if test "x$XSERVER_LIBPCIACCESS" = xyes; then
