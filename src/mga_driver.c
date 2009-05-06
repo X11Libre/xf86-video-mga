@@ -1399,6 +1399,11 @@ MGACountRam(ScrnInfoPtr pScrn)
    return SizeFound;
 }
 
+#ifdef  EDID_COMPLETE_RAWDATA
+#undef  xf86DoEDID_DDC2
+#define xf86DoEDID_DDC2(a, b) xf86DoEEDID(a, b, TRUE)
+#endif
+
 static xf86MonPtr
 MGAdoDDC(ScrnInfoPtr pScrn)
 {
