@@ -1402,128 +1402,120 @@ MGACountRam(ScrnInfoPtr pScrn)
 static xf86MonPtr
 MGAdoDDC(ScrnInfoPtr pScrn)
 {
-  vgaHWPtr hwp;
-  MGAPtr pMga;
-  xf86MonPtr MonInfo = NULL;
+    vgaHWPtr hwp;
+    MGAPtr pMga;
+    xf86MonPtr MonInfo = NULL;
+    char *from = NULL;
 
-  hwp = VGAHWPTR(pScrn);
-  pMga = MGAPTR(pScrn);
+    hwp = VGAHWPTR(pScrn);
+    pMga = MGAPTR(pScrn);
 
-  /* Load DDC if we have the code to use it */
-  /* This gives us DDC1 */
-  if (pMga->ddc1Read || pMga->i2cInit) {
-      if (xf86LoadSubModule(pScrn, "ddc")) {
-	  xf86LoaderReqSymLists(ddcSymbols, NULL);
+    /* Load DDC if we have the code to use it */
+    /* This gives us DDC1 */
+    if (pMga->ddc1Read || pMga->i2cInit) {
+	if (xf86LoadSubModule(pScrn, "ddc")) {
+	    xf86LoaderReqSymLists(ddcSymbols, NULL);
 	} else {
-	  /* ddc module not found, we can do without it */
-	  pMga->ddc1Read = NULL;
-	  pMga->DDC_Bus1 = NULL;
-	  pMga->DDC_Bus2 = NULL;
-	  return NULL;
+	    /* ddc module not found, we can do without it */
+	    pMga->ddc1Read = NULL;
+	    pMga->DDC_Bus1 = NULL;
+	    pMga->DDC_Bus2 = NULL;
+	    return NULL;
 	}
     } else 
-      return NULL;
+	return NULL;
 
     /* - DDC can use I2C bus */
     /* Load I2C if we have the code to use it */
     if (pMga->i2cInit) {
-      if ( xf86LoadSubModule(pScrn, "i2c") ) {
-	xf86LoaderReqSymLists(i2cSymbols,NULL);
-      } else {
-	/* i2c module not found, we can do without it */
-	pMga->i2cInit = NULL;
-	pMga->DDC_Bus1 = NULL;
-	pMga->DDC_Bus2 = NULL;
-      }
+	if ( xf86LoadSubModule(pScrn, "i2c") ) {
+	    xf86LoaderReqSymLists(i2cSymbols, NULL);
+	} else {
+	    /* i2c module not found, we can do without it */
+	    pMga->i2cInit = NULL;
+	    pMga->DDC_Bus1 = NULL;
+	    pMga->DDC_Bus2 = NULL;
+	}
     }
 
-  /* Map the MGA memory and MMIO areas */
-  if (!MGAMapMem(pScrn))
-    return NULL;
+    /* Map the MGA memory and MMIO areas */
+    if (!MGAMapMem(pScrn))
+	return NULL;
 
-  /* Initialise the MMIO vgahw functions */
-  vgaHWSetMmioFuncs(hwp, pMga->IOBase, PORT_OFFSET);
-  vgaHWGetIOBase(hwp);
+    /* Initialise the MMIO vgahw functions */
+    vgaHWSetMmioFuncs(hwp, pMga->IOBase, PORT_OFFSET);
+    vgaHWGetIOBase(hwp);
 
-  /* Map the VGA memory when the primary video */
-  if (pMga->Primary) {
-    hwp->MapSize = 0x10000;
-    if (!vgaHWMapMem(pScrn))
-      return NULL;
-  } else {
-    /* XXX Need to write an MGA mode ddc1SetSpeed */
-    if (pMga->DDC1SetSpeed == vgaHWddc1SetSpeedWeak()) {
-      pMga->DDC1SetSpeed = NULL;
-      xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2,
-		     "DDC1 disabled - chip not in VGA mode\n");
+    /* Map the VGA memory when the primary video */
+    if (pMga->Primary) {
+	hwp->MapSize = 0x10000;
+	if (!vgaHWMapMem(pScrn))
+	    return NULL;
+    } else {
+	/* XXX Need to write an MGA mode ddc1SetSpeed */
+	if (pMga->DDC1SetSpeed == vgaHWddc1SetSpeedWeak()) {
+	    pMga->DDC1SetSpeed = NULL;
+	    xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2,
+			   "DDC1 disabled - chip not in VGA mode\n");
+	}
     }
-  }
 
-  /* Save the current state */
-  MGASave(pScrn);
+    /* Save the current state */
+    MGASave(pScrn);
 
-  /* It is now safe to talk to the card */
+    /* It is now safe to talk to the card */
 
-  /* Initialize I2C buses - used by DDC if available */
-  if (pMga->i2cInit) {
-    pMga->i2cInit(pScrn);
-  }
+    /* Initialize I2C buses - used by DDC if available */
+    if (pMga->i2cInit) {
+	pMga->i2cInit(pScrn);
+    }
 
-   /* DDC for second head... */
-  if (pMga->SecondCrtc && pMga->DDC_Bus2) {
-    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->DDC_Bus2);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n",
-		(void *)MonInfo);
-    xf86PrintEDID(MonInfo);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
-    xf86SetDDCproperties(pScrn, MonInfo);
-    return MonInfo;
-  }
-
-  else {
+    /* DDC for second head... */
+    if (pMga->SecondCrtc && pMga->DDC_Bus2) {
+	MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex, pMga->DDC_Bus2);
+	from = "I2C";
+    } else {
 	/* Its the first head... */ 
-	  if (pMga->DDC_Bus1) {
-	    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex,pMga->DDC_Bus1);
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I2C Monitor info: %p\n", (void *) MonInfo);
-	    xf86PrintEDID(MonInfo);
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
-	  }
-	  if (!MonInfo)
-	  /* Read and output monitor info using DDC1 */
-	  if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
-	    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
-						 pMga->DDC1SetSpeed,
-						 pMga->ddc1Read ) ;
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DDC Monitor info: %p\n", (void *) MonInfo);
-	    xf86PrintEDID( MonInfo );
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of DDC Monitor info\n");
-	  }
-	  if (!MonInfo){
+	if (pMga->DDC_Bus1) {
+	    MonInfo = xf86DoEDID_DDC2(pScrn->scrnIndex, pMga->DDC_Bus1);
+	    from = "I2C";
+	}
+	if (!MonInfo)
+	    /* Read and output monitor info using DDC1 */
+	    if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
+		MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
+					  pMga->DDC1SetSpeed,
+					  pMga->ddc1Read ) ;
+		from = "DDC1";
+	    }
+	if (!MonInfo){
 	    vbeInfoPtr pVbe;
 	    if (xf86LoadSubModule(pScrn, "vbe")) {
-	      pVbe = VBEInit(NULL,pMga->pEnt->index);
-	      MonInfo = vbeDoEDID(pVbe, NULL);
-	      vbeFree(pVbe);
-	
-	      if (MonInfo){
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VBE DDC Monitor info: %p\n", (void *) MonInfo);
-		xf86PrintEDID( MonInfo );
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of VBE DDC Monitor info\n\n");
-	      }
+		pVbe = VBEInit(NULL, pMga->pEnt->index);
+		MonInfo = vbeDoEDID(pVbe, NULL);
+		vbeFree(pVbe);
+		from = "VBE";
 	    }
-	  }
-   }
-  /* Restore previous state and unmap MGA memory and MMIO areas */
-  MGARestore(pScrn);
-  MGAUnmapMem(pScrn);
-  /* Unmap vga memory if we mapped it */
-  if (xf86IsPrimaryPci(pMga->PciInfo) && !pMga->FBDev) {
-    vgaHWUnmapMem(pScrn);
-  }
+	}
+    }
 
-  xf86SetDDCproperties(pScrn, MonInfo);
+    if (MonInfo) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%s monitor info\n", from);
+	xf86PrintEDID(MonInfo);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of monitor info\n");
+    }
 
-  return MonInfo;
+    /* Restore previous state and unmap MGA memory and MMIO areas */
+    MGARestore(pScrn);
+    MGAUnmapMem(pScrn);
+    /* Unmap vga memory if we mapped it */
+    if (xf86IsPrimaryPci(pMga->PciInfo) && !pMga->FBDev) {
+	vgaHWUnmapMem(pScrn);
+    }
+
+    xf86SetDDCproperties(pScrn, MonInfo);
+
+    return MonInfo;
 }
 
 #ifdef DISABLE_VGA_IO
