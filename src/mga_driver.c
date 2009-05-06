@@ -636,13 +636,9 @@ static const char *driSymbols[] = {
 };
 #endif
 
-#define MGAuseI2C 1
-
 static const char *ddcSymbols[] = {
     "xf86DoEDID_DDC1",
-#if MGAuseI2C
     "xf86DoEDID_DDC2",
-#endif
     "xf86PrintEDID",
     "xf86SetDDCproperties",
     NULL
@@ -1428,7 +1424,6 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     } else 
       return NULL;
 
-#if MGAuseI2C
     /* - DDC can use I2C bus */
     /* Load I2C if we have the code to use it */
     if (pMga->i2cInit) {
@@ -1441,7 +1436,6 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	pMga->DDC_Bus2 = NULL;
       }
     }
-#endif /* MGAuseI2C */
 
   /* Map the MGA memory and MMIO areas */
   if (!MGAMapMem(pScrn))
@@ -1470,7 +1464,6 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 
   /* It is now safe to talk to the card */
 
-#if MGAuseI2C
   /* Initialize I2C buses - used by DDC if available */
   if (pMga->i2cInit) {
     pMga->i2cInit(pScrn);
@@ -1496,7 +1489,6 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of I2C Monitor info\n");
 	  }
 	  if (!MonInfo)
-#endif /* MGAuseI2C */
 	  /* Read and output monitor info using DDC1 */
 	  if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
 	    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,
@@ -1520,9 +1512,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	      }
 	    }
 	  }
-#if MGAuseI2C
    }
-#endif
   /* Restore previous state and unmap MGA memory and MMIO areas */
   MGARestore(pScrn);
   MGAUnmapMem(pScrn);
