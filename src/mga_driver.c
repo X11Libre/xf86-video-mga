@@ -526,186 +526,6 @@ static const OptionInfoRec MGAOptions[] = {
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
-
-/*
- * List of symbols from other modules that this module references.  This
- * list is used to tell the loader that it is OK for symbols here to be
- * unresolved providing that it hasn't been told that they haven't been
- * told that they are essential via a call to xf86LoaderReqSymbols() or
- * xf86LoaderReqSymLists().  The purpose is this is to avoid warnings about
- * unresolved symbols that are not required.
- */
-
-static const char *vgahwSymbols[] = {
-    "vgaHWFreeHWRec",
-    "vgaHWGetHWRec",
-    "vgaHWGetIOBase",
-    "vgaHWGetIndex",
-    "vgaHWInit",
-    "vgaHWLock",
-    "vgaHWMapMem",
-    "vgaHWProtect",
-    "vgaHWRestore",
-    "vgaHWSave",
-    "vgaHWSaveScreen",
-    "vgaHWSetMmioFuncs",
-    "vgaHWUnlock",
-    "vgaHWUnmapMem",
-    "vgaHWddc1SetSpeedWeak",
-    NULL
-};
-
-static const char *fbSymbols[] = {
-    "fbPictureInit",
-    "fbScreenInit",
-    NULL
-};
-
-#ifdef USE_EXA
-static const char *exaSymbols[] = {
-    "exaDriverInit",
-    "exaDriverFini",
-    "exaGetPixmapOffset",
-    "exaGetVersion",
-    NULL
-};
-#endif
-
-#ifdef USE_XAA
-static const char *xaaSymbols[] = {
-    "XAACachePlanarMonoStipple",
-    "XAACreateInfoRec",
-    "XAADestroyInfoRec",
-    "XAAGetFallbackOps",
-    "XAAInit",
-    "XAAMoveDWORDS",
-    "XAA_888_plus_PICT_a8_to_8888",
-    NULL
-};
-#endif
-
-static const char *ramdacSymbols[] = {
-    "xf86CreateCursorInfoRec",
-    "xf86DestroyCursorInfoRec",
-    "xf86InitCursor",
-    NULL
-};
-
-#ifdef XF86DRI
-static const char *drmSymbols[] = {
-    "drmAddBufs",
-    "drmAddMap",
-    "drmAgpAcquire",
-    "drmAgpAlloc",
-    "drmAgpBind",
-    "drmAgpDeviceId",
-    "drmAgpEnable",
-    "drmAgpFree",
-    "drmAgpGetMode",
-    "drmAgpRelease",
-    "drmAgpUnbind",
-    "drmAgpVendorId",
-    "drmCommandNone",
-    "drmCommandWrite",
-    "drmCtlInstHandler",
-    "drmCtlUninstHandler",
-    "drmFreeVersion",
-    "drmGetInterruptFromBusID",
-    "drmGetLibVersion",
-    "drmGetVersion",
-    "drmMap",
-    "drmMapBufs",
-    "drmUnmap",
-    "drmUnmapBufs",
-    NULL
-};
-
-static const char *driSymbols[] = {
-    "DRICloseScreen",
-    "DRICreateInfoRec",
-    "DRIDestroyInfoRec",
-    "DRIFinishScreenInit",
-    "DRIGetDeviceInfo",
-    "DRILock",
-    "DRIQueryVersion",
-    "DRIScreenInit",
-    "DRIUnlock",
-    "GlxSetVisualConfigs",
-    "DRICreatePCIBusID",
-    NULL
-};
-#endif
-
-static const char *ddcSymbols[] = {
-    "xf86DoEDID_DDC1",
-    "xf86DoEDID_DDC2",
-    "xf86PrintEDID",
-    "xf86SetDDCproperties",
-    NULL
-};
-
-static const char *i2cSymbols[] = {
-    "xf86CreateI2CBusRec",
-    "xf86I2CBusInit",
-    NULL
-};
-
-static const char *shadowSymbols[] = {
-    "ShadowFBInit",
-    NULL
-};
-
-#ifdef XFree86LOADER
-static const char *vbeSymbols[] = {
-    "VBEInit",
-    "vbeDoEDID",
-    "vbeFree",
-    NULL
-};
-#endif
-
-static const char *int10Symbols[] = {
-    "xf86FreeInt10",
-    "xf86InitInt10",
-    NULL
-};
-
-static const char *fbdevHWSymbols[] = {
-    "fbdevHWAdjustFrameWeak",
-    "fbdevHWEnterVT",
-    "fbdevHWGetVidmem",
-    "fbdevHWInit",
-    "fbdevHWLeaveVTWeak",
-    "fbdevHWLoadPaletteWeak",
-    "fbdevHWMapMMIO",
-    "fbdevHWMapVidmem",
-    "fbdevHWModeInit",
-    "fbdevHWRestore",
-    "fbdevHWSave",
-    "fbdevHWSwitchModeWeak",
-    "fbdevHWUnmapMMIO",
-    "fbdevHWUnmapVidmem",
-    "fbdevHWUseBuildinMode",
-    "fbdevHWValidModeWeak",
-    NULL
-};
-
-#ifdef USEMGAHAL
-static const char *halSymbols[] = {
-  "MGACloseLibrary",
-  "MGAGetBOARDHANDLESize",
-  "MGAGetHardwareInfo",
-  "MGAOpenLibrary",
-  "MGARestoreVgaState",
-  "MGASaveVgaState",
-  "MGASetMode",
-  "MGASetVgaMode",
-  "MGAValidateMode",
-  "MGAValidateVideoParameters",
-  "HALSetDisplayStart",
-  NULL
-};
-#endif
 #ifdef XFree86LOADER
 
 static MODULESETUPPROTO(mgaSetup);
@@ -736,34 +556,6 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
     if (!setupDone) {
 	setupDone = TRUE;
 	xf86AddDriver(&MGA_C_NAME, module, 1);
-
-	/*
-	 * Modules that this driver always requires may be loaded here
-	 * by calling LoadSubModule().
-	 */
-
-	/*
-	 * Tell the loader about symbols from other modules that this module
-	 * might refer to.
-	 */
-	LoaderRefSymLists(vgahwSymbols,
-#ifdef USE_XAA
-                          xaaSymbols,
-#endif
-#ifdef USE_EXA
-                          exaSymbols,
-#endif
-			  ramdacSymbols, ddcSymbols, i2cSymbols,
-			  shadowSymbols, fbdevHWSymbols, vbeSymbols,
-			  fbSymbols, int10Symbols,
-#ifdef XF86DRI
-			  drmSymbols, driSymbols,
-#endif
-#ifdef USEMGAHAL
-			  halSymbols,
-#endif
-			  NULL);
-
 	/*
 	 * The return value must be non-NULL on success even though there
 	 * is no TearDownProc.
@@ -1418,9 +1210,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     /* Load DDC if we have the code to use it */
     /* This gives us DDC1 */
     if (pMga->ddc1Read || pMga->i2cInit) {
-	if (xf86LoadSubModule(pScrn, "ddc")) {
-	    xf86LoaderReqSymLists(ddcSymbols, NULL);
-	} else {
+	if (!xf86LoadSubModule(pScrn, "ddc")) {
 	    /* ddc module not found, we can do without it */
 	    pMga->ddc1Read = NULL;
 	    pMga->DDC_Bus1 = NULL;
@@ -1433,9 +1223,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     /* - DDC can use I2C bus */
     /* Load I2C if we have the code to use it */
     if (pMga->i2cInit) {
-	if ( xf86LoadSubModule(pScrn, "i2c") ) {
-	    xf86LoaderReqSymLists(i2cSymbols, NULL);
-	} else {
+	if (!xf86LoadSubModule(pScrn, "i2c")) {
 	    /* i2c module not found, we can do without it */
 	    pMga->i2cInit = NULL;
 	    pMga->DDC_Bus1 = NULL;
@@ -1710,8 +1498,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "vgahw"))
 	return FALSE;
 
-    xf86LoaderReqSymLists(vgahwSymbols, NULL);
-
     /*
      * Allocate a vgaHWRec
      */
@@ -1818,7 +1604,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    from = X_CONFIG;
 	}
         if (loadHal && xf86LoadSubModule(pScrn, "mga_hal")) {
-	  xf86LoaderReqSymLists(halSymbols, NULL);
 	  xf86DrvMsg(pScrn->scrnIndex, from,"Matrox HAL module used\n");
 	  pMga->HALLoaded = TRUE;
 	} else {
@@ -2013,7 +1798,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	/* check for linux framebuffer device */
 	if (!xf86LoadSubModule(pScrn, "fbdevhw"))
 	    return FALSE;
-	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
 	if (!fbdevHWInit(pScrn, pMga->PciInfo, NULL))
 	    return FALSE;
     }
@@ -2114,7 +1898,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         xf86LoadSubModule(pScrn, "int10")) {
         xf86Int10InfoPtr pInt;
 
-	xf86LoaderReqSymLists(int10Symbols, NULL);
         xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Initializing int10\n");
         pInt = xf86InitInt10(pMga->pEnt->index);
 	if (pInt) pMga->softbooted = TRUE;
@@ -2884,8 +2667,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	MGAFreeRec(pScrn);
 	return FALSE;
     }
-    xf86LoaderReqSymLists(fbSymbols, NULL);
-
 
     /* Load XAA if needed */
     if (!pMga->NoAccel) {
@@ -2894,14 +2675,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    if (!xf86LoadSubModule(pScrn, "exa")) {
 		MGAFreeRec(pScrn);
 		return FALSE;
-	    } else xf86LoaderReqSymLists(exaSymbols, NULL);
+	    }
 	} else {
 #endif
 #ifdef USE_XAA
 	    if (!xf86LoadSubModule(pScrn, "xaa")) {
 		MGAFreeRec(pScrn);
 		return FALSE;
-	    } else xf86LoaderReqSymLists(xaaSymbols, NULL);
+	    }
 #endif
 #ifdef USE_EXA
 	}
@@ -2914,7 +2695,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    MGAFreeRec(pScrn);
 	    return FALSE;
 	}
-	xf86LoaderReqSymLists(ramdacSymbols, NULL);
     }
 
     /* Load shadowfb if needed */
@@ -2923,15 +2703,12 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    MGAFreeRec(pScrn);
 	    return FALSE;
 	}
-	xf86LoaderReqSymLists(shadowSymbols, NULL);
     }
 
 #ifdef XF86DRI
     /* Load the dri module if requested. */
     if (xf86ReturnOptValBool(pMga->Options, OPTION_DRI, FALSE)) {
-       if (xf86LoadSubModule(pScrn, "dri")) {
-	  xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
-       }
+       xf86LoadSubModule(pScrn, "dri");
     }
 #endif
     pMga->CurrentLayout.bitsPerPixel = pScrn->bitsPerPixel;
