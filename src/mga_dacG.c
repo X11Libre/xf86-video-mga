@@ -309,10 +309,6 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         ucTempByte |= 0x3<<2; //select MGA pixel clock
         OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
 
-        // Set pixlock to 0
-        ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
-        outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte & ~0x40);
-
         ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_POW_DOWN | 0x80;
         outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
 
@@ -331,23 +327,12 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         usleep(50);
 
         // Program the Pixel PLL Register
-        outMGAdac(MGA1064_WB_PIX_PLLC_M, mgaReg->PllM);
         outMGAdac(MGA1064_WB_PIX_PLLC_N, mgaReg->PllN);
+        outMGAdac(MGA1064_WB_PIX_PLLC_M, mgaReg->PllM);
         outMGAdac(MGA1064_WB_PIX_PLLC_P, mgaReg->PllP);
 
         // Wait 50 us
         usleep(50);
-
-        ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
-        OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
-
-        // Wait 50 us
-        usleep(50);
-
-        OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
-
-        // Wait 500 us
-        usleep(500);
 
         // Turning the PLL on
         ucTempByte = inMGAdac(MGA1064_VREF_CTL);
@@ -367,10 +352,6 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         ucTempByte &= ~MGA1064_REMHEADCTL_CLKSL_MSK;
         ucTempByte |= MGA1064_REMHEADCTL_CLKSL_PLL;
         outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
-
-        // Set pixlock to 1
-        ucTempByte = inMGAdac(MGA1064_PIX_PLL_STAT);
-        outMGAdac(MGA1064_PIX_PLL_STAT, ucTempByte | 0x40);
 
         // Reset dotclock rate bit.
         OUTREG8(MGAREG_SEQ_INDEX, 1);
