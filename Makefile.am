@@ -23,9 +23,12 @@ SUBDIRS = src man util
 
 EXTRA_DIST = README_HALLIB mga_PInS.txt
 
-.PHONY: ChangeLog
+.PHONY: ChangeLog INSTALL
+
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL
