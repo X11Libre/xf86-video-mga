@@ -369,7 +369,7 @@ static const struct mga_device_attributes attribs[] = {
 	    MGA_HOST_PCI       /* Host interface */
 	},
 
-	8192, 0x4000,          /* Memory probe size & offset values */
+	16384, 0x4000,          /* Memory probe size & offset values */
     },
 
     /* G200WB */
