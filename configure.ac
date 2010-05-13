@@ -23,7 +23,7 @@
 AC_PREREQ(2.57)
 
 AC_INIT([xf86-video-mga],
-        1.4.11,
+        1.4.12,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-mga)
 
