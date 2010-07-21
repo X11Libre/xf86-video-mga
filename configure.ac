@@ -171,9 +171,10 @@ AC_SUBST([moduledir])
 DRIVER_NAME=mga
 AC_SUBST([DRIVER_NAME])
 
-AC_OUTPUT([
-	Makefile
-	src/Makefile
-	man/Makefile
-	util/Makefile
+AC_CONFIG_FILES([
+                Makefile
+                src/Makefile
+                man/Makefile
+                util/Makefile
 ])
+AC_OUTPUT
