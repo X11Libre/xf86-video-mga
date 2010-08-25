@@ -1081,7 +1081,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 
 	if (pMga->is_G200SE)
 	    pMga->reg_1e24 = INREG(0x1e24); /* stash the model for later */
-	if (pMga->reg_1e24 == 0x01) {
+	if (pMga->reg_1e24 >= 0x01) {
 	    MGAUnmapMem(pScrn);
 	    ProbeSize = 16384;
 	    ProbeSizeOffset = 0x10000;
@@ -3253,7 +3253,7 @@ MGA_HAL(
     MGA_NOT_HAL(
 	if (pMga->is_G200SE) {
             OUTREG8(0x1FDE, 0x06);
-	    if (pMga->reg_1e24 == 0x01)
+	    if (pMga->reg_1e24 >= 0x01)
 		OUTREG8(0x1FDF, 0x03);
 	    else 
 		OUTREG8(0x1FDF, 0x14);
@@ -4326,7 +4326,7 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 	    return MODE_VIRTUAL_X;
 	if (mode->VDisplay > 1200)
 	    return MODE_VIRTUAL_Y;
-	if (pMga->reg_1e24 == 0x01 &&
+	if (pMga->reg_1e24 >= 0x01 &&
 	    xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 244)
 	    return MODE_BANDWIDTH;
     } else if (pMga->is_G200WB){
