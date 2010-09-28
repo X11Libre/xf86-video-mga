@@ -1,4 +1,3 @@
-/* $XConsortium: mga_driver.c /main/12 1996/10/28 05:13:26 kaleb $ */
 /*
  * MGA Millennium (MGA2064W) with Ti3026 RAMDAC driver v.1.1
  *

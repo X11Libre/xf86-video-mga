@@ -1,5 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_macros.h,v 1.21 2001/09/26 12:59:17 alanh Exp $ */
-
 #ifndef _MGA_MACROS_H_
 #define _MGA_MACROS_H_
 
