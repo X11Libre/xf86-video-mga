@@ -1779,23 +1779,16 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 #ifndef XSERVER_LIBPCIACCESS
     /*
      * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
-     * use the VGA default.  Allow the config file to override this.
+     * use the VGA default.
      */
 
-    pMga->BiosFrom = X_NONE;
-    if (pMga->device->BiosBase != 0) {
-	/* XXX This isn't used */
-	pMga->BiosAddress = pMga->device->BiosBase;
-	pMga->BiosFrom = X_CONFIG;
-    } else {
-	/* details: rombase sdk pp 4-15 */
-	if (pMga->PciInfo->biosBase != 0) {
-	    pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
-	    pMga->BiosFrom = X_PROBED;
-	} else if (pMga->Primary) {
-	    pMga->BiosAddress = 0xc0000;
-	    pMga->BiosFrom = X_DEFAULT;
-	}
+    /* details: rombase sdk pp 4-15 */
+    if (pMga->PciInfo->biosBase != 0) {
+	pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
+	pMga->BiosFrom = X_PROBED;
+    } else if (pMga->Primary) {
+	pMga->BiosAddress = 0xc0000;
+	pMga->BiosFrom = X_DEFAULT;
     }
     if (pMga->BiosAddress) {
 	xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom, "BIOS at 0x%lX\n",
