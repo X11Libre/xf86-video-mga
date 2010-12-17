@@ -403,6 +403,21 @@ static const struct mga_device_attributes attribs[] = {
 	8192, 0x4000,          /* Memory probe size & offset values */
     },
 
+    /* G200ER */
+    [15] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 203400 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    45000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	},
+
+	16384, 0x4000,          /* Memory probe size & offset values */
+    }
 };
 
 #ifdef XSERVER_LIBPCIACCESS
@@ -432,6 +447,8 @@ static const struct pci_id_match mga_device_match[] = {
 
     MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_EH_PCI, 14 ),
 
+	MGA_DEVICE_MATCH(PCI_CHIP_MGAG200_ER_PCI, 15 ),
+
     { 0, 0, 0 },
 };
 #endif
@@ -449,6 +466,7 @@ static SymTabRec MGAChipsets[] = {
     { PCI_CHIP_MGAG200_SE_A_PCI,	"mgag200 SE A PCI" },
     { PCI_CHIP_MGAG200_SE_B_PCI,	"mgag200 SE B PCI" },
     { PCI_CHIP_MGAG200_EV_PCI,	"mgag200 EV Maxim" },
+    { PCI_CHIP_MGAG200_ER_PCI,	"mgag200 ER SH7757" },	
     { PCI_CHIP_MGAG200_WINBOND_PCI,	"mgag200 eW Nuvoton" },
     { PCI_CHIP_MGAG200_EH_PCI,	"mgag200eH" },
     { PCI_CHIP_MGAG400,		"mgag400" },
@@ -470,6 +488,8 @@ static PciChipsets MGAPciChipsets[] = {
     { PCI_CHIP_MGAG200_SE_A_PCI, PCI_CHIP_MGAG200_SE_A_PCI,
 	RES_SHARED_VGA },
     { PCI_CHIP_MGAG200_EV_PCI, PCI_CHIP_MGAG200_EV_PCI,
+	RES_SHARED_VGA },
+    { PCI_CHIP_MGAG200_ER_PCI, PCI_CHIP_MGAG200_ER_PCI,
 	RES_SHARED_VGA },
     { PCI_CHIP_MGAG200_WINBOND_PCI, PCI_CHIP_MGAG200_WINBOND_PCI,
 	RES_SHARED_VGA },
@@ -912,6 +932,11 @@ MGAProbe(DriverPtr drv, int flags)
             case PCI_CHIP_MGAG200_EH_PCI:
                 attrib_no = 14;
                 break;
+				
+            case PCI_CHIP_MGAG200_ER_PCI:
+                attrib_no = 15;
+                break;
+				
 
 	    default:
 		return FALSE;
@@ -1285,6 +1310,11 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     MGASave(pScrn);
 
     /* It is now safe to talk to the card */
+    /* Allow access to DDC */
+    if (pMga->is_G200ER) {
+	 CARD8 ucData = inMGAdac(MGA1064_GEN_IO_CTL2);
+     outMGAdac(MGA1064_GEN_IO_CTL2, ucData | 1);        
+    }
 
     /* Initialize I2C buses - used by DDC if available */
     if (pMga->i2cInit) {
@@ -1324,6 +1354,12 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%s monitor info\n", from);
 	xf86PrintEDID(MonInfo);
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "end of monitor info\n");
+    }
+
+    /* Remove access to DDC */
+    if (pMga->is_G200ER) {
+	  CARD8 ucData = inMGAdac(MGA1064_GEN_IO_CTL2);
+      outMGAdac(MGA1064_GEN_IO_CTL2, ucData & ~1);        
     }
 
     /* Restore previous state and unmap MGA memory and MMIO areas */
@@ -1619,6 +1655,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     pMga->is_G200EV = (pMga->Chipset == PCI_CHIP_MGAG200_EV_PCI);
     pMga->is_G200WB = (pMga->Chipset == PCI_CHIP_MGAG200_WINBOND_PCI);
     pMga->is_G200EH = (pMga->Chipset == PCI_CHIP_MGAG200_EH_PCI);
+    pMga->is_G200ER = (pMga->Chipset == PCI_CHIP_MGAG200_ER_PCI);
 
 #ifdef USEMGAHAL
     if (pMga->chip_attribs->HAL_chipset) {
@@ -1782,14 +1819,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * use the VGA default.
      */
 
-    /* details: rombase sdk pp 4-15 */
-    if (pMga->PciInfo->biosBase != 0) {
-	pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
-	pMga->BiosFrom = X_PROBED;
-    } else if (pMga->Primary) {
-	pMga->BiosAddress = 0xc0000;
-	pMga->BiosFrom = X_DEFAULT;
-    }
+	/* details: rombase sdk pp 4-15 */
+	if (pMga->PciInfo->biosBase != 0) {
+	    pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
+	    pMga->BiosFrom = X_PROBED;
+	} else if (pMga->Primary) {
+	    pMga->BiosAddress = 0xc0000;
+	    pMga->BiosFrom = X_DEFAULT;
+	}
     if (pMga->BiosAddress) {
 	xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom, "BIOS at 0x%lX\n",
 		   (unsigned long)pMga->BiosAddress);
@@ -2134,6 +2171,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGAG200_WINBOND_PCI:
     case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
+    case PCI_CHIP_MGAG200_ER_PCI:	
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
 	MGAGSetupFuncs(pScrn);
@@ -2247,6 +2285,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
           case PCI_CHIP_MGAG200_WINBOND_PCI:
 	  case PCI_CHIP_MGAG200_EV_PCI:
       case PCI_CHIP_MGAG200_EH_PCI:
+	  case PCI_CHIP_MGAG200_ER_PCI:	  
 	    pMga->SrcOrg = 0;
 	    pMga->DstOrg = 0;
 	    break;
@@ -2424,16 +2463,17 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	   maxPitch = 2048;
 	   break;
 	case PCI_CHIP_MGAG200_SE_A_PCI:
-	   if (pScrn->videoRam < 2048){
+           if (pScrn->videoRam < 2048){
                maxPitch = 1280;
-	   }
-	   break;
+           }
+           break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
         case PCI_CHIP_MGAG200_WINBOND_PCI:
 	case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
+	case PCI_CHIP_MGAG200_ER_PCI:	
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
 	   maxPitch = 4096;
@@ -4332,9 +4372,12 @@ MGAValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 	    return MODE_BANDWIDTH;
     } else if (pMga->is_G200EV
 	       && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 327)) {
-        return MODE_BANDWIDTH;
+	return MODE_BANDWIDTH;
     } else if (pMga->is_G200EH
                && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 375)) {
+        return MODE_BANDWIDTH;
+    } else if (pMga->is_G200ER
+               && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 550)) {
         return MODE_BANDWIDTH;
     }
 

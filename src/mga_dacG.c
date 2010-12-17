@@ -444,6 +444,116 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
     outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
 }
 
+#define G200ER_PLLREF 48000
+#define G200ER_VCOMIN 1056000
+#define G200ER_VCOMAX 1488000
+
+static void MGAG200ERComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *piM, int *piN, int *piP)
+{
+
+    int  ulM;
+    int  ulN;
+    int  ulO;
+    int  ulR;
+
+    CARD32 ulComputedFo;
+    CARD32 ulVco;
+    CARD32 ulFDelta;
+    CARD32 ulFTmpDelta;
+
+    CARD32 aulMDivValue[] = {1, 2, 4, 8};
+
+    CARD32 ulFo   = lFo;
+
+    ulFDelta = 0xFFFFFFFF;
+
+    for (ulR = 0; ulR < 4;  ulR++)
+    {
+    	if(ulFDelta==0) break;
+        for (ulN = 5; (ulN <= 128) ; ulN++)
+        {
+            if(ulFDelta==0) break;
+            for (ulM = 3; ulM >= 0; ulM--)
+            {
+            	if(ulFDelta==0) break;
+                for (ulO = 5; ulO <= 32; ulO++)
+                {
+                	ulVco = (G200ER_PLLREF * (ulN+1)) / (ulR+1);
+                	// Validate vco
+                    if (ulVco < G200ER_VCOMIN) continue;
+					if (ulVco > G200ER_VCOMAX) continue;
+                	ulComputedFo = ulVco / (aulMDivValue[ulM] * (ulO+1));
+
+                    if (ulComputedFo > ulFo)
+                    {
+                        ulFTmpDelta = ulComputedFo - ulFo;
+                    }
+                    else
+                    {
+                        ulFTmpDelta = ulFo - ulComputedFo;
+                    }
+
+                    if (ulFTmpDelta < ulFDelta)
+                    {
+                        ulFDelta = ulFTmpDelta;
+                        // XG200ERPIXPLLCM M<1:0> O<7:3>
+                        *piM = (CARD8)ulM | (CARD8)(ulO<<3);
+                        //
+                        // XG200ERPIXPLLCN N<6:0>
+                        *piN = (CARD8)ulN;
+                        //
+                        // XG200ERPIXPLLCP R<1:0> cg<7:4> (Use R value)
+                        *piP = (CARD8)ulR | (CARD8)(ulR<<3);
+
+                        // Test
+                        int ftest = (G200ER_PLLREF * (ulN+1)) / ((ulR+1) * aulMDivValue[ulM] * (ulO+1));
+                        ftest=ftest;
+                    }
+                } // End O Loop
+            } // End M Loop
+        } // End N Loop
+    } // End R Loop
+}
+
+static void
+MGAG200ERPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
+{
+    //TODO  G200ER Validate sequence 
+    CARD8 ucPixCtrl, ucTempByte;
+    MGAPtr pMga = MGAPTR(pScrn);
+
+
+    // Set pixclkdis to 1
+    ucPixCtrl = inMGAdac(MGA1064_PIX_CLK_CTL);
+    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_DIS;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+
+    ucTempByte = inMGAdac(MGA1064_REMHEADCTL);
+    ucTempByte |= MGA1064_REMHEADCTL_CLKDIS;
+    outMGAdac(MGA1064_REMHEADCTL, ucTempByte);
+
+    // Select PLL Set C
+    ucTempByte = INREG8(MGAREG_MEM_MISC_READ);
+    ucTempByte |= (0x3<<2) | 0xc0; //select MGA pixel clock
+    OUTREG8(MGAREG_MEM_MISC_WRITE, ucTempByte);
+
+    ucPixCtrl &= ~MGA1064_PIX_CLK_CTL_CLK_DIS;
+    ucPixCtrl |= MGA1064_PIX_CLK_CTL_CLK_POW_DOWN;
+    outMGAdac(MGA1064_PIX_CLK_CTL, ucPixCtrl);
+
+    // Wait 500 us
+    usleep(500);
+
+    // Program the Pixel PLL Register
+    outMGAdac(MGA1064_ER_PIX_PLLC_N, mgaReg->PllN);
+    outMGAdac(MGA1064_ER_PIX_PLLC_M, mgaReg->PllM);
+    outMGAdac(MGA1064_ER_PIX_PLLC_P, mgaReg->PllP);
+
+        // Wait 50 us
+    usleep(50);
+
+}
+
 static void
 MGAG200WBPrepareForModeSwitch(ScrnInfoPtr pScrn)
 {
@@ -768,8 +878,13 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 
 	    pReg->PllM = m;
 	    pReg->PllN = n;
-	    pReg->PllP = p;
-        } else {
+	    pReg->PllP = p;		
+	} else if (pMga->is_G200ER) {
+	    MGAG200ERComputePLLParam(pScrn, f_out, &m, &n, &p);
+	    pReg->PllM = m;
+	    pReg->PllN = n;
+	    pReg->PllP = p;		
+    } else {
 	    /* Do the calculations for m, n, p and s */
 	    MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
 
@@ -966,6 +1081,10 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
                 pReg->Option2 = 0x0000b000;
                 break;
 
+		case PCI_CHIP_MGAG200_ER_PCI:
+			pReg->Dac_Index90 = 0;
+			break;
+
         case PCI_CHIP_MGAG200_EH_PCI:
                 pReg->DacRegs[MGA1064_MISC_CTL] =
                     MGA1064_MISC_CTL_VGA8 |
@@ -1088,6 +1207,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         if (pMga->is_G200WB){
             pReg->ExtVga[1] |= 0x88;
         }
+	pReg->ExtVga_Index24 = 0x05;
 		
 	pVga->CRTC[0]	= ht - 4;
 	pVga->CRTC[1]	= hd;
@@ -1327,10 +1447,15 @@ MGA_NOT_HAL(
 	      if ( (pMga->is_G200EV || pMga->is_G200WB || pMga->is_G200EH) &&
 		   (i >= 0x44) && (i <= 0x4E))
 	         continue;
-
+			 
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
 	   
+		if (pMga->is_G200ER)
+        {
+			outMGAdac(0x90, mgaReg->Dac_Index90);
+        }
+   
 	   if (!MGAISGx50(pMga)) {
 	       /* restore pci_option register */
 #ifdef XSERVER_LIBPCIACCESS
@@ -1361,7 +1486,9 @@ MGA_NOT_HAL(
 #endif
 	   }
 
-           if (pMga->is_G200EV) {
+           if (pMga->is_G200ER) {
+               MGAG200ERPIXPLLSET(pScrn, mgaReg);               
+           } else  if (pMga->is_G200EV) {
                MGAG200EVPIXPLLSET(pScrn, mgaReg);
            } else if (pMga->is_G200WB) {
                MGAG200WBPIXPLLSET(pScrn, mgaReg);
@@ -1388,6 +1515,11 @@ MGA_NOT_HAL(
            for (i = 0; i < 6; i++)
 	      OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[i] << 8) | i);
 
+           if (pMga->is_G200ER) {
+               OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
+               OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_Index24);			   
+           }
+
 	   /* This handles restoring the generic VGA registers. */
 	   if (pMga->is_G200SE) {
  	      MGAG200SERestoreMode(pScrn, vgaReg);
@@ -1404,7 +1536,7 @@ MGA_NOT_HAL(
                OUTREG16(MGAREG_CRTCEXT_INDEX, 6);
                OUTREG16(MGAREG_CRTCEXT_DATA, 0);
            }
-
+		   
 	   /*
 	    * this is needed to properly restore start address
 	    */
@@ -1555,6 +1687,11 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
             mgaReg->PllM = inMGAdac(MGA1064_EH_PIX_PLLC_M);
             mgaReg->PllN = inMGAdac(MGA1064_EH_PIX_PLLC_N);
             mgaReg->PllP = inMGAdac(MGA1064_EH_PIX_PLLC_P);
+        } else if (pMga->is_G200ER) {
+            mgaReg->PllM = inMGAdac(MGA1064_ER_PIX_PLLC_M);
+            mgaReg->PllN = inMGAdac(MGA1064_ER_PIX_PLLC_N);
+            mgaReg->PllP = inMGAdac(MGA1064_ER_PIX_PLLC_P);
+            mgaReg->Dac_Index90 = inMGAdac(0x90);
         }
 
         mgaReg->PIXPLLCSaved = TRUE;
@@ -1582,6 +1719,11 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	{
 		OUTREG8(MGAREG_CRTCEXT_INDEX, i);
 		mgaReg->ExtVga[i] = INREG8(MGAREG_CRTCEXT_DATA);
+	}
+	if (pMga->is_G200ER)
+	{
+		OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
+		mgaReg->ExtVga_Index24 = INREG8(MGAREG_CRTCEXT_DATA);
 	}
 
 #ifdef DEBUG		
@@ -1737,7 +1879,7 @@ static const struct mgag_i2c_private {
     { (1 << 0), (1 << 2) },
     { (1 << 4), (1 << 5) },
     { (1 << 0), (1 << 1) },  /* G200SE, G200EV and G200WB I2C bits */
-    { (1 << 1), (1 << 0) },  /* G200EH I2C bits */
+    { (1 << 1), (1 << 0) },  /* G200EH, G200ER I2C bits */
 };
 
 
@@ -1750,7 +1892,7 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
 
   if (pMga->is_G200SE || pMga->is_G200WB || pMga->is_G200EV)
     i2c_index = 3;
-  else if (pMga->is_G200EH)
+  else if (pMga->is_G200EH || pMga->is_G200ER)
     i2c_index = 4;
   else
     i2c_index = 0;
@@ -1851,7 +1993,7 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
 
         if (pMga->is_G200SE || pMga->is_G200WB || pMga->is_G200EV)
             i2c_index = 3;
-        else if (pMga->is_G200EH)
+        else if (pMga->is_G200EH || pMga->is_G200ER)
             i2c_index = 4;
         else
             i2c_index = 0;
@@ -1976,7 +2118,7 @@ void MGAGSetupFuncs(ScrnInfoPtr pScrn)
     pMga->Save = MGAGSave;
     pMga->Restore = MGAGRestore;
     pMga->ModeInit = MGAGInit;
-    if (!pMga->is_G200WB){
+    if ((!pMga->is_G200WB) && (!pMga->is_G200ER)) {
         pMga->ddc1Read = MGAG_ddc1Read;
         /* vgaHWddc1SetSpeed will only work if the card is in VGA mode */
         pMga->DDC1SetSpeed = vgaHWddc1SetSpeedWeak();

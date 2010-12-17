@@ -1131,6 +1131,7 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
     case PCI_CHIP_MGAG200_WINBOND_PCI:
     case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
+    case PCI_CHIP_MGAG200_ER_PCI:	
 	pMga->SrcOrg = 0;
 	OUTREG(MGAREG_SRCORG, pMga->realSrcOrg);
 	OUTREG(MGAREG_DSTORG, pMga->DstOrg);
