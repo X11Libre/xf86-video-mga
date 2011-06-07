@@ -688,7 +688,12 @@ extern CARD32 MGAAtypeNoBLK[16];
 #define	NICE_DASH_PATTERN	0x00000020
 #define	TWO_PASS_COLOR_EXPAND	0x00000040
 #define	MGA_NO_PLANEMASK	0x00000080
+/* linear expansion doesn't work on BE due to wrong byte order */
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+#define USE_LINEAR_EXPANSION	0x00000000
+#else
 #define USE_LINEAR_EXPANSION	0x00000100
+#endif
 #define LARGE_ADDRESSES		0x00000200
 
 #define MGAIOMAPSIZE		0x00004000
