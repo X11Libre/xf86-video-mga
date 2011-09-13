@@ -37,37 +37,6 @@ typedef char            CHAR;
 typedef unsigned char   UCHAR;
 typedef unsigned char   FAR*LPUCHAR;
 
-typedef struct TAGCLIENTTABLE{
-    ULONG (DECL *ClientReadConfigSpaceByte       )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientReadConfigSpaceDword      )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientWriteConfigSpaceByte      )(LPVOID , ULONG, UCHAR);          
-    ULONG (DECL *ClientWriteConfigSpaceDword     )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientOpenRegisterBase          )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientCloseRegisterBase         )(LPVOID );                        
-    ULONG (DECL *ClientReadRegisterByte          )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientReadRegisterDword         )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientWriteRegisterByte         )(LPVOID , ULONG, UCHAR);          
-    ULONG (DECL *ClientWriteRegisterDword        )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientOpenMemoryBase            )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientCloseMemoryBase           )(LPVOID );                        
-    ULONG (DECL *ClientReadMemoryByte            )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientReadMemoryDword           )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientWriteMemoryByte           )(LPVOID , ULONG, UCHAR);          
-    ULONG (DECL *ClientWriteMemoryDword          )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientOpenSystemDevice          )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientCloseSystemDevice         )(LPVOID );                        
-    ULONG (DECL *ClientReadSystemDeviceByte      )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientReadSystemDeviceDword     )(LPVOID , ULONG, LPVOID );        
-    ULONG (DECL *ClientWriteSystemDeviceByte     )(LPVOID , ULONG, UCHAR);          
-    ULONG (DECL *ClientWriteSystemDeviceDword    )(LPVOID , ULONG, ULONG);          
-    ULONG (DECL *ClientWait                      )(LPVOID , ULONG);                 
-    ULONG (DECL *ClientGetBiosInfo               ) (LPVOID, LPVOID, LPVOID);        
-    ULONG (DECL *ClientReadDDCEdid               ) (LPVOID, LPVOID, ULONG);         
-#ifdef DEBUG
-    ULONG (DECL *ClientDebug                     ) (LPVOID, ULONG, LPVOID, ULONG, LPVOID);
-#endif
-} CLIENTTABLE, FAR *LPCLIENTTABLE;
-
 #endif /* _INTERNALBINDING */
 
 /***************************************************************************************************
