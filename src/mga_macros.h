@@ -74,18 +74,7 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 #define CHECK_DMA_QUIESCENT(pMGA, pScrn)
 #endif
 
-#ifdef USEMGAHAL
-#define MGA_HAL(x) { \
-	MGAPtr pMga = MGAPTR(pScrn); \
-	if (pMga->HALLoaded && pMga->chip_attribs->HAL_chipset) { x; } \
-}
-#define MGA_NOT_HAL(x) { \
-	MGAPtr pMga = MGAPTR(pScrn); \
-	if (!pMga->HALLoaded || !pMga->chip_attribs->HAL_chipset) { x; } \
-}
-#else
 #define MGA_NOT_HAL(x) { x; }
-#endif
 
 #define MGAISGx50(x) ((x)->is_Gx50)
 

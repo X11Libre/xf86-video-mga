@@ -236,9 +236,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     int i;
     char* s;
     ClockRangePtr clockRanges;
-#ifdef USEMGAHAL
-    ULONG status;
-#endif
     MgaScrn2Rel Monitor2Pos;
 
     xf86DrvMsg(pScrn1->scrnIndex, X_INFO, "==== Start of second screen initialization ====\n");
@@ -252,9 +249,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     }
 
     pMga = MGAPTR(pScrn);
-#ifdef USEMGAHAL
-    pMga->pMgaModeInfo = NULL; /*will be allocated later if NULL*/ 
-#endif
     pMga1 = MGAPTR(pScrn1);
     pMga1->pScrn2 = pScrn;
   
@@ -456,10 +450,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     clockRanges->clockIndex = -1;		/* programmable */
     clockRanges->interlaceAllowed = TRUE;
     clockRanges->doubleScanAllowed = TRUE;
-#ifdef USEMGAHAL
-    MGA_HAL(clockRanges->interlaceAllowed = FALSE);
-    MGA_HAL(clockRanges->doubleScanAllowed = FALSE);
-#endif
     clockRanges->interlaceAllowed = FALSE; /*no interlace on CRTC2 */
 
     clockRanges->ClockMulFactor = 1;
@@ -562,30 +552,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	MGAFreeRec(pScrn);
 	return FALSE;
     }
-#ifdef USEMGAHAL
-    MGA_HAL(
-
-    pMga->pBoard = pMga1->pBoard;
-    pMga->pClientStruct = pMga1->pClientStruct;
-    pMga->pMgaHwInfo = pMga1->pMgaHwInfo;
-
-
-    MGAFillModeInfoStruct(pScrn,NULL);
-    /* Fields usually handled by MGAFillModeInfoStruct, but are unavailable
-     * because no mode is given
-     */
-    pMga->pMgaModeInfo->ulDispWidth = pScrn->virtualX;
-    pMga->pMgaModeInfo->ulDispHeight = pScrn->virtualY;
-    
-    if((status = MGAValidateMode(pMga->pBoard,pMga->pMgaModeInfo)) != 0) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		   "MGAValidateMode from HALlib found the mode to be invalid.\n"
-		   "\tError: 0x%lx\n", status);
-        return FALSE;
-    }
-    pScrn->displayWidth = pMga->pMgaModeInfo->ulFBPitch;
-    );	/* MGA_HAL */
-#endif
 
     /*
      * Set the CRTC parameters for all of the modes based on the type
@@ -595,9 +561,6 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
      * driver and if the driver doesn't provide code to set them.  They
      * are not pre-initialised at all.
      */
-#ifdef USEMGAHAL
-    MGA_HAL(xf86SetCrtcForModes(pScrn, 0));
-#endif
     MGA_NOT_HAL(xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V));
 
     /* Set the current mode to the first in the list */

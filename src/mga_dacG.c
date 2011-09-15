@@ -1001,9 +1001,6 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
-#ifdef USEMGAHAL
-	       MGA_HAL(break;);
-#endif
 	       if (MGAISGx50(pMga))
 		       break;
 
@@ -1046,9 +1043,6 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 	case PCI_CHIP_MGAG200_SE_A_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
-#ifdef USEMGAHAL
-		MGA_HAL(break;);
-#endif
         pReg->DacRegs[ MGA1064_VREF_CTL ] = 0x03;
                 pReg->DacRegs[MGA1064_PIX_CLK_CTL] =
                     MGA1064_PIX_CLK_CTL_SEL_PLL;
@@ -1097,9 +1091,6 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
 	default:
-#ifdef USEMGAHAL
-		MGA_HAL(break;);
-#endif
 		if(pMga->OverclockMem) {
                      /* 143 Mhz */
 		    pReg->DacRegs[ MGA1064_SYS_PLL_M ] = 0x06;
@@ -1496,21 +1487,6 @@ MGA_NOT_HAL(
                MGAG200EHPIXPLLSET(pScrn, mgaReg);
            }
 );	/* MGA_NOT_HAL */
-#ifdef USEMGAHAL
-          /* 
-	   * Work around another bug in HALlib: it doesn't restore the
-	   * DAC width register correctly. MATROX: hint, hint.
-	   */
-           MGA_HAL(	 
-    	       outMGAdac(MGA1064_MUL_CTL,mgaReg->DacRegs[0]);
-  	       outMGAdac(MGA1064_MISC_CTL,mgaReg->DacRegs[1]); 
-	       if (!MGAISGx50(pMga)) {
-		   outMGAdac(MGA1064_PIX_PLLC_M,mgaReg->DacRegs[2]);
-		   outMGAdac(MGA1064_PIX_PLLC_N,mgaReg->DacRegs[3]);
-		   outMGAdac(MGA1064_PIX_PLLC_P,mgaReg->DacRegs[4]);
-	       } 
-	       ); 
-#endif
 	   /* restore CRTCEXT regs */
            for (i = 0; i < 6; i++)
 	      OUTREG16(MGAREG_CRTCEXT_INDEX, (mgaReg->ExtVga[i] << 8) | i);
@@ -1650,24 +1626,6 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * DAC width register correctly.
 	 */
 
-#ifdef USEMGAHAL
-	/* 
-	 * Work around another bug in HALlib: it doesn't restore the
-	 * DAC width register correctly (s.o.). MATROX: hint, hint.
-	 */
-  	MGA_HAL(
-  	    if (mgaReg->DacRegs == NULL) {
-  		mgaReg->DacRegs = xnfcalloc(MGAISGx50(pMga) ? 2 : 5, 1);
-  	    }
-    	    mgaReg->DacRegs[0] = inMGAdac(MGA1064_MUL_CTL);
-  	    mgaReg->DacRegs[1] = inMGAdac(MGA1064_MISC_CTL);
-	    if (!MGAISGx50(pMga)) {
-		mgaReg->DacRegs[2] = inMGAdac(MGA1064_PIX_PLLC_M);
-		mgaReg->DacRegs[3] = inMGAdac(MGA1064_PIX_PLLC_N);
-		mgaReg->DacRegs[4] = inMGAdac(MGA1064_PIX_PLLC_P);
-	    } 
-  	);
-#endif
 	MGA_NOT_HAL(
 	/*
 	 * The port I/O code necessary to read in the extended registers.
@@ -1793,12 +1751,6 @@ MGAGSetCursorPosition(ScrnInfoPtr pScrn, int x, int y)
     x += 64;
     y += 64;
 
-#ifdef USEMGAHAL
-    MGA_HAL(
-	    x += pMga->HALGranularityOffX;
-	    y += pMga->HALGranularityOffY;
-    );
-#endif
     /* cursor update must never occurs during a retrace period (pp 4-160) */
     while( INREG( MGAREG_Status ) & 0x08 );
     

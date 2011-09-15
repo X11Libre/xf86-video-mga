@@ -42,10 +42,6 @@
 #include "mga_dri.h"
 #endif
 
-#ifdef USEMGAHAL
-#include "client.h"
-#endif
-
 typedef enum {
     OPTION_SW_CURSOR,
     OPTION_HW_CURSOR,
@@ -329,11 +325,6 @@ typedef enum {
 
 typedef struct {
     int			lastInstance;
-#ifdef USEMGAHAL
-    LPCLIENTDATA	pClientStruct;
-    LPBOARDHANDLE	pBoard;
-    LPMGAHWINFO		pMgaHwInfo;
-#endif
     int			refCount;
     CARD32		masterFbAddress;
     long		masterFbMapSize;
@@ -459,12 +450,6 @@ struct mga_device_attributes {
 };
 
 typedef struct {
-#ifdef USEMGAHAL
-    LPCLIENTDATA	pClientStruct;
-    LPBOARDHANDLE	pBoard;
-    LPMGAMODEINFO	pMgaModeInfo;
-    LPMGAHWINFO		pMgaHwInfo;
-#endif
     EntityInfoPtr	pEnt;
     struct mga_bios_values bios;
     CARD8               BiosOutputMode;
@@ -650,9 +635,6 @@ typedef struct {
     MGAPaletteInfo	palinfo[256];  /* G400 hardware bug workaround */
     FBLinearPtr		LinearScratch;
     Bool                softbooted;
-#ifdef USEMGAHAL
-    Bool                HALLoaded;
-#endif
     OptionInfoPtr	Options;
 
     /* Exa */
@@ -809,26 +791,6 @@ void MGAG200SERestoreFonts(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SESaveMode(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SERestoreMode(ScrnInfoPtr, vgaRegPtr);
 void MGAG200SEHWProtect(ScrnInfoPtr, Bool);
-
-#ifdef USEMGAHAL
-/************ ESC Call Definition ***************/
-typedef struct {
-    char *function;
-    void (*funcptr)(ScrnInfoPtr pScrn, unsigned long *param, char *out, DisplayModePtr pMode);
-} MGAEscFuncRec, *MGAEscFuncPtr;
-
-typedef struct {
-    char function[32];
-    unsigned long parameters[32];
-} EscCmdStruct;
-
-extern LPMGAMODEINFO pMgaModeInfo[2];
-extern MGAMODEINFO   TmpMgaModeInfo[2];
-
-extern void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, DisplayModePtr pMode);
-void MGAFillDisplayModeStruct(DisplayModePtr pMode, LPMGAMODEINFO pModeInfo);
-/************************************************/
-#endif
 
 static __inline__ void
 MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)

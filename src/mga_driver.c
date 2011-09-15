@@ -1509,10 +1509,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     int flags24;
     MGAEntPtr pMgaEnt = NULL;
     Bool Default;
-#ifdef USEMGAHAL
-    ULONG status;
-    CARD8 MiscCtlReg;
-#endif
 
     /*
      * Note: This function is only called once at server startup, and
@@ -1657,37 +1653,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     pMga->is_G200EH = (pMga->Chipset == PCI_CHIP_MGAG200_EH_PCI);
     pMga->is_G200ER = (pMga->Chipset == PCI_CHIP_MGAG200_ER_PCI);
 
-#ifdef USEMGAHAL
-    if (pMga->chip_attribs->HAL_chipset) {
-	Bool loadHal = TRUE;
-	
-	from = X_DEFAULT;
-	if (xf86FindOption(pMga->device->options, "NoHal")) {
-	    loadHal = !xf86SetBoolOption(pMga->device->options,
-					 "NoHal", !loadHal);
-	    from = X_CONFIG;
-	} else if (xf86FindOption(pMga->device->options, "Hal")) {
-	    loadHal = xf86SetBoolOption(pMga->device->options,
-					"Hal", loadHal);
-	    from = X_CONFIG;
-	}
-        if (loadHal && xf86LoadSubModule(pScrn, "mga_hal")) {
-	  xf86DrvMsg(pScrn->scrnIndex, from,"Matrox HAL module used\n");
-	  pMga->HALLoaded = TRUE;
-	} else {
-	  xf86DrvMsg(pScrn->scrnIndex, from, "Matrox HAL module not loaded "
-		     "- using builtin mode setup instead\n");
-	  pMga->HALLoaded = FALSE;
-	}
-    }
-#endif
-
     pMga->DualHeadEnabled = FALSE;
     if (xf86IsEntityShared(pScrn->entityList[0])) {/* dual-head mode requested*/
 	if (
-#ifdef USEMGAHAL
-	    pMga->HALLoaded ||
-#endif
 	    !MGA_DH_NEEDS_HAL(pMga)) {
 	    pMga->DualHeadEnabled = TRUE;
 	} else if (xf86IsPrimInitDone(pScrn->entityList[0])) {
@@ -2088,30 +2056,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                 "\"Merged Framebuffer\" mode only supported on G450 and G550 boards.\n");
         } else { 
-#ifdef USEMGAHAL
-            if(pMga->HALLoaded)
-            { 
-                pMga->MergedFB = TRUE;
-                xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-                        "Using \"Merged Framebuffer\" mode.\n");
-                /*
-                * a few options that won't work well together
-                */
-                if(pMga->HWCursor) /*Should we give the choice? */
-                    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                        " -- Hardware Cursor disabled.\n");
-                pMga->HWCursor = FALSE; 
-                if(pMga->ShadowFB) 
-                    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                        " -- Shadow Framebuffer disabled.\n");
-                pMga->ShadowFB = FALSE;
-                if(pMga->FBDev) 
-                    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                        " -- Framebuffer device disabled.\n");
-                pMga->FBDev = FALSE;
-            } /* MGA_HAL */
-            else
-#endif
             { 
                 xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                     "HALLib not loaded! NOT using \"Merged Framebuffer\" mode.\n");
@@ -2404,10 +2348,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     clockRanges->clockIndex = -1;		/* programmable */
     clockRanges->interlaceAllowed = TRUE;
     clockRanges->doubleScanAllowed = TRUE;
-#ifdef USEMGAHAL
-    MGA_HAL(clockRanges->interlaceAllowed = FALSE);
-    MGA_HAL(clockRanges->doubleScanAllowed = FALSE);
-#endif
     if (pMga->SecondCrtc == TRUE) 
 	clockRanges->interlaceAllowed = FALSE;
 
@@ -2513,80 +2453,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	MGAFreeRec(pScrn);
 	return FALSE;
     }
-#ifdef USEMGAHAL
-    MGA_HAL(
-
-    if(pMga->SecondCrtc == FALSE) {
-	
-        pMga->pBoard = xalloc(sizeof(CLIENTDATA) + MGAGetBOARDHANDLESize());
-        pMga->pClientStruct = xalloc(sizeof(CLIENTDATA));
-        pMga->pClientStruct->pMga = (MGAPtr) pMga;
-
-        MGAMapMem(pScrn);
-	/* 
-	 * For some reason the MGAOPM_DMA_BLIT bit needs to be set
-	 * on G200 before opening the HALlib. I don't know why.
-	 * MATROX: hint, hint.
-	 */
-	/*if (pMga->Chipset == PCI_CHIP_MGAG200 ||
-	  pMga->Chipset == PCI_CHIP_MGAG200_PCI) */{
-	    CARD32 opmode;
-	    opmode = INREG(MGAREG_OPMODE);
-	    OUTREG(MGAREG_OPMODE,  MGAOPM_DMA_BLIT | opmode);
-	}
-	/* wrapping OpenLibrary to fix broken registers. MATROX: hint, hint. */
-	MiscCtlReg = inMGAdac(MGA1064_MISC_CTL);
-        MGAOpenLibrary(pMga->pBoard,pMga->pClientStruct,sizeof(CLIENTDATA));
-	outMGAdac(MGA1064_MISC_CTL,MiscCtlReg);
-        MGAUnmapMem(pScrn);
-        pMga->pMgaHwInfo = xalloc(sizeof(MGAHWINFO));
-        MGAGetHardwareInfo(pMga->pBoard,pMga->pMgaHwInfo);
-
-        /* copy the board handles */
-        if (pMga->DualHeadEnabled) {
-            pMgaEnt->pClientStruct = pMga->pClientStruct;
-            pMgaEnt->pBoard = pMga->pBoard;
-            pMgaEnt->pMgaHwInfo = pMga->pMgaHwInfo;
-        }
-
-    } else { /* Second CRTC && entity is shared */ 
-        pMga->pBoard = pMgaEnt->pBoard;
-        pMga->pClientStruct = pMgaEnt->pClientStruct;
-        pMga->pMgaHwInfo = pMgaEnt->pMgaHwInfo;
-
-    }
-
-    MGAFillModeInfoStruct(pScrn,NULL);
-    /* Fields usually handled by MGAFillModeInfoStruct, but are unavailable
-     * because no mode is given
-     */
-    pMga->pMgaModeInfo->ulDispWidth = pScrn->virtualX;
-    pMga->pMgaModeInfo->ulDispHeight = pScrn->virtualY;
-
-    
-    if (ISDIGITAL1(pMga)) 
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "Digital screen detected on first head.\n");
-    if (ISTV1(pMga)) 
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "TV detected on first head.\n");
-    if (ISDIGITAL2(pMga)) 
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "Digital screen detected on second head.\n");
-    if (ISTV2(pMga))
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "TV detected on second head.\n");
-
-    
-    if((status = MGAValidateMode(pMga->pBoard,pMga->pMgaModeInfo)) != 0) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		   "MGAValidateMode from HALlib found the mode to be invalid.\n"
-		   "\tError: 0x%lx\n", status);
-        return FALSE;
-    }
-    pScrn->displayWidth = pMga->pMgaModeInfo->ulFBPitch;
-    );	/* MGA_HAL */
-#endif
 
     /* If the Device section explicitly set HasSDRAM, don't bother checking.
      */
@@ -2620,9 +2486,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * driver and if the driver doesn't provide code to set them.  They
      * are not pre-initialised at all.
      */
-#ifdef USEMGAHAL
-    MGA_HAL(xf86SetCrtcForModes(pScrn, 0));
-#endif
     MGA_NOT_HAL(xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V));
 
     /* Set the current mode to the first in the list */
@@ -2790,46 +2653,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     };
 
     
-#ifdef USEMGAHAL
-    MGA_HAL(
-    /* Close the library after preinit */
-    /* This needs to only happen after this board has completed preinit
-     * both times
-     */
-
-      if(pMga->DualHeadEnabled) {
-	  /* Entity is shared make sure refcount == 2 */
-	  /* If ref count is 2 then reset it to 0 */
-	  if(pMgaEnt->refCount == 2) {
-	      /* Both boards have done there initialization */
-	      MGACloseLibrary(pMga->pBoard);
-
-	      if (pMga->pBoard)
-	        xfree(pMga->pBoard);
-	      if (pMga->pClientStruct)
-	        xfree(pMga->pClientStruct);
-	      if (pMga->pMgaModeInfo)
-	        xfree(pMga->pMgaModeInfo);
-	      if (pMga->pMgaHwInfo)
-	        xfree(pMga->pMgaHwInfo);
-	      pMgaEnt->refCount = 0;
-	  }
-      } else {
-	  MGACloseLibrary(pMga->pBoard);
-
-	  if (pMga->pBoard)
-	    xfree(pMga->pBoard);
-	  if (pMga->pClientStruct)
-	    xfree(pMga->pClientStruct);
-	  if (pMga->pMgaModeInfo)
-	    xfree(pMga->pMgaModeInfo);
-	  if (pMga->pMgaHwInfo)
-	    xfree(pMga->pMgaHwInfo);
-      }
-
-    );	/* MGA_HAL */
-#endif
-
     xf86SetPrimInitDone(pScrn->entityList[0]);
     
     return TRUE;
@@ -2995,9 +2818,6 @@ MGASave(ScrnInfoPtr pScrn)
     MGARegPtr mgaReg = &pMga->SavedReg;
 
     if(pMga->SecondCrtc == TRUE) return;
-#ifdef USEMGAHAL
-    MGA_HAL(if (pMga->pBoard != NULL) MGASaveVgaState(pMga->pBoard));
-#endif
 
     /* I need to save the registers for the second head also */
     /* Save the register for 0x80 to 0xa0 */
@@ -3006,135 +2826,6 @@ MGASave(ScrnInfoPtr pScrn)
     /* Only save text mode fonts/text for the primary card */
     (*pMga->Save)(pScrn, vgaReg, mgaReg, pMga->Primary);
 }
-
-#ifdef USEMGAHAL
-/* Convert DisplayModeRec parameters in MGAMODEINFO parameters.
-*  mode parameter optionnal. */
-void
-MGAFillModeInfoStruct(ScrnInfoPtr pScrn, DisplayModePtr mode)
-{
-     const char *s;
-    MGAPtr pMga = MGAPTR(pScrn);
-
-    Bool digital1 = FALSE;
-    Bool digital2 = FALSE;
-    Bool tv1 = FALSE;
-    Bool tv2 = FALSE;
-    Bool swap_head
-      = xf86ReturnOptValBool(pMga->Options, OPTION_SWAPPED_HEAD, FALSE);
-        
-    if(pMga->MergedFB && mode && mode->Private && (mode->PrivSize == 0)) {
-        mode = pMga->SecondCrtc ? 
-             ((MergedDisplayModePtr)mode->Private)->Monitor2
-            : ((MergedDisplayModePtr)mode->Private)->Monitor1;
-    }
-    
-    
-    if (pMga->pMgaHwInfo)
-    {
-	digital1 = ISDIGITAL1(pMga);
-	digital2 = ISDIGITAL2(pMga);
-	tv1 = ISTV1(pMga);
-	tv2 = ISTV2(pMga);
-    }
-
-    /*FIXME: causes segfault elsewhere if not commented*/
-    /*if(!pMga->pMgaModeInfo)*/ pMga->pMgaModeInfo = xalloc(sizeof(MGAMODEINFO));
-    pMga->pMgaModeInfo->flOutput = 0;
-    pMga->pMgaModeInfo->ulDeskWidth = pScrn->virtualX;
-    pMga->pMgaModeInfo->ulDeskHeight = pScrn->virtualY;
-    pMga->pMgaModeInfo->ulFBPitch = 0;
-    pMga->pMgaModeInfo->ulBpp = pScrn->bitsPerPixel;
-    pMga->pMgaModeInfo->ulZoom = 1;
-    pMga->pMgaModeInfo->flSignalMode = 0x10;
-
-    /* Set TV standard */
-    if ((s = xf86GetOptValString(pMga->Options, OPTION_TVSTANDARD))) {
-    	if (!xf86NameCmp(s, "PAL")) {
-    		pMga->pMgaModeInfo->flSignalMode = 0x00;
-    		pMga->pMgaModeInfo->ulRefreshRate = 50;
-    		pMga->pMgaModeInfo->ulTVStandard = TV_PAL;
-    	} else {
-    		pMga->pMgaModeInfo->ulRefreshRate = 60;
-    		pMga->pMgaModeInfo->ulTVStandard = TV_NTSC;
-    	}
-    } else {
-    	pMga->pMgaModeInfo->ulRefreshRate = 0;
-    	pMga->pMgaModeInfo->ulTVStandard = TV_NTSC;
-    }
-
-    /* Set Cable Type */
-    if ((s = xf86GetOptValString(pMga->Options, OPTION_CABLETYPE))) {
-    	if (!xf86NameCmp(s, "SCART_RGB")) {
-    		pMga->pMgaModeInfo->ulCableType = TV_SCART_RGB;
-    	} else if (!xf86NameCmp(s, "SCART_COMPOSITE")) {
-    		pMga->pMgaModeInfo->ulCableType = TV_SCART_COMPOSITE;
-    	} else if (!xf86NameCmp(s, "SCART_TYPE2")) {
-    		pMga->pMgaModeInfo->ulCableType = TV_SCART_TYPE2;
-    	} else {
-    		pMga->pMgaModeInfo->ulCableType = TV_YC_COMPOSITE;
-    	}
-    } else {
-    	pMga->pMgaModeInfo->ulCableType = TV_YC_COMPOSITE;
-    }
-
-    if(mode) {
-        pMga->pMgaModeInfo->ulHorizRate = 0;
-        pMga->pMgaModeInfo->ulDispWidth = mode->HDisplay;
-        pMga->pMgaModeInfo->ulDispHeight = mode->VDisplay;
-        pMga->pMgaModeInfo->ulPixClock = mode->Clock;
-        pMga->pMgaModeInfo->ulHFPorch = mode->HSyncStart - mode->HDisplay;
-        pMga->pMgaModeInfo->ulHSync = mode->HSyncEnd - mode->HSyncStart;
-        pMga->pMgaModeInfo->ulHBPorch = mode->HTotal - mode->HSyncEnd;
-        pMga->pMgaModeInfo->ulVFPorch = mode->VSyncStart - mode->VDisplay;
-        pMga->pMgaModeInfo->ulVSync = mode->VSyncEnd - mode->VSyncStart;
-        pMga->pMgaModeInfo->ulVBPorch = mode->VTotal - mode->VSyncEnd;
-    }
-    /* Use DstOrg directly */
-    /* This is an offset in pixels not memory */
-    pMga->pMgaModeInfo->ulDstOrg = pMga->DstOrg / (pScrn->bitsPerPixel / 8);
-    pMga->pMgaModeInfo->ulDisplayOrg = pMga->DstOrg / (pScrn->bitsPerPixel / 8);
-    pMga->pMgaModeInfo->ulPanXGran = 0;
-    pMga->pMgaModeInfo->ulPanYGran = 0;
-
-    if(pMga->SecondCrtc == TRUE) {
-	pMga->pMgaModeInfo->flOutput = MGAMODEINFO_SECOND_CRTC |
-				       MGAMODEINFO_FORCE_PITCH |
-				       MGAMODEINFO_FORCE_DISPLAYORG;
-	if (digital2) {
-	    pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL2;
-	} else if (tv2) {
-	    pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_TV;
-	} else {
-            if (!swap_head) {
-	      pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_ANALOG2;
-            } else {
-              pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_ANALOG1;
-            }
-	}
-    } else { 
-	pMga->pMgaModeInfo->flOutput = MGAMODEINFO_FORCE_PITCH;
-        if (digital1) {
-	    if ((pMga->Chipset == PCI_CHIP_MGAG200) ||
-		(pMga->Chipset == PCI_CHIP_MGAG200_PCI)) {
-		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_FLATPANEL1;
-		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL2;
-	    } else {
-		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL1;
-	    }
-        } else if (tv1) {
-	    pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_TV;
-       	} else {
-            if (!swap_head) {
-	        pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_ANALOG1;
-            } else {
-                pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_ANALOG2;
-            }
-        }
-    }
-    pMga->pMgaModeInfo->ulFBPitch = pScrn->displayWidth;
-}
-#endif
 
 /*
  * Initialise a new mode.  This is currently still using the old
@@ -3150,9 +2841,6 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     MGAPtr pMga = MGAPTR(pScrn);
     MGARegPtr mgaReg;
 
-#ifdef USEMGAHAL
-   ULONG status;
-#endif
     vgaHWUnlock(hwp);
 
 /*    if(pMga->MergedFB && mode && mode->Private && (mode->PrivSize == 0)) {
@@ -3175,93 +2863,11 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     }
     vgaReg = &hwp->ModeReg;
     mgaReg = &pMga->ModeReg;
-#ifdef USEMGAHAL
-    MGA_HAL( 
-        MGAFillModeInfoStruct(pScrn,mode);
-                    
-        /* Validate the parameters */
-        if ((status = MGAValidateMode(pMga->pBoard, pMga->pMgaModeInfo)) != 0) {
-            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "MGAValidateMode from HALlib found the mode to be invalid.\n"
-                    "\tError: %lx\n", status);
-            return FALSE;
-        }
-
-        /*
-         * Find mode for second head. 
-         */
-        if(pMga->MergedFB) {
-    
-            MGAFillModeInfoStruct(pMga->pScrn2,mode);
-            /* Validates the Video parameters */
-            if ((status = MGAValidateVideoParameters(pMga->pBoard, MGAPTR(pMga->pScrn2)->pMgaModeInfo))
-                != 0) {
-                xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                        "MGAValidateVideoParameters from HALlib found the mode to be invalid.\n\tError: %lx\n", status);
-                return FALSE;
-            }
-        }
-    );	 /*MGA_HAL */
-    
-#endif
-
-#ifdef USEMGAHAL
-MGA_HAL(
-
-    /*************************** ESC *****************************/
-    TmpMgaModeInfo[0] =  *pMga->pMgaModeInfo;
-	
-    if(pMga->SecondCrtc == TRUE)
-        pMgaModeInfo[1] = pMga->pMgaModeInfo;
-    else
-        pMgaModeInfo[0] = pMga->pMgaModeInfo;
-    
-	TmpMgaModeInfo[0].ulDispWidth = 0;
-    
-    if(!pMga->MergedFB) /* FIXME: Must deal with this once PowerDesk & MergedFB 
-                           compatibility will exist */
-        MGAFillDisplayModeStruct(mode, pMga->pMgaModeInfo);  
-    /*************************************************************/
-
-);	/* MGA_HAL */
-#endif
 
 #ifdef XF86DRI
    if (pMga->directRenderingEnabled) {
        DRILock(screenInfo.screens[pScrn->scrnIndex], 0);
    }
-#endif
-
-#ifdef USEMGAHAL
-    MGA_HAL(
-    /* Initialize the board */
-    if(MGASetMode(pMga->pBoard,pMga->pMgaModeInfo) != 0) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		"MGASetMode returned an error."
-		"  Make sure to validate the mode before.\n");
-	return FALSE;
-    }
-    if(pMga->MergedFB
-       && MGASetMode(pMga->pBoard,MGAPTR(pMga->pScrn2)->pMgaModeInfo) != 0) {
-  	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		   "MGASetMode returned an error."
-		   "  Make sure to validate the mode before.\n");
-    }
-
-    );	/* MGA_HAL */
-
-    /* getting around bugs in the HAL lib. MATROX: hint, hint. */
-    MGA_HAL(
-	    if (pMga->chip_attribs->hwcursor_1064) {
-		if(pMga->SecondCrtc == FALSE && pMga->HWCursor == TRUE) {
-		outMGAdac(MGA1064_CURSOR_BASE_ADR_LOW, 
-			  pMga->FbCursorOffset >> 10);
-		outMGAdac(MGA1064_CURSOR_BASE_ADR_HI, 
-			  pMga->FbCursorOffset >> 18);
-		outMGAdac(MGA1064_CURSOR_CTL, 0x00);
-	      }
-	    }
-    );	/* MGA_HAL */
 #endif
 
     MGA_NOT_HAL((*pMga->Restore)(pScrn, vgaReg, mgaReg, FALSE));
@@ -3472,14 +3078,6 @@ MGARestore(ScrnInfoPtr pScrn)
 	vgaHWProtect(pScrn, TRUE);
     }
     if (pMga->Primary) {
-#ifdef USEMGAHAL
-	MGA_HAL(
-	    if(pMga->pBoard != NULL) {
-		MGASetVgaMode(pMga->pBoard);
-		MGARestoreVgaState(pMga->pBoard);
-	    }
-	    );	/* MGA_HAL */
-#endif
         (*pMga->Restore)(pScrn, vgaReg, mgaReg, TRUE);
     } else {
         vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
@@ -3588,81 +3186,12 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
        pPriv = xf86GetEntityPrivate(pScrn->entityList[0], MGAEntityIndex);
        pMgaEnt = pPriv->ptr;
        pMgaEnt->refCount++;
-#ifdef USEMGAHAL
-       MGA_HAL(
-       if(pMgaEnt->refCount == 1) {
-	   CARD8 MiscCtlReg;
-	  pMga->pBoard = xalloc(sizeof(CLIENTDATA) + MGAGetBOARDHANDLESize());
-	  pMga->pClientStruct = xalloc(sizeof(CLIENTDATA));
-	  pMga->pClientStruct->pMga = (MGAPtr) pMga;
-	  
-	  /* wrapping OpenLibrary to fix broken registers. MATROX: hint,hint.*/
-          MiscCtlReg = inMGAdac(MGA1064_MISC_CTL);
-	  MGAOpenLibrary(pMga->pBoard,pMga->pClientStruct,sizeof(CLIENTDATA));
-	  outMGAdac(MGA1064_MISC_CTL,MiscCtlReg);
-	  pMga->pMgaHwInfo = xalloc(sizeof(MGAHWINFO));
-	  MGAGetHardwareInfo(pMga->pBoard,pMga->pMgaHwInfo);
-
-	  /* Detecting for type of display */
-	  if (pMga->pMgaHwInfo->ulCapsSecondOutput & MGAHWINFOCAPS_OUTPUT_TV) {
-	  	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "TV detected\n");
-	  }
-	  if (pMga->pMgaHwInfo->ulCapsFirstOutput &
-			MGAHWINFOCAPS_OUTPUT_DIGITAL) {
-	  	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-				"Digital Screen detected\n");
-	  }
-	  if (pMga->pMgaHwInfo->ulCapsSecondOutput &
-			MGAHWINFOCAPS_OUTPUT_DIGITAL) {
-	  	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-				"Digital Screen detected\n");
-	  }
-
-	  /* Now copy these to the entitystructure */
-	  pMgaEnt->pClientStruct = pMga->pClientStruct;
-	  pMgaEnt->pBoard = pMga->pBoard;
-	  pMgaEnt->pMgaHwInfo = pMga->pMgaHwInfo;
-       } else { /* Ref count is 2 */
-	  pMga->pClientStruct = pMgaEnt->pClientStruct;
-	  pMga->pBoard = pMgaEnt->pBoard;
-	  pMga->pMgaHwInfo = pMgaEnt->pMgaHwInfo;
-       }
-       );	/* MGA_HAL */
-#endif
     } else {
-#ifdef USEMGAHAL
-	CARD8 MiscCtlReg;
-
-	  MGA_HAL(
-	  pMga->pBoard = xalloc(sizeof(CLIENTDATA) + MGAGetBOARDHANDLESize());
-	  pMga->pClientStruct = xalloc(sizeof(CLIENTDATA));
-	  pMga->pClientStruct->pMga = (MGAPtr) pMga;
-
-	  MiscCtlReg = inMGAdac(MGA1064_MISC_CTL);
-	  /* wrapping OpenLibrary to fix broken registers. MATROX: hint,hint.*/
-	  MGAOpenLibrary(pMga->pBoard,pMga->pClientStruct,sizeof(CLIENTDATA));
-	  outMGAdac(MGA1064_MISC_CTL,MiscCtlReg);
-	  pMga->pMgaHwInfo = xalloc(sizeof(MGAHWINFO));
-	  MGAGetHardwareInfo(pMga->pBoard,pMga->pMgaHwInfo);
-	  );	/* MGA_HAL */
-#endif
     }
     if (pMga->is_G200SE) {
 	pScrn->videoRam = VRTemp;
 	pMga->FbMapSize = FBTemp;
     }
-#ifdef USEMGAHAL
-    MGA_HAL(
-	/* There is a problem in the HALlib: set soft reset bit */
-	/* MATROX: hint, hint. */
-	if (!pMga->Primary && !pMga->FBDev &&
-	    (SUBSYS_ID(pMga->PciInfo) == PCI_CARD_MILL_G200_SG)) {
-	    OUTREG(MGAREG_Reset, 1);
-	    usleep(200);
-	    OUTREG(MGAREG_Reset, 0);
-	}
-    );	/* MGA_HAL */
-#endif
 
     /* Initialise the MMIO vgahw functions */
     vgaHWSetMmioFuncs(hwp, pMga->IOBase, PORT_OFFSET);
@@ -3969,66 +3498,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 Bool
 MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 {
-#ifdef USEMGAHAL
-    char sCmdIn[256];
-    char sCmdOut[256];
-    FILE* fdIn;
-# ifdef MATROX_WRITEBACK
-    FILE* fdOut;
-# endif
-#endif
  
     if  (mode->Flags & 0x80000000) {
-#ifdef USEMGAHAL
-
-# ifdef MATROX_WRITEBACK
-#  define MWB(x) { x; }
-#  define MWB_COND(x) x
-# else
-#  define MWB(x)
-#  define MWB_COND(x) 1
-# endif
-	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
-	MGA_HAL(
-	fdIn = fopen("/tmp/mgaDriverIn", "rt");
-	MWB(fdOut = fopen("/tmp/mgaDriverOut", "wt"))
-
-	if(fdIn && MWB_COND(fdOut))
-	{
- 
-	    fgets(sCmdIn, 255, fdIn);
- 
-	    if(sCmdIn)
-	    {
- 
-		MGAExecuteEscCmd(xf86Screens[scrnIndex], sCmdIn, sCmdOut, mode);
- 
-		/* Remove file and close file descriptor */
-		remove("/tmp/mgaDriverIn");
-		fclose(fdIn);
-		MWB(
-		    /* Write output data to output file for
-		       calling application */
-		    fputs(sCmdOut, fdOut);
-		    fclose(fdOut);
-		    )
-		mode->Flags &= 0x7FFFFFFF;
-		return TRUE;
-	    }
-	    else
-	    {
-		mode->Flags &= 0x7FFFFFFF;
-		return FALSE;
-	    }
-	}
-	else
-	{
-	    mode->Flags &= 0x7FFFFFFF;
-	    return FALSE;
-	}
-   )
-#endif
  	return FALSE; 
     }   else
 	return MGAModeInit(xf86Screens[scrnIndex], mode);
@@ -4040,28 +3511,6 @@ MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 void
 MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y)
 {
-#ifdef USEMGAHAL
-    MGA_HAL(
-	MGAPtr pMga = MGAPTR(pScrn);
-	MGAPtr pMga2;
-	int xg = 1;
-	int yg = 1;
-	if(pMga->pMgaModeInfo && pMga->pMgaModeInfo->ulPanXGran && pMga->pMgaModeInfo->ulPanYGran) {
-	    xg = pMga->pMgaModeInfo->ulPanXGran;
-	    yg = pMga->pMgaModeInfo->ulPanYGran;
-	}
-	if(pMga->pScrn2 && (pMga2 = MGAPTR(pMga->pScrn2)) ) {
-
-	    if(pMga2->pMgaModeInfo && pMga2->pMgaModeInfo->ulPanXGran && pMga2->pMgaModeInfo->ulPanYGran) {
-		xg = max(xg,pMga2->pMgaModeInfo->ulPanXGran);
-		yg = max(yg,pMga2->pMgaModeInfo->ulPanYGran);
-	    }
-	}
-	xg=16; /*ncoder: temporary */ 
-	*x -= *x % xg;
-	*y -= *y % yg;
-	); 
-#endif
 }
 
 
@@ -4087,16 +3536,6 @@ MGAAdjustFrame(int scrnIndex, int x, int y, int flags)
         /* wanted to improve panning granularity problems without risking
          * compatibility issues. Existing code looked hardware dependent.
          */
-#ifdef USEMGAHAL
-    MGA_HAL(
-	    pMga->HALGranularityOffX = x;
-	    pMga->HALGranularityOffY = y;
-        MGAAdjustGranularity(pScrn,&x,&y);
-	    pMga->HALGranularityOffX = pMga->HALGranularityOffX - x;
-	    pMga->HALGranularityOffY = pMga->HALGranularityOffY - y;
-        HALSetDisplayStart(pMga->pBoard,x,y,0);
-    );
-#endif
     MGA_NOT_HAL(
         if(pMga->ShowCache && y && pScrn->vtSema)
             y += pScrn->virtualY - 1;
@@ -4139,12 +3578,6 @@ MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
     pScrn = xf86Screens[scrnIndex];
     pMga = MGAPTR(pScrn);
     pLayout = &pMga->CurrentLayout;
-#ifdef USEMGAHAL
-    MGA_HAL(
-        MGAAdjustGranularity(pScrn,&x,&y);
-        HALSetDisplayStart(pMga->pBoard,x,y,1);
-    );
-#endif
     MGA_NOT_HAL(
         if(pMga->ShowCache && y && pScrn->vtSema)
             y += pScrn->virtualY - 1;
@@ -4258,9 +3691,6 @@ MGALeaveVT(int scrnIndex, int flags)
         DRILock(pScreen, 0);
     }
 #endif
-#ifdef USEMGAHAL
-    MGA_HAL( RESTORE_TEXTMODE_ON_DVI(pMga); );
-#endif
 }
 
 
@@ -4280,9 +3710,6 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
     MGAPtr pMga = MGAPTR(pScrn);
     MGAEntPtr pMgaEnt = NULL;
 
-#ifdef USEMGAHAL    
-    MGA_HAL( RESTORE_TEXTMODE_ON_DVI(pMga); );
-#endif
     if (pMga->MergedFB)
          MGACloseScreenMerged(scrnIndex, pScreen);
 
@@ -4310,37 +3737,6 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
        pMgaEnt = pPriv->ptr;
        pMgaEnt->refCount--;
    }
-
-#ifdef USEMGAHAL
-   MGA_HAL(
-   if(pMga->DualHeadEnabled) {
-      if(pMgaEnt->refCount == 0) {
-	 /* Both boards have closed there screen */
-	 MGACloseLibrary(pMga->pBoard);
-
-	 if (pMga->pBoard)
-	   xfree(pMga->pBoard);
-	 if (pMga->pClientStruct)
-	   xfree(pMga->pClientStruct);
-	 if (pMga->pMgaModeInfo)
-	   xfree(pMga->pMgaModeInfo);
-	 if (pMga->pMgaHwInfo)
-	   xfree(pMga->pMgaHwInfo);
-      }
-   } else {
-      MGACloseLibrary(pMga->pBoard);
-
-      if (pMga->pBoard)
-	xfree(pMga->pBoard);
-      if (pMga->pClientStruct)
-	xfree(pMga->pClientStruct);
-      if (pMga->pMgaModeInfo)
-	xfree(pMga->pMgaModeInfo);
-      if (pMga->pMgaHwInfo)
-	xfree(pMga->pMgaHwInfo);
-   }
-   );	/* MGA_HAL */
-#endif
 
 #ifdef USE_XAA
     if (pMga->AccelInfoRec)
