@@ -3282,6 +3282,28 @@ MGA_HAL(
 	    outb(0xfac, 0x02);
     }
 
+    /* Reset tagfifo*/ 
+	if (pMga->is_G200ER) 
+    {
+        CARD32 ulMemCtl = INREG(MGAREG_MEMCTL);
+        CARD8  ucSeq1;
+
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reset tagfifo\n");
+        /* Screen off */
+    	OUTREG8(MGAREG_SEQ_INDEX, 0x01);	/* Select SEQ1 */
+	    ucSeq1 = INREG8(MGAREG_SEQ_DATA) | 0x20;
+    	OUTREG8(MGAREG_SEQ_DATA, ucSeq1);
+
+        /* Reset tagfifo */
+        OUTREG(MGAREG_MEMCTL, ulMemCtl | 0x002000000);
+        usleep(1000); /* wait 1ms */
+        OUTREG(MGAREG_MEMCTL, ulMemCtl & ~0x002000000);
+
+        /* Screen on */
+    	OUTREG8(MGAREG_SEQ_DATA, ucSeq1 & ~0x20);
+
+    }
+
     /* 
      This function optimize the Priority Request control
      Higher HiPriLvl will reduce drawing performance

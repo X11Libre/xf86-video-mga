@@ -119,6 +119,9 @@
 #define MGAREG_WACCEPTSEQ       0x1dd4
 #define MGAREG_WMISC            0x1e70
 
+
+#define MGAREG_MEMCTL           0x2E08
+
 /* OPMODE register additives */
 
 #define MGAOPM_DMA_GENERAL	(0x00 << 2)
