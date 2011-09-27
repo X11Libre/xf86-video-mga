@@ -865,7 +865,7 @@ mgaExaInit(ScreenPtr pScreen)
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "X %d Y %d bpp %d\n",
                pScrn->virtualX, pScrn->virtualY, pScrn->bitsPerPixel);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Start at %p, size %x, osb %x\n",
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Start at %p, size %lx, osb %lx\n",
                pExa->memoryBase, pExa->memorySize, pExa->offScreenBase);
 
     /* In PW24 mode, we need to align to "3 64-bytes" */
