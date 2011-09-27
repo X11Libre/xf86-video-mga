@@ -2164,7 +2164,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     /*
      * Reset card if it isn't primary one
      */
-    if ( (!pMga->Primary && !pMga->FBDev) || xf86IsPc98() )
+    if ( (!pMga->Primary && !pMga->FBDev) )
         MGASoftReset(pScrn);
 
     if (pScrn->videoRam == 0) {
@@ -2876,13 +2876,6 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	MGAG200SEHWProtect(pScrn,FALSE);
     } else {
 	vgaHWProtect(pScrn, FALSE);
-    }
-
-    if (xf86IsPc98()) {
-	if (pMga->Chipset == PCI_CHIP_MGA2064)
-	    outb(0xfac, 0x01);
-	else
-	    outb(0xfac, 0x02);
     }
 
     /* Reset tagfifo*/ 
@@ -3680,8 +3673,6 @@ MGALeaveVT(int scrnIndex, int flags)
     MGARestore(pScrn);
     vgaHWLock(hwp);
 
-    if (xf86IsPc98())
-	outb(0xfac, 0x00);
 #ifdef XF86DRI
     if (pMga->directRenderingEnabled) {
         pScreen = screenInfo.screens[scrnIndex];
@@ -3754,9 +3745,6 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
     free(pMga->ScratchBuffer);
 
     pScrn->vtSema = FALSE;
-
-    if (xf86IsPc98())
-	outb(0xfac, 0x00);
 
     xf86ClearPrimInitDone(pScrn->entityList[0]);
 

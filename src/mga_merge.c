@@ -385,7 +385,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     /*
      * Reset card if it isn't primary one
      */
-    if ( (!pMga->Primary && !pMga->FBDev) || xf86IsPc98() )
+    if ( (!pMga->Primary && !pMga->FBDev) )
         MGASoftReset(pScrn);
 
     
