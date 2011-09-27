@@ -583,7 +583,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     BoxRec AvailFBArea;
     int i;
 
-    pMga->ScratchBuffer = xalloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
+    pMga->ScratchBuffer = malloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
     if(!pMga->ScratchBuffer) return FALSE;
 
     pMga->AccelInfoRec = infoPtr = XAACreateInfoRec();

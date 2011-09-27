@@ -131,8 +131,8 @@ void MGAInitVideo(ScreenPtr pScreen)
 	    num_adaptors = 1;
 	    adaptors = &newAdaptor;
 	} else {
-	    newAdaptors =  /* need to free this someplace */
-		xalloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr*));
+	    /* need to free this someplace */
+	    newAdaptors = malloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr *));
 	    if(newAdaptors) {
 		memcpy(newAdaptors, adaptors, num_adaptors * 
 					sizeof(XF86VideoAdaptorPtr));
@@ -147,7 +147,7 @@ void MGAInitVideo(ScreenPtr pScreen)
         xf86XVScreenInit(pScreen, adaptors, num_adaptors);
 
     if(newAdaptors)
-	xfree(newAdaptors);
+	free(newAdaptors);
 }
 
 /* client libraries expect an encoding */
@@ -231,10 +231,10 @@ MGAAllocAdaptor(ScrnInfoPtr pScrn, Bool doublebuffer)
     if(!(adapt = xf86XVAllocateVideoAdaptorRec(pScrn)))
 	return NULL;
 
-    if(!(pPriv = xcalloc(1, sizeof(MGAPortPrivRec) + 
+    if(!(pPriv = calloc(1, sizeof(MGAPortPrivRec) +
 			(sizeof(DevUnion) * MGA_MAX_PORTS)))) 
     {
-	xfree(adapt);
+	free(adapt);
 	return NULL;
     }
 
@@ -1082,18 +1082,18 @@ MGAAllocateSurface(
     surface->width = w;
     surface->height = h;
 
-    if(!(surface->pitches = xalloc(sizeof(int)))) {
+    if(!(surface->pitches = malloc(sizeof(int)))) {
         MGAFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
-    if(!(surface->offsets = xalloc(sizeof(int)))) {
-	xfree(surface->pitches);
+    if(!(surface->offsets = malloc(sizeof(int)))) {
+	free(surface->pitches);
         MGAFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
-    if(!(pPriv = xalloc(sizeof(OffscreenPrivRec)))) {
-	xfree(surface->pitches);
-	xfree(surface->offsets);
+    if(!(pPriv = malloc(sizeof(OffscreenPrivRec)))) {
+	free(surface->pitches);
+	free(surface->offsets);
         MGAFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
@@ -1137,9 +1137,9 @@ MGAFreeSurface(
     if(pPriv->isOn)
 	MGAStopSurface(surface);
     MGAFreeMemory(pScrn, pPriv->surface_memory);
-    xfree(surface->pitches);
-    xfree(surface->offsets);
-    xfree(surface->devPrivate.ptr);
+    free(surface->pitches);
+    free(surface->offsets);
+    free(surface->devPrivate.ptr);
 
     return Success;
 }
@@ -1231,7 +1231,7 @@ MGAInitOffscreenImages(ScreenPtr pScreen)
     XF86OffscreenImagePtr offscreenImages;
 
     /* need to free this someplace */
-    if(!(offscreenImages = xalloc(num * sizeof(XF86OffscreenImageRec))))
+    if(!(offscreenImages = malloc(num * sizeof(XF86OffscreenImageRec))))
 	return;
 
     offscreenImages[0].image = &Images[0];

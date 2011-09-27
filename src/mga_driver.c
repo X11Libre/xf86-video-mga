@@ -646,7 +646,7 @@ MGAFreeRec(ScrnInfoPtr pScrn)
 {
     if (pScrn->driverPrivate == NULL)
 	return;
-    xfree(pScrn->driverPrivate);
+    free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 }
 
@@ -813,7 +813,7 @@ MGAProbe(DriverPtr drv, int flags)
 			            MGAChipsets, MGAPciChipsets, devSections,
 			            numDevSections, drv, &usedChips);
     /* Free it since we don't need that list after this */
-    xfree(devSections);
+    free(devSections);
     if (numUsed <= 0)
 	return FALSE;
 
@@ -971,7 +971,7 @@ MGAProbe(DriverPtr drv, int flags)
 	    }
         }
     }
-    xfree(usedChips);
+    free(usedChips);
 
     return foundScreen;
 }
@@ -1715,7 +1715,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
     }
 
-    if (!(pMga->Options = xalloc(sizeof(MGAOptions))))
+    if (!(pMga->Options = malloc(sizeof(MGAOptions))))
 	return FALSE;
     memcpy(pMga->Options, MGAOptions, sizeof(MGAOptions));
 
@@ -2384,7 +2384,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         switch(pMga->Chipset) {
 	case PCI_CHIP_MGA2064:
 	   if (!pMga->NoAccel) {
-		linePitches = xalloc(sizeof(Pitches1));
+		linePitches = malloc(sizeof(Pitches1));
 		memcpy(linePitches, Pitches1, sizeof(Pitches1));
 		minPitch = maxPitch = 0;
 	   }
@@ -2393,7 +2393,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	case PCI_CHIP_MGA2164_AGP:
 	case PCI_CHIP_MGA1064:
 	   if (!pMga->NoAccel) {
-		linePitches = xalloc(sizeof(Pitches2));
+		linePitches = malloc(sizeof(Pitches2));
 		memcpy(linePitches, Pitches2, sizeof(Pitches2));
 		minPitch = maxPitch = 0;
 	   }
@@ -2431,7 +2431,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 			      LOOKUP_BEST_REFRESH);
       
 	if (linePitches)
-	   xfree(linePitches);
+	   free(linePitches);
     }
 
     if (i < 1 && pMga->FBDev) {
@@ -3294,7 +3294,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     if(pMga->ShadowFB) {
  	pMga->ShadowPitch = BitmapBytePad(pScrn->bitsPerPixel * width);
-	pMga->ShadowPtr = xalloc(pMga->ShadowPitch * height);
+	pMga->ShadowPtr = malloc(pMga->ShadowPitch * height);
 	displayWidth = pMga->ShadowPitch / (pScrn->bitsPerPixel >> 3);
         FBStart = pMga->ShadowPtr;
     } else {
@@ -3745,21 +3745,21 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
 #ifdef USE_EXA
     if (pMga->ExaDriver) {
 	exaDriverFini(pScreen);
-	xfree(pMga->ExaDriver);
+	free(pMga->ExaDriver);
     }
 #endif
     if (pMga->CursorInfoRec)
     	xf86DestroyCursorInfoRec(pMga->CursorInfoRec);
     if (pMga->ShadowPtr)
-	xfree(pMga->ShadowPtr);
+	free(pMga->ShadowPtr);
     if (pMga->DGAModes)
-	xfree(pMga->DGAModes);
+	free(pMga->DGAModes);
     if (pMga->adaptor)
-	xfree(pMga->adaptor);
+	free(pMga->adaptor);
     if (pMga->portPrivate)
-	xfree(pMga->portPrivate);
+	free(pMga->portPrivate);
     if (pMga->ScratchBuffer)
-	xfree(pMga->ScratchBuffer);
+	free(pMga->ScratchBuffer);
 
     pScrn->vtSema = FALSE;
 

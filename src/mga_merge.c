@@ -70,9 +70,9 @@ CopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest, DisplayModePtr i, DisplayM
     DisplayModePtr mode;
     int dx = 0,dy = 0;
     /* start with first node */
-    mode = xalloc(sizeof(DisplayModeRec));
+    mode = malloc(sizeof(DisplayModeRec));
     memcpy(mode,i, sizeof(DisplayModeRec));
-    mode->Private = xalloc(sizeof(MergedDisplayModeRec));
+    mode->Private = malloc(sizeof(MergedDisplayModeRec));
     ((MergedDisplayModePtr)mode->Private)->Monitor1 = i;
     ((MergedDisplayModePtr)mode->Private)->Monitor2 = j;
     ((MergedDisplayModePtr)mode->Private)->Monitor2Pos = srel;
@@ -239,7 +239,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     MgaScrn2Rel Monitor2Pos;
 
     xf86DrvMsg(pScrn1->scrnIndex, X_INFO, "==== Start of second screen initialization ====\n");
-    pScrn = xalloc(sizeof(ScrnInfoRec));
+    pScrn = malloc(sizeof(ScrnInfoRec));
     memcpy(pScrn,pScrn1,sizeof(ScrnInfoRec));
    
     pScrn->driverPrivate = NULL; 
@@ -270,7 +270,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 
     /* Set pScrn->monitor */
     {
-        pScrn->monitor = xalloc(sizeof(MonRec));
+        pScrn->monitor = malloc(sizeof(MonRec));
         /* copy everything we don't care about */
         memcpy(pScrn->monitor,pScrn1->monitor,sizeof(MonRec));
         pScrn->monitor->DDC = NULL;   /*FIXME:have to try this */ 
@@ -484,7 +484,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
         switch(pMga->Chipset) {
 	case PCI_CHIP_MGA2064:
 	   if (!pMga->NoAccel) {
-		linePitches = xalloc(sizeof(Pitches1));
+		linePitches = malloc(sizeof(Pitches1));
 		memcpy(linePitches, Pitches1, sizeof(Pitches1));
 		minPitch = maxPitch = 0;
 	   }
@@ -493,7 +493,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	case PCI_CHIP_MGA2164_AGP:
 	case PCI_CHIP_MGA1064:
 	   if (!pMga->NoAccel) {
-		linePitches = xalloc(sizeof(Pitches2));
+		linePitches = malloc(sizeof(Pitches2));
 		memcpy(linePitches, Pitches2, sizeof(Pitches2));
 		minPitch = maxPitch = 0;
 	   }
@@ -529,7 +529,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 			      LOOKUP_BEST_REFRESH);
         
 	if (linePitches)
-	   xfree(linePitches);
+	   free(linePitches);
     }
 
 
@@ -881,10 +881,10 @@ MGACloseScreenMerged(int scrnIndex, ScreenPtr pScreen) {
     ScrnInfoPtr pScrn2 = pMga->pScrn2;
 
     if(pScrn2) {
-        xfree(pScrn2->monitor);
+        free(pScrn2->monitor);
         pScrn2->monitor = NULL;
 
-        xfree(pScrn2);
+        free(pScrn2);
         pMga->pScrn2 = NULL;
     }
 
@@ -893,8 +893,8 @@ MGACloseScreenMerged(int scrnIndex, ScreenPtr pScreen) {
         do {
             DisplayModePtr p = pScrn1->currentMode->next; 
             if(pScrn1->currentMode->Private) 
-                xfree(pScrn1->currentMode->Private);
-            xfree(pScrn1->currentMode);
+                free(pScrn1->currentMode->Private);
+            free(pScrn1->currentMode);
             pScrn1->currentMode = p;
         }while( pScrn1->currentMode != pScrn1->modes);
     }
