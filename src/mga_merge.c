@@ -528,8 +528,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 			      pMga->FbMapSize,
 			      LOOKUP_BEST_REFRESH);
         
-	if (linePitches)
-	   free(linePitches);
+	free(linePitches);
     }
 
 
@@ -892,8 +891,7 @@ MGACloseScreenMerged(int scrnIndex, ScreenPtr pScreen) {
         pScrn1->currentMode = pScrn1->modes;
         do {
             DisplayModePtr p = pScrn1->currentMode->next; 
-            if(pScrn1->currentMode->Private) 
-                free(pScrn1->currentMode->Private);
+            free(pScrn1->currentMode->Private);
             free(pScrn1->currentMode);
             pScrn1->currentMode = p;
         }while( pScrn1->currentMode != pScrn1->modes);

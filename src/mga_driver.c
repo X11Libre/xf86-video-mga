@@ -644,8 +644,6 @@ MGAGetRec(ScrnInfoPtr pScrn)
 void
 MGAFreeRec(ScrnInfoPtr pScrn)
 {
-    if (pScrn->driverPrivate == NULL)
-	return;
     free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 }
@@ -2430,8 +2428,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 			      pMga->FbMapSize,
 			      LOOKUP_BEST_REFRESH);
       
-	if (linePitches)
-	   free(linePitches);
+	free(linePitches);
     }
 
     if (i < 1 && pMga->FBDev) {
@@ -3750,16 +3747,11 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
 #endif
     if (pMga->CursorInfoRec)
     	xf86DestroyCursorInfoRec(pMga->CursorInfoRec);
-    if (pMga->ShadowPtr)
-	free(pMga->ShadowPtr);
-    if (pMga->DGAModes)
-	free(pMga->DGAModes);
-    if (pMga->adaptor)
-	free(pMga->adaptor);
-    if (pMga->portPrivate)
-	free(pMga->portPrivate);
-    if (pMga->ScratchBuffer)
-	free(pMga->ScratchBuffer);
+    free(pMga->ShadowPtr);
+    free(pMga->DGAModes);
+    free(pMga->adaptor);
+    free(pMga->portPrivate);
+    free(pMga->ScratchBuffer);
 
     pScrn->vtSema = FALSE;
 

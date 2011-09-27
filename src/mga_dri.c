@@ -1011,8 +1011,8 @@ static void MGADRIMoveBuffersXAA(WindowPtr pParent, DDXPointRec ptOldOrg,
 	    pboxNew2 = (BoxPtr)malloc(sizeof(BoxRec)*nbox);
 	    pptNew2 = (DDXPointPtr)malloc(sizeof(DDXPointRec)*nbox);
 	    if (!pboxNew2 || !pptNew2) {
-	        if (pptNew2) free(pptNew2);
-	        if (pboxNew2) free(pboxNew2);
+	        free(pptNew2);
+	        free(pboxNew2);
 	        if (pboxNew1) {
 		    free(pptNew1);
 		    free(pboxNew1);
@@ -1494,21 +1494,13 @@ void MGADRICloseScreen( ScreenPtr pScreen )
    DRICloseScreen( pScreen );
 
    if ( pMga->pDRIInfo ) {
-      if ( pMga->pDRIInfo->devPrivate ) {
-	 free( pMga->pDRIInfo->devPrivate );
-	 pMga->pDRIInfo->devPrivate = 0;
-      }
+      free(pMga->pDRIInfo->devPrivate);
+      pMga->pDRIInfo->devPrivate = 0;
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
    }
-   if ( pMga->DRIServerInfo ) {
-      free(pMga->DRIServerInfo);
-      pMga->DRIServerInfo = 0;
-   }
-   if ( pMga->pVisualConfigs ) {
-      free(pMga->pVisualConfigs);
-   }
-   if ( pMga->pVisualConfigsPriv ) {
-      free( pMga->pVisualConfigsPriv );
-   }
+   free(pMga->DRIServerInfo);
+   pMga->DRIServerInfo = 0;
+   free(pMga->pVisualConfigs);
+   free(pMga->pVisualConfigsPriv);
 }
