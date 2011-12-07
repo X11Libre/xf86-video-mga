@@ -2707,9 +2707,18 @@ MGAMapMem(ScrnInfoPtr pScrn)
 	if (pMga->IOBase == NULL)
 	    return FALSE;
 
-	pMga->FbBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
-				     pMga->PciTag, pMga->FbAddress,
-				     pMga->FbMapSize);
+    if (pMga->is_G200ER)
+    {
+        pMga->FbBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
+                         pMga->PciTag, pMga->FbAddress,
+                         pMga->FbMapSize);
+    }
+    else
+    {
+        pMga->FbBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
+                         pMga->PciTag, pMga->FbAddress,
+                         pMga->FbMapSize);
+    }
 	if (pMga->FbBase == NULL)
 	    return FALSE;
 #endif
@@ -3139,11 +3148,19 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pMga = MGAPTR(pScrn);
     MGAdac = &pMga->Dac;
 
-    if (pMga->is_G200SE) {
-	VRTemp = pScrn->videoRam;
-	FBTemp = pMga->FbMapSize;
-	pScrn->videoRam = 8192;
-	pMga->FbMapSize = pScrn->videoRam * 1024;
+    if (pMga->is_G200SE)
+    {
+        VRTemp = pScrn->videoRam;
+        FBTemp = pMga->FbMapSize;
+        if (pMga->reg_1e24 >= 0x01)
+        {
+            pScrn->videoRam = 16384;
+        }
+        else
+        {
+            pScrn->videoRam = 8192;
+        }
+        pMga->FbMapSize = pScrn->videoRam * 1024;
     }
     
 
@@ -3701,9 +3718,25 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     MGAPtr pMga = MGAPTR(pScrn);
     MGAEntPtr pMgaEnt = NULL;
+    CARD32 VRTemp, FBTemp;
 
     if (pMga->MergedFB)
          MGACloseScreenMerged(scrnIndex, pScreen);
+
+    if (pMga->is_G200SE)
+    {
+        VRTemp = pScrn->videoRam;
+        FBTemp = pMga->FbMapSize;
+        if (pMga->reg_1e24 >= 0x01)
+        {
+            pScrn->videoRam = 16384;
+        }
+        else
+        {
+            pScrn->videoRam = 8192;
+        }
+        pMga->FbMapSize = pScrn->videoRam * 1024;
+    }
 
     if (pScrn->vtSema) {
 	if (pMga->FBDev) {
@@ -3716,6 +3749,13 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
 	    vgaHWUnmapMem(pScrn);
 	}
     }
+
+    if (pMga->is_G200SE)
+    {
+        pScrn->videoRam = VRTemp;
+        pMga->FbMapSize = FBTemp;
+    }
+
 #ifdef XF86DRI
    if (pMga->directRenderingEnabled) {
        MGADRICloseScreen(pScreen);
