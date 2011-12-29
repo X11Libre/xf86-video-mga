@@ -269,6 +269,8 @@ MGASetupImageVideoOverlay(ScreenPtr pScreen)
     XF86VideoAdaptorPtr adapt;
 
     adapt = MGAAllocAdaptor(pScrn, TRUE);
+    if (adapt == NULL)
+	return NULL;
 
     adapt->type = XvWindowMask | XvInputMask | XvImageMask;
     adapt->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT;
@@ -316,6 +318,8 @@ MGASetupImageVideoTexture(ScreenPtr pScreen)
     MGAPtr pMga = MGAPTR(pScrn);
 
     adapt = MGAAllocAdaptor(pScrn, FALSE);
+    if (adapt == NULL)
+	return NULL;
 
     adapt->type = XvWindowMask | XvInputMask | XvImageMask;
     adapt->flags = 0;
@@ -1298,6 +1302,8 @@ MGASetupImageVideoILOAD(ScreenPtr pScreen)
     MGAPtr pMga = MGAPTR(pScrn);
 
     adapt = MGAAllocAdaptor(pScrn, FALSE);
+    if (adapt == NULL)
+	return NULL;
 
     adapt->type = XvWindowMask | XvInputMask | XvImageMask;
     adapt->flags = 0;
