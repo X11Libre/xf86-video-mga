@@ -2101,6 +2101,31 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         }
     }
 
+    /* Load XAA if needed */
+    if (!pMga->NoAccel) {
+#ifdef USE_EXA
+	if (pMga->Exa) {
+	    if (!xf86LoadSubModule(pScrn, "exa")) {
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		           "Falling back to shadowfb\n");
+		pMga->ShadowFB = TRUE;
+		pMga->NoAccel = TRUE;
+	    }
+	} else {
+#endif
+#ifdef USE_XAA
+	    if (!xf86LoadSubModule(pScrn, "xaa")) {
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		           "Falling back to shadowfb\n");
+		pMga->ShadowFB = TRUE;
+		pMga->NoAccel = TRUE;
+	    }
+#endif
+#ifdef USE_EXA
+	}
+#endif
+    }
+
     switch (pMga->Chipset) {
     case PCI_CHIP_MGA2064:
     case PCI_CHIP_MGA2164:
@@ -2594,27 +2619,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "fb")) {
 	MGAFreeRec(pScrn);
 	return FALSE;
-    }
-
-    /* Load XAA if needed */
-    if (!pMga->NoAccel) {
-#ifdef USE_EXA
-	if (pMga->Exa) {
-	    if (!xf86LoadSubModule(pScrn, "exa")) {
-		MGAFreeRec(pScrn);
-		return FALSE;
-	    }
-	} else {
-#endif
-#ifdef USE_XAA
-	    if (!xf86LoadSubModule(pScrn, "xaa")) {
-		MGAFreeRec(pScrn);
-		return FALSE;
-	    }
-#endif
-#ifdef USE_EXA
-	}
-#endif
     }
 
     /* Load ramdac if needed */
