@@ -41,7 +41,7 @@
 #include "mga_macros.h"
 
 #include "exa.h"
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "mga_dri.h"
 #endif
 
@@ -763,7 +763,7 @@ mgaWaitMarker(ScreenPtr pScreen, int marker)
     while (INREG (MGAREG_Status) & 0x10000);
 }
 
-#ifdef XF86DRI
+#ifdef MGADRI
 static void
 init_dri(ScrnInfoPtr pScrn)
 {
@@ -837,7 +837,7 @@ init_dri(ScrnInfoPtr pScrn)
                        MGA_BUFFER_ALIGN) & ~MGA_BUFFER_ALIGN;
     dri->backPitch = widthBytes;
 }
-#endif /* XF86DRI */
+#endif /* MGADRI */
 
 Bool
 mgaExaInit(ScreenPtr pScreen)
@@ -898,7 +898,7 @@ mgaExaInit(ScreenPtr pScreen)
     pExa->UploadToScreen = mgaUploadToScreen;
     pExa->DownloadFromScreen = mgaDownloadFromScreen;
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if (pMga->directRenderingEnabled)
         init_dri(pScrn);
 #endif

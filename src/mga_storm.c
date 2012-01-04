@@ -24,7 +24,7 @@
 #include "miline.h"
 #include "servermd.h"
 
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "GL/glxtokens.h"
 #endif
 
@@ -32,7 +32,7 @@
 #include "mga_reg.h"
 #include "mga_macros.h"
 
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "mga_dri.h"
 #endif
 
@@ -797,7 +797,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 	break;
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if ( pMga->directRenderingEnabled ) {
        MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
        BoxRec MemBox;
@@ -899,7 +899,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 		   pMGADRIServer->textureOffset );
     }
     else
-#endif /* defined(XF86DRI) */
+#endif /* defined(MGADRI) */
     {
        AvailFBArea.x1 = 0;
        AvailFBArea.x2 = pScrn->displayWidth;

@@ -101,7 +101,7 @@
 #include "shadowfb.h"
 #include "fbdevhw.h"
 
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "dri.h"
 #endif
 
@@ -1532,7 +1532,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     pMga = MGAPTR(pScrn);
     /* Set here until dri is enabled */
-#ifdef XF86DRI
+#ifdef MGADRI
     pMga->haveQuiescense = 1;
 #endif
     /* Get the entity, and make sure it is PCI. */
@@ -1706,13 +1706,13 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     if (pMga->DualHeadEnabled) {
-#ifdef XF86DRI
+#ifdef MGADRI
         pMga->GetQuiescence = MGAGetQuiescenceShared;
 #endif
     } else {                                              /* single-head mode */
         pMga->SecondCrtc = FALSE;
         pMga->HWCursor = TRUE;
-#ifdef XF86DRI
+#ifdef MGADRI
         pMga->GetQuiescence = MGAGetQuiescence;
 #endif
     }
@@ -1942,7 +1942,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (pScrn->depth == 8)
 	pScrn->rgbBits = 8;
 
-#ifdef XF86DRI
+#ifdef MGADRI
     from = X_DEFAULT;
     pMga->agpMode = MGA_DEFAULT_AGP_MODE;
 
@@ -2637,7 +2637,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	}
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
     /* Load the dri module if requested. */
     if (xf86ReturnOptValBool(pMga->Options, OPTION_DRI, FALSE)) {
        xf86LoadSubModule(pScrn, "dri");
@@ -2878,7 +2878,7 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     vgaReg = &hwp->ModeReg;
     mgaReg = &pMga->ModeReg;
 
-#ifdef XF86DRI
+#ifdef MGADRI
    if (pMga->directRenderingEnabled) {
        DRILock(screenInfo.screens[pScrn->scrnIndex], 0);
    }
@@ -2989,7 +2989,7 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	pMga->M1currentMode = (DisplayModePtr)mode->Private;
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
    if (pMga->directRenderingEnabled)
      DRIUnlock(screenInfo.screens[pScrn->scrnIndex]);
 #endif
@@ -3138,7 +3138,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     MGAEntPtr pMgaEnt = NULL;
     int f;
     CARD32 VRTemp, FBTemp;
-#ifdef XF86DRI
+#ifdef MGADRI
     MessageType driFrom = X_DEFAULT;
 #endif
     DPMSSetProcPtr mga_dpms_set_proc = NULL;
@@ -3317,7 +3317,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	FBStart = pMga->FbStart;
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
      /*
       * Setup DRI after visuals have been established.
       *
@@ -3473,7 +3473,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     MGAInitVideo(pScreen);
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if (pMga->directRenderingEnabled) {
        /* Now that mi, drm and others have done their thing,
 	* complete the DRI setup.
@@ -3625,7 +3625,7 @@ MGAEnterVT(int scrnIndex, int flags)
 
     pMga = MGAPTR(pScrn);
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if (pMga->directRenderingEnabled) {
 	if (pMga->irq) {
 	    /* Need to make sure interrupts are enabled */
@@ -3651,7 +3651,7 @@ static Bool
 MGAEnterVTFBDev(int scrnIndex, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-#ifdef XF86DRI
+#ifdef MGADRI
     ScreenPtr pScreen;
     MGAPtr pMga;
 
@@ -3690,7 +3690,7 @@ MGALeaveVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     vgaHWPtr hwp = VGAHWPTR(pScrn);
-#ifdef XF86DRI
+#ifdef MGADRI
     MGAPtr pMga = MGAPTR(pScrn);
     ScreenPtr pScreen;
 #endif
@@ -3698,7 +3698,7 @@ MGALeaveVT(int scrnIndex, int flags)
     MGARestore(pScrn);
     vgaHWLock(hwp);
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if (pMga->directRenderingEnabled) {
         pScreen = screenInfo.screens[scrnIndex];
         DRILock(pScreen, 0);
@@ -3760,7 +3760,7 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
         pMga->FbMapSize = FBTemp;
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
    if (pMga->directRenderingEnabled) {
        MGADRICloseScreen(pScreen);
        pMga->directRenderingEnabled=FALSE;
