@@ -682,6 +682,15 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
     smga->pvp = dev;
 #endif
 
+    if (pci_device_has_kernel_driver(dev)) {
+	xf86DrvMsg(0, X_ERROR,
+                   "mga: The PCI device 0x%x at %2.2d@%2.2d:%2.2d:%1.1d has a kernel module claiming it.\n",
+                   dev->device_id, dev->bus, dev->domain, dev->dev, dev->func);
+        xf86DrvMsg(0, X_ERROR,
+                   "mga: This driver cannot operate until it has been unloaded.\n");
+        return FALSE;
+    }
+
     /* Allocate a ScrnInfoRec and claim the slot */
     pScrn = xf86ConfigPciEntity(pScrn, 0, entity_num, MGAPciChipsets,
 				NULL,
