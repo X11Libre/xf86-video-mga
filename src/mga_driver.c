@@ -1263,7 +1263,7 @@ MGAdoDDC(ScrnInfoPtr pScrn)
     vgaHWPtr hwp;
     MGAPtr pMga;
     xf86MonPtr MonInfo = NULL;
-    char *from = NULL;
+    const char *from = NULL;
 
     hwp = VGAHWPTR(pScrn);
     pMga = MGAPTR(pScrn);
