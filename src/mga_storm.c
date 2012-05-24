@@ -14,9 +14,6 @@
 /* Drivers that need to access the PCI config space directly need this */
 #include "xf86Pci.h"
 
-/* Drivers for PCI hardware need this */
-#include "xf86PciInfo.h"
-
 /* Drivers that use XAA need this */
 #include "xaa.h"
 #include "xaalocal.h"

@@ -116,29 +116,30 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define OUTREG(addr,val) MGAdbg_outreg32(pScrn, addr, val, __FUNCTION__)
 #endif /* EXTRADEBUG */
 
-#ifndef PCI_CHIP_MGAG200_SE_A_PCI
-#define PCI_CHIP_MGAG200_SE_A_PCI 0x0522
-#endif
+/*
+ * PCI vendor/device ids, formerly in xf86PciInfo.h
+ */
 
-#ifndef PCI_CHIP_MGAG200_SE_B_PCI
-#define PCI_CHIP_MGAG200_SE_B_PCI 0x0524
-#endif
+#define PCI_VENDOR_MATROX               0x102B
 
-#ifndef PCI_CHIP_MGAG200_WINBOND_PCI
-#define PCI_CHIP_MGAG200_WINBOND_PCI 0x0532
-#endif
+#define PCI_CHIP_MGA2085                0x0518
+#define PCI_CHIP_MGA2064                0x0519
+#define PCI_CHIP_MGA1064                0x051A
+#define PCI_CHIP_MGA2164                0x051B
+#define PCI_CHIP_MGA2164_AGP            0x051F
 
-#ifndef PCI_CHIP_MGAG200_EV_PCI
-#define PCI_CHIP_MGAG200_EV_PCI 0x0530
-#endif
-
-#ifndef PCI_CHIP_MGAG200_EH_PCI
-#define PCI_CHIP_MGAG200_EH_PCI 0x0533
-#endif
-
-#ifndef PCI_CHIP_MGAG200_ER_PCI
-#define PCI_CHIP_MGAG200_ER_PCI 0x0534
-#endif
+#define PCI_CHIP_MGAG100_PCI            0x1000
+#define PCI_CHIP_MGAG100                0x1001
+#define PCI_CHIP_MGAG200_PCI            0x0520
+#define PCI_CHIP_MGAG200                0x0521
+#define PCI_CHIP_MGAG200_SE_A_PCI       0x0522
+#define PCI_CHIP_MGAG200_SE_B_PCI       0x0524
+#define PCI_CHIP_MGAG200_WINBOND_PCI    0x0532
+#define PCI_CHIP_MGAG200_EV_PCI         0x0530
+#define PCI_CHIP_MGAG200_EH_PCI         0x0533
+#define PCI_CHIP_MGAG200_ER_PCI         0x0534
+#define PCI_CHIP_MGAG400                0x0525
+#define PCI_CHIP_MGAG550                0x2527
 
 /*
  * Read/write to the DAC via MMIO 

@@ -10,8 +10,6 @@
 
 #include "compiler.h"
 
-/* Drivers for PCI hardware need this */
-#include "xf86PciInfo.h"
 #include "mga.h"
 #include "mga_macros.h"
 #include "mga_reg.h"

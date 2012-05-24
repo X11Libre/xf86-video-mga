@@ -65,9 +65,6 @@
 
 #include "compiler.h"
 
-/* Drivers for PCI hardware need this */
-#include "xf86PciInfo.h"
-
 /* Drivers that need to access the PCI config space directly need this */
 #ifndef XSERVER_LIBPCIACCESS
 #include "xf86Pci.h"

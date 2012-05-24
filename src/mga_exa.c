@@ -45,7 +45,6 @@
 #include "mga_dri.h"
 #endif
 
-#include "xf86PciInfo.h"
 
 #if 0
 #define DEBUG_MSG(x)  ErrorF x
