@@ -197,7 +197,7 @@ SECOND_PASS:
 Bool
 MGADGAInit(ScreenPtr pScreen)
 {   
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    DGAModePtr modes = NULL;
    int num = 0;
@@ -310,8 +310,8 @@ MGA_SetMode(
         memcpy(&pMga->CurrentLayout, &SavedLayouts[index], sizeof(MGAFBLayout));
                 
       pScrn->currentMode = pMga->CurrentLayout.mode;
-      pScrn->SwitchMode(index, pScrn->currentMode, 0);
-      MGAAdjustFrame(index, pScrn->frameX0, pScrn->frameY0, 0);
+      pScrn->SwitchMode(SWITCH_MODE_ARGS(pScrn, pScrn->currentMode));
+      MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
       pMga->DGAactive = FALSE;
    } else {
       if(!pMga->DGAactive) {  /* save the old parameters */
@@ -328,7 +328,7 @@ MGA_SetMode(
       pMga->CurrentLayout.weight.blue = BitsSet(pMode->blue_mask);
       /* MGAModeInit() will set the mode field */
 
-      pScrn->SwitchMode(index, pMode->mode, 0);
+      pScrn->SwitchMode(SWITCH_MODE_ARGS(pScrn, pMode->mode));
       /* not strictly required but nice */
       mgaDGASetPalette(pScrn);
    }
@@ -355,7 +355,7 @@ MGA_SetViewport(
 ){
    MGAPtr pMga = MGAPTR(pScrn);
 
-   MGAAdjustFrame(pScrn->pScreen->myNum, x, y, flags);
+   MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, x, y));
    pMga->DGAViewportStatus = 0;  /* MGAAdjustFrame loops until finished */
 }
 

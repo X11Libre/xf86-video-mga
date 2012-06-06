@@ -72,7 +72,7 @@ static Atom xvBrightness, xvContrast, xvColorKey, xvDoubleBuffer;
 static void
 MGAVideoSave(ScreenPtr pScreen, ExaOffscreenArea *area)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     MGAPortPrivPtr pPriv = pMga->portPrivate;
 
@@ -83,7 +83,7 @@ MGAVideoSave(ScreenPtr pScreen, ExaOffscreenArea *area)
 
 void MGAInitVideo(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XF86VideoAdaptorPtr *adaptors, *newAdaptors = NULL;
     XF86VideoAdaptorPtr newAdaptor = NULL;
     MGAPtr pMga = MGAPTR(pScrn);
@@ -263,7 +263,7 @@ MGAAllocAdaptor(ScrnInfoPtr pScrn, Bool doublebuffer)
 static XF86VideoAdaptorPtr 
 MGASetupImageVideoOverlay(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     XF86VideoAdaptorPtr adapt;
 
@@ -312,7 +312,7 @@ MGASetupImageVideoOverlay(ScreenPtr pScreen)
 static XF86VideoAdaptorPtr 
 MGASetupImageVideoTexture(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XF86VideoAdaptorPtr adapt;
     MGAPtr pMga = MGAPTR(pScrn);
 
@@ -567,7 +567,7 @@ MGAAllocateMemory(
    int size
 ){
    MGAPtr pMga = MGAPTR(pScrn);
-   ScreenPtr pScreen = screenInfo.screens[pScrn->scrnIndex];
+   ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
    int offset = 0;
 
 #ifdef USE_EXA
@@ -1227,7 +1227,7 @@ MGADisplaySurface(
 static void 
 MGAInitOffscreenImages(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     int num = (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550) ? 2 : 1;
     XF86OffscreenImagePtr offscreenImages;
@@ -1296,7 +1296,7 @@ MGAInitOffscreenImages(ScreenPtr pScreen)
 static XF86VideoAdaptorPtr
 MGASetupImageVideoILOAD(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XF86VideoAdaptorPtr adapt;
     MGAPtr pMga = MGAPTR(pScrn);
 

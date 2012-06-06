@@ -1794,7 +1794,7 @@ MGAGSetCursorColorsG100(ScrnInfoPtr pScrn, int bg, int fg)
 static Bool 
 MGAGUseHWCursor(ScreenPtr pScrn, CursorPtr pCurs)
 {
-    MGAPtr pMga = MGAPTR(xf86Screens[pScrn->myNum]);
+    MGAPtr pMga = MGAPTR(xf86ScreenToScrn(pScrn));
    /* This needs to detect if its on the second dac */
     if( XF86SCRNINFO(pScrn)->currentMode->Flags & V_DBLSCAN )
     	return FALSE;

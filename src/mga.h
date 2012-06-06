@@ -46,6 +46,8 @@
 #include "mga_dri.h"
 #endif
 
+#include "compat-api.h"
+
 typedef enum {
     OPTION_SW_CURSOR,
     OPTION_HW_CURSOR,
@@ -564,7 +566,7 @@ typedef struct {
     void		(*Save)(ScrnInfoPtr, vgaRegPtr, MGARegPtr, Bool);
     void		(*Restore)(ScrnInfoPtr, vgaRegPtr, MGARegPtr, Bool);
     Bool		(*ModeInit)(ScrnInfoPtr, DisplayModePtr);
-    void		(*PointerMoved)(int index, int x, int y);
+    void		(*PointerMoved)(SCRN_ARG_TYPE arg, int x, int y);
     CloseScreenProcPtr	CloseScreen;
     ScreenBlockHandlerProcPtr BlockHandler;
     unsigned int	(*ddc1Read)(ScrnInfoPtr);
@@ -693,8 +695,8 @@ extern CARD32 MGAAtypeNoBLK[16];
 
 /* Prototypes */
 
-void MGAAdjustFrame(int scrnIndex, int x, int y, int flags);
-Bool MGASwitchMode(int scrnIndex, DisplayModePtr mode, int flags);
+void MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL);
+Bool MGASwitchMode(SWITCH_MODE_ARGS_DECL);
 void MGAFillModeInfoStruct(ScrnInfoPtr pScrn, DisplayModePtr mode);
 Bool MGAGetRec(ScrnInfoPtr pScrn);
 void MGAProbeDDC(ScrnInfoPtr pScrn, int index);
@@ -703,7 +705,7 @@ void MGAFreeRec(ScrnInfoPtr pScrn);
 Bool mga_read_and_process_bios(ScrnInfoPtr pScrn);
 void MGADisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
 				  int flags);
-void MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags);
+void MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS_DECL);
 void MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn,
 					     int PowerManagementMode,
 					     int flags);
@@ -743,7 +745,7 @@ void mgaDoSetupForScreenToScreenCopy( ScrnInfoPtr pScrn, int xdir,
 void mgaDoSetupForSolidFill( ScrnInfoPtr pScrn, int color, int rop,
     unsigned int planemask, unsigned int bpp );
 
-void MGAPointerMoved(int index, int x, int y);
+void MGAPointerMoved(SCRN_ARG_TYPE arg, int x, int y);
 
 void MGAInitVideo(ScreenPtr pScreen);
 void MGAResetVideo(ScrnInfoPtr pScrn);

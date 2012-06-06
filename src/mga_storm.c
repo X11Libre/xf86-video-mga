@@ -573,7 +573,7 @@ MGASubsequentCPUToScreenTexture (
 Bool mgaAccelInit( ScreenPtr pScreen )
 {
     XAAInfoRecPtr infoPtr;
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     int maxFastBlitMem, maxlines;
     Bool doRender = FALSE;
@@ -2337,7 +2337,7 @@ MGAValidatePolyArc(
    unsigned long changes,
    DrawablePtr pDraw
 ){
-   ScrnInfoPtr pScrn = xf86Screens[pGC->pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pGC->pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    Bool fullPlanemask = TRUE;
 
@@ -2424,7 +2424,7 @@ MGAValidatePolyPoint(
    unsigned long changes,
    DrawablePtr pDraw
 ){
-   ScrnInfoPtr pScrn = xf86Screens[pGC->pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pGC->pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    Bool fullPlanemask = TRUE;
 

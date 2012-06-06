@@ -55,7 +55,8 @@ mga_drv_la_SOURCES = \
          mga_shadow.c \
          mga_ucode.h \
 	 mga_vga.c \
-         mga_video.c
+         mga_video.c \
+         compat-api.h
 
 if DRI
 mga_drv_la_SOURCES += \

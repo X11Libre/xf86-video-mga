@@ -74,7 +74,7 @@ static char MGAClientDriverName[] = "mga";
  */
 static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    int numConfigs = 0;
    __GLXvisualConfig *pConfigs = 0;
@@ -407,7 +407,7 @@ void MGAGetQuiescenceShared( ScrnInfoPtr pScrn )
 
 static void MGASwapContext( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
 
    /* Arrange for dma_quiescence and xaa sync to be called as
@@ -420,7 +420,7 @@ static void MGASwapContext( ScreenPtr pScreen )
 
 static void MGASwapContextShared( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    MGAEntPtr pMGAEnt = pMga->entityPrivate;
    MGAPtr pMGA2 = MGAPTR(pMGAEnt->pScrn_2);
@@ -522,7 +522,7 @@ static unsigned int mylog2( unsigned int n )
  */
 static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
     int ret;
@@ -778,7 +778,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 
 static Bool MGADRIKernelInit( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
    drm_mga_init_t init;
@@ -838,7 +838,7 @@ static Bool MGADRIKernelInit( ScreenPtr pScreen )
  */
 static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
    if (!pMga->irq) {
       pMga->irq = drmGetInterruptFromBusID(pMga->drmFD,
@@ -873,7 +873,7 @@ static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 
 static Bool MGADRIBuffersInit( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
 
@@ -896,7 +896,7 @@ static void MGADRIInitBuffersXAA(WindowPtr pWin, RegionPtr prgn,
                                  CARD32 index)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     BoxPtr pbox = REGION_RECTS(prgn);
     int nbox  = REGION_NUM_RECTS(prgn);
@@ -941,7 +941,7 @@ static void MGADRIMoveBuffersXAA(WindowPtr pParent, DDXPointRec ptOldOrg,
                                  RegionPtr prgnSrc, CARD32 index)
 {
     ScreenPtr pScreen = pParent->drawable.pScreen;
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
     int nbox;
     BoxPtr pbox, pboxTmp, pboxNext, pboxBase, pboxNew1, pboxNew2;
@@ -1088,7 +1088,7 @@ static void MGADRIMoveBuffersEXA(WindowPtr pParent, DDXPointRec ptOldOrg,
 
 Bool MGADRIScreenInit( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    DRIInfoPtr pDRIInfo;
    MGADRIPtr pMGADRI;
@@ -1367,7 +1367,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
 Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
    MGADRIPtr pMGADRI;
@@ -1462,7 +1462,7 @@ Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
 
 void MGADRICloseScreen( ScreenPtr pScreen )
 {
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+   ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
    drm_mga_init_t init;
