@@ -20,7 +20,10 @@
 #include <stdio.h>
 
 #include "compiler.h"
+#ifdef HAVE_XAA_H
 #include "xaa.h"
+#endif
+#include "xf86fbman.h"
 #include "exa.h"
 #include "xf86Cursor.h"
 #include "vgaHW.h"
@@ -554,7 +557,9 @@ typedef struct {
     CARD32		MAccess;
     int			FifoSize;
     int			StyleLen;
+#ifdef HAVE_XAA_H
     XAAInfoRecPtr	AccelInfoRec;
+#endif
     xf86CursorInfoPtr	CursorInfoRec;
     DGAModePtr		DGAModes;
     int			numDGAModes;
@@ -715,7 +720,7 @@ void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);
 void MGAGSetupFuncs(ScrnInfoPtr pScrn);
 
-/* #ifdef USE_XAA */
+/*#ifdef USE_XAA */
 void MGAStormSync(ScrnInfoPtr pScrn);
 void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);

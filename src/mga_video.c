@@ -14,7 +14,6 @@
 #include "mga_macros.h"
 #include "xf86xv.h"
 #include <X11/extensions/Xv.h>
-#include "xaa.h"
 
 #ifdef USE_XAA
 #include "xaa.h"
@@ -1987,9 +1986,11 @@ MGAPutImageILOAD(
 
     bpp = pScrn->bitsPerPixel >> 3;
 
+#ifdef HAVE_XAA_H
     if( pMga->AccelInfoRec->NeedToSync && ((long)data != pPriv->lastPort) ) {
 	MGAStormSync(pScrn);
     }
+#endif
 
     pPriv->lastPort = (long)data;
     nbox=REGION_NUM_RECTS(clipBoxes);
@@ -2019,8 +2020,9 @@ MGAPutImageILOAD(
 	pbox++;
     }
 
-
+#ifdef HAVE_XAA_H
     pMga->AccelInfoRec->NeedToSync = TRUE;
+#endif
     pPriv->videoStatus = FREE_TIMER;
     pPriv->freeTime = currentTime.milliseconds + FREE_DELAY;
     pMga->VideoTimerCallback = MGAVideoTimerCallback;

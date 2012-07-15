@@ -5,8 +5,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Pci.h"
-#include "xaa.h"
-#include "xaalocal.h"
 #include "mga.h"
 #include "mga_reg.h"
 #include "dgaproc.h"
@@ -17,10 +15,12 @@ static Bool MGA_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,
 static Bool MGA_SetMode(ScrnInfoPtr, DGAModePtr);
 static int  MGA_GetViewport(ScrnInfoPtr);
 static void MGA_SetViewport(ScrnInfoPtr, int, int, int);
+#ifdef HAVE_XAA_H
 static void MGA_FillRect(ScrnInfoPtr, int, int, int, int, unsigned long);
 static void MGA_BlitRect(ScrnInfoPtr, int, int, int, int, int, int);
 static void MGA_BlitTransRect(ScrnInfoPtr, int, int, int, int, int, int, 
 					unsigned long);
+#endif
 
 static
 DGAFunctionRec MGA_DGAFuncs = {
@@ -30,9 +30,13 @@ DGAFunctionRec MGA_DGAFuncs = {
    MGA_SetViewport,
    MGA_GetViewport,
    MGAStormSync,
+#ifdef HAVE_XAA_H
    MGA_FillRect,
    MGA_BlitRect,
    MGA_BlitTransRect
+#else
+   NULL, NULL, NULL
+#endif
 };
 
 
@@ -120,11 +124,13 @@ SECOND_PASS:
 	    mode->flags = DGA_CONCURRENT_ACCESS;
             if(pixmap)
 		mode->flags |= DGA_PIXMAP_AVAILABLE;
+#ifdef HAVE_XAA_H
 	    if(!pMga->NoAccel) {
 		mode->flags |= DGA_FILL_RECT | DGA_BLIT_RECT;
 		if((Bpp != 3) && (pMga->Chipset != PCI_CHIP_MGA2064))
 		    mode->flags |= DGA_BLIT_RECT_TRANS;
 	    }
+#endif
 	    if(pMode->Flags & V_DBLSCAN)
 		mode->flags |= DGA_DOUBLESCAN;
 	    if(pMode->Flags & V_INTERLACE)
@@ -359,6 +365,7 @@ MGA_SetViewport(
    pMga->DGAViewportStatus = 0;  /* MGAAdjustFrame loops until finished */
 }
 
+#ifdef HAVE_XAA_H
 static void 
 MGA_FillRect (
    ScrnInfoPtr pScrn, 
@@ -424,7 +431,7 @@ static void MGA_BlitTransRect( ScrnInfoPtr pScrn, int srcx, int srcy,
 	SET_SYNC_FLAG(pMga->AccelInfoRec);
     }
 }
-
+#endif
 
 static Bool 
 MGA_OpenFramebuffer(

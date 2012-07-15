@@ -32,7 +32,6 @@ mga_drv_la_LIBADD = $(noinst_LTLIBRARIES)
 mga_drv_la_SOURCES = \
          binding.h \
          client.h \
-         mga_arc.c \
          mga_bios.c \
          mga_common.h \
          mga_dac3026.c \
@@ -70,7 +69,8 @@ mga_drv_la_SOURCES += \
     mga_exa.c
 endif
 
-if USE_XAA
+if XAA
 mga_drv_la_SOURCES += \
+    mga_arc.c \
     mga_storm.c
 endif

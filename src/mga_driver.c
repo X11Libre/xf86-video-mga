@@ -90,7 +90,7 @@
 #include "mga_macros.h"
 #include "mga_maven.h"
 
-#ifdef USE_XAA
+#ifdef XAA
 #include "xaa.h"
 #endif
 
@@ -2118,7 +2118,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    }
 	} else {
 #endif
-#ifdef USE_XAA
+#ifdef XAA
 	    if (!xf86LoadSubModule(pScrn, "xaa")) {
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		           "Falling back to shadowfb\n");
@@ -3401,8 +3401,10 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 	    mgaExaInit(pScreen);
 	else
 #endif
-#ifdef USE_XAA
+#ifdef XAA
 	    MGAStormAccelInit(pScreen);
+#else
+	    ;
 #endif
     }
 
@@ -3771,7 +3773,7 @@ MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
        pMgaEnt->refCount--;
    }
 
-#ifdef USE_XAA
+#ifdef XAA
     if (pMga->AccelInfoRec)
 	XAADestroyInfoRec(pMga->AccelInfoRec);
 #endif
