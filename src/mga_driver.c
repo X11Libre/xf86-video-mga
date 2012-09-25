@@ -73,9 +73,6 @@
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
 
-/* All drivers implementing backing store need this */
-#include "mibstore.h"
-
 #include "micmap.h"
 
 #include "xf86DDC.h"
@@ -3408,7 +3405,6 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 #endif
     }
 
-    miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
 
