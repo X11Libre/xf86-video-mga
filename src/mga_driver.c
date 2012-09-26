@@ -4185,3 +4185,13 @@ MGAG100BlackMagic(ScrnInfoPtr pScrn)
     usleep(10);
 }
 
+#ifndef HAVE_XAA_H
+void MGAStormEngineInit( ScrnInfoPtr pScrn )
+{
+}
+
+void
+MGAStormSync(ScrnInfoPtr pScrn)
+{
+}
+#endif
