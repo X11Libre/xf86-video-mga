@@ -3398,11 +3398,7 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 	    mgaExaInit(pScreen);
 	else
 #endif
-#ifdef XAA
 	    MGAStormAccelInit(pScreen);
-#else
-	    ;
-#endif
     }
 
     xf86SetBackingStore(pScreen);
@@ -4184,14 +4180,3 @@ MGAG100BlackMagic(ScrnInfoPtr pScrn)
     OUTREG(MGAREG_MACCESS, 1<<15);
     usleep(10);
 }
-
-#ifndef HAVE_XAA_H
-void MGAStormEngineInit( ScrnInfoPtr pScrn )
-{
-}
-
-void
-MGAStormSync(ScrnInfoPtr pScrn)
-{
-}
-#endif
