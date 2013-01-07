@@ -676,12 +676,22 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 #endif
 
     if (pci_device_has_kernel_driver(dev)) {
-	xf86DrvMsg(0, X_ERROR,
-                   "mga: The PCI device 0x%x at %2.2d@%2.2d:%2.2d:%1.1d has a kernel module claiming it.\n",
-                   dev->device_id, dev->bus, dev->domain, dev->dev, dev->func);
-        xf86DrvMsg(0, X_ERROR,
-                   "mga: This driver cannot operate until it has been unloaded.\n");
-        return FALSE;
+	/* If it's a G200 server chip, it's probably on KMS, so bail; if not,
+	 * it might be using matroxfb, which is ok. */
+	switch (dev->device_id) {
+	    case PCI_CHIP_MGAG200_SE_A_PCI:
+	    case PCI_CHIP_MGAG200_SE_B_PCI:
+	    case PCI_CHIP_MGAG200_EV_PCI:
+	    case PCI_CHIP_MGAG200_ER_PCI:
+	    case PCI_CHIP_MGAG200_WINBOND_PCI:
+	    case PCI_CHIP_MGAG200_EH_PCI:
+		xf86DrvMsg(0, X_ERROR,
+	                   "mga: The PCI device 0x%x at %2.2d@%2.2d:%2.2d:%1.1d has a kernel module claiming it.\n",
+	                   dev->device_id, dev->bus, dev->domain, dev->dev, dev->func);
+	        xf86DrvMsg(0, X_ERROR,
+	                   "mga: This driver cannot operate until it has been unloaded.\n");
+	        return FALSE;
+	}
     }
 
     /* Allocate a ScrnInfoRec and claim the slot */
