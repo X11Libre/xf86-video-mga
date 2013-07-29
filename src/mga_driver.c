@@ -1679,6 +1679,23 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	}
     }
 
+    pMga->HWCursor = TRUE;
+    from = X_DEFAULT;
+
+    /*
+     * The preferred method is to use the "hw cursor" option as a tri-state
+     * option, with the default set above.
+     */
+    if (xf86GetOptValBool(pMga->Options, OPTION_HW_CURSOR, &pMga->HWCursor))
+	from = X_CONFIG;
+
+    /* For compatibility, accept this too (as an override) */
+    if (xf86ReturnOptValBool(pMga->Options, OPTION_SW_CURSOR, FALSE)) {
+	from = X_CONFIG;
+	pMga->HWCursor = FALSE;
+    }
+
+    pMga->SecondCrtc = FALSE;
     /*
      * In case of DualHead, we need to determine if we are the 'master' head
      * or the 'slave' head. In order to do that, at the end of the first
@@ -1691,13 +1708,12 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86IsEntityShared(pScrn->entityList[0])) {      /* dual-head mode */
         if (!xf86IsPrimInitDone(pScrn->entityList[0])) { /* Is it the first initialisation? */
             /* First CRTC  */
-            pMga->SecondCrtc = FALSE;
-            pMga->HWCursor = TRUE;
             pMgaEnt->pScrn_1 = pScrn;
         } else if (pMga->DualHeadEnabled) {
             /* Second CRTC */
             pMga->SecondCrtc = TRUE;
             pMga->HWCursor = FALSE;
+	    from = X_DEFAULT;
             pMgaEnt->pScrn_2 = pScrn;
             pScrn->AdjustFrame = MGAAdjustFrameCrtc2;
 	    /*
@@ -1716,14 +1732,15 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    return FALSE;
 	}
     }
+    xf86DrvMsg(pScrn->scrnIndex, from, "Using %s cursor\n",
+	       pMga->HWCursor ? "HW" : "SW");
+
 
     if (pMga->DualHeadEnabled) {
 #ifdef MGADRI
         pMga->GetQuiescence = MGAGetQuiescenceShared;
 #endif
     } else {                                              /* single-head mode */
-        pMga->SecondCrtc = FALSE;
-        pMga->HWCursor = TRUE;
 #ifdef MGADRI
         pMga->GetQuiescence = MGAGetQuiescence;
 #endif
@@ -1986,24 +2003,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->forcePciDma = TRUE;
     }
 #endif
-
-    from = X_DEFAULT;
-
-    /*
-     * The preferred method is to use the "hw cursor" option as a tri-state
-     * option, with the default set above.
-     */
-    if (xf86GetOptValBool(pMga->Options, OPTION_HW_CURSOR, &pMga->HWCursor)) {
-	from = X_CONFIG;
-    }
-
-    /* For compatibility, accept this too (as an override) */
-    if (xf86ReturnOptValBool(pMga->Options, OPTION_SW_CURSOR, FALSE)) {
-    from = X_CONFIG;
-    pMga->HWCursor = FALSE;
-    }
-    xf86DrvMsg(pScrn->scrnIndex, from, "Using %s cursor\n",
-        pMga->HWCursor ? "HW" : "SW");
 
     if (xf86ReturnOptValBool(pMga->Options, OPTION_NOACCEL, FALSE)) {
 	pMga->NoAccel = TRUE;
