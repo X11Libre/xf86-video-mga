@@ -1679,7 +1679,27 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	}
     }
 
-    pMga->HWCursor = TRUE;
+    /*
+     * Disable HW cursor by default on G200 server chips as these
+     * chips are often used with a remote graphics link which cannot
+     * display the HW cursor.
+     */
+    switch (pMga->Chipset) {
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+    case PCI_CHIP_MGAG200_EV_PCI:
+    case PCI_CHIP_MGAG200_ER_PCI:
+    case PCI_CHIP_MGAG200_WINBOND_PCI:
+    case PCI_CHIP_MGAG200_EH_PCI:
+	pMga->HWCursor = FALSE;
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "HW cursor is not supported with video redirection on"
+		   "G200 server chips.\n If you don't intend to use video "
+		   "redirection enable with Option \"HWCursor\" \"On\"\n");
+	break;
+    default:
+	pMga->HWCursor = TRUE;
+    }
     from = X_DEFAULT;
 
     /*
