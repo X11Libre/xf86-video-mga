@@ -3177,11 +3177,13 @@ MGACrtc2FillStrip(ScrnInfoPtr pScrn)
 	    (pScrn->bitsPerPixel >> 3) * pScrn->displayWidth * pScrn->virtualY);
     } else {
 	xf86SetLastScrnFlag(pScrn->entityList[0], pScrn->scrnIndex);
+#ifdef HAVE_XAA_H
 	pMga->RestoreAccelState(pScrn);
 	pMga->SetupForSolidFill(pScrn, 0, GXcopy, 0xFFFFFFFF);
 	pMga->SubsequentSolidFillRect(pScrn, pScrn->virtualX, 0,
 				  pScrn->displayWidth - pScrn->virtualX,
 				  pScrn->virtualY);
+#endif
 	MGAStormSync(pScrn);
     }
 }
