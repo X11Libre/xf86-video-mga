@@ -2687,30 +2687,55 @@ MGAMapMem(ScrnInfoPtr pScrn)
 #ifdef XSERVER_LIBPCIACCESS
     struct pci_device *const dev = pMga->PciInfo;
     struct pci_mem_region *region;
-    void **memory[2];
     int i, err;
 #endif
 
 
     if (!pMga->FBDev) {
 #ifdef XSERVER_LIBPCIACCESS
-        memory[pMga->io_bar] = &pMga->IOBase;
-        memory[pMga->framebuffer_bar] = &pMga->FbBase;
+	pciaddr_t fbaddr = pMga->FbAddress;
+	pciaddr_t fbsize = pMga->FbMapSize;
+	err = pci_device_map_range(dev,
+				   fbaddr, fbsize,
+				   PCI_DEV_MAP_FLAG_WRITABLE,
+				   (void **)&pMga->FbBase);
 
-        for (i = 0; i < 2; i++) {
-            region = &dev->regions[i];
-            err = pci_device_map_range(dev,
-                                       region->base_addr, region->size,
-                                       PCI_DEV_MAP_FLAG_WRITABLE,
-                                       memory[i]);
+	if (err) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "Unable to map Framebuffer %08llX %llx.  %s (%d)\n",
+		       (long long)fbaddr, (long long)fbsize,
+		       strerror(err), err);
+	    return FALSE;
+	}
+	else
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "MAPPED Framebuffer %08llX %llx to %08llX.\n",
+		       (long long)fbaddr, (long long)fbsize,
+		       (long long)pMga->FbBase);
 
-            if (err) {
-                xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                           "Unable to map BAR %i.  %s (%d)\n",
-                           i, strerror(err), err);
-                return FALSE;
-            }
-        }
+	if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedIOUsage == 0) {
+	    region = &dev->regions[pMga->io_bar];
+	    err = pci_device_map_range(dev,
+				       region->base_addr, region->size,
+				       PCI_DEV_MAP_FLAG_WRITABLE,
+				       &pMga->IOBase);
+
+	    if (err) {
+	      xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			 "Unable to map IO Region %i.  %s (%d)\n",
+			 pMga->io_bar, strerror(err), err);
+	      return FALSE;
+	    }
+
+	    if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedIOBase = pMga->IOBase;
+	}
+	else
+		pMga->IOBase = pMga->entityPrivate->mappedIOBase;
+
+	if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedIOUsage ++;
+
 #else
 	/*
 	 * For Alpha, we need to map SPARSE memory, since we need
@@ -2761,16 +2786,27 @@ MGAMapMem(ScrnInfoPtr pScrn)
     if (pMga->iload_bar != -1) {
 #ifdef XSERVER_LIBPCIACCESS
         region = &dev->regions[pMga->iload_bar];
-        err = pci_device_map_range(dev,
-                                   region->base_addr, region->size,
-                                   PCI_DEV_MAP_FLAG_WRITABLE,
-                                   (void *) &pMga->ILOADBase);
-	if (err) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Unable to map BAR 2 (ILOAD region).  %s (%d)\n",
-		       strerror(err), err);
-	    return FALSE;
+
+	if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedILOADUsage == 0) {
+	    err = pci_device_map_range(dev,
+				       region->base_addr, region->size,
+				       PCI_DEV_MAP_FLAG_WRITABLE,
+				       (void *) &pMga->ILOADBase);
+	    if (err) {
+	      xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			 "Unable to map BAR 2 (ILOAD region).  %s (%d)\n",
+			 strerror(err), err);
+	      return FALSE;
+	    }
+
+	    if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedILOADBase = pMga->ILOADBase;
 	}
+	else
+		pMga->ILOADBase = pMga->entityPrivate->mappedILOADBase;
+
+	if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedILOADUsage ++;
 #else
 	pMga->ILOADBase = xf86MapPciMem(pScrn->scrnIndex,
 					VIDMEM_MMIO | VIDMEM_MMIO_32BIT |
@@ -2800,10 +2836,20 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     
     if (!pMga->FBDev) {
 #ifdef XSERVER_LIBPCIACCESS
-        pci_device_unmap_range(dev, pMga->IOBase, 
-			       dev->regions[pMga->io_bar].size);
+	    if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedIOUsage--;
+
+	    if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedIOUsage == 0) {
+		pci_device_unmap_range(dev, pMga->IOBase,
+				       dev->regions[pMga->io_bar].size);
+
+		if(pMga->entityPrivate != NULL)
+			pMga->entityPrivate->mappedIOBase = NULL;
+	    }
+
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "UNMAPPING framebuffer 0x%08llX, 0x%llX.\n", (long long)pMga->FbBase, (long long)pMga->FbMapSize);
         pci_device_unmap_range(dev, pMga->FbBase, 
-			       dev->regions[pMga->framebuffer_bar].size);
+			       pMga->FbMapSize);
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->IOBase, 0x4000);
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->FbBase, pMga->FbMapSize);
@@ -2816,8 +2862,17 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 
     if ((pMga->iload_bar != -1) && (pMga->ILOADBase != NULL)) {
 #ifdef XSERVER_LIBPCIACCESS
-        pci_device_unmap_range(dev, pMga->ILOADBase,
-			       dev->regions[pMga->iload_bar].size);
+	    if(pMga->entityPrivate != NULL)
+		pMga->entityPrivate->mappedILOADUsage--;
+
+	    if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedILOADUsage == 0) {
+		pci_device_unmap_range(dev, pMga->ILOADBase,
+				       dev->regions[pMga->iload_bar].size);
+
+		if(pMga->entityPrivate != NULL)
+		    pMga->entityPrivate->mappedILOADBase = NULL;
+	    }
+
 #else
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->ILOADBase, 0x800000);
 #endif

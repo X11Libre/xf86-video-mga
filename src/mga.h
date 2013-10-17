@@ -343,6 +343,13 @@ typedef struct {
     int			mastervideoRam;
     int			slavevideoRam;
     Bool		directRenderingEnabled;
+
+    void *		mappedIOBase;
+    int			mappedIOUsage;
+
+    void *		mappedILOADBase;
+    int			mappedILOADUsage;
+
     ScrnInfoPtr 	pScrn_1;
     ScrnInfoPtr 	pScrn_2;
 } MGAEntRec, *MGAEntPtr;
