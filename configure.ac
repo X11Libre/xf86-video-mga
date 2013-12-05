@@ -144,6 +144,9 @@ fi
 AC_MSG_CHECKING([whether to include XAA support])
 AM_CONDITIONAL(XAA, test "x$XAA" = xyes)
 AC_MSG_RESULT([$XAA])
+if test "x$XAA" = xyes; then
+        AC_DEFINE(USE_XAA, 1, [Build support for XAA])
+fi
 
 # Properly handle EXA.
 AC_MSG_CHECKING([whether to enable EXA support])
