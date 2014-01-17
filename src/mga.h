@@ -218,6 +218,7 @@ typedef struct {
     CARD32		Option2;
     CARD32		Option3;
     long                Clock;
+    unsigned char	Pan_Ctl;
     Bool                PIXPLLCSaved;
     unsigned char       PllM;
     unsigned char       PllN;
