@@ -3618,7 +3618,7 @@ void
 MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
 {
     SCRN_INFO_PTR(arg);
-    int Base, tmp, count;
+    int Base, tmp, count, last_vcount;
 
     MGAFBLayout *pLayout;
     MGAPtr pMga;
@@ -3648,8 +3648,14 @@ MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
         while (INREG8(0x1FDA) & 0x08);
         while (!(INREG8(0x1FDA) & 0x08));
         /* wait until we're past the start (fixseg.c in the DDK) */
-        count = INREG(MGAREG_VCOUNT) + 2;
-        while(INREG(MGAREG_VCOUNT) < count);
+        last_vcount = INREG(MGAREG_VCOUNT);
+        count = last_vcount + 2;
+        while (1) {
+           int vcount = INREG(MGAREG_VCOUNT);
+           if (vcount >= count) break;
+           if (vcount < last_vcount) break;
+           last_vcount = count;
+        }
 
         OUTREG16(MGAREG_CRTC_INDEX, (Base & 0x00FF00) | 0x0C);
         OUTREG16(MGAREG_CRTC_INDEX, ((Base & 0x0000FF) << 8) | 0x0D);
