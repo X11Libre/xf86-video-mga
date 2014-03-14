@@ -3654,7 +3654,7 @@ MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
            int vcount = INREG(MGAREG_VCOUNT);
            if (vcount >= count) break;
            if (vcount < last_vcount) break;
-           last_vcount = count;
+           last_vcount = vcount;
         }
 
         OUTREG16(MGAREG_CRTC_INDEX, (Base & 0x00FF00) | 0x0C);
