@@ -2594,7 +2594,8 @@ MGAMapMem(ScrnInfoPtr pScrn)
 	pciaddr_t fbsize = pMga->FbMapSize;
 	err = pci_device_map_range(dev,
 				   fbaddr, fbsize,
-				   PCI_DEV_MAP_FLAG_WRITABLE,
+				   PCI_DEV_MAP_FLAG_WRITABLE |
+				   PCI_DEV_MAP_FLAG_WRITE_COMBINE,
 				   (void **)&pMga->FbBase);
 
 	if (err) {
