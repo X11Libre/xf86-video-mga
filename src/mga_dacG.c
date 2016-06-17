@@ -207,6 +207,74 @@ MGAG200WBComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 #endif
 }
 
+void
+MGAG200EW3ComputePLLParam(ScrnInfoPtr pScrn ,long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulVCOMax, ulVCOMin;
+    unsigned int ulTestP1;
+    unsigned int ulTestP2;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulPLLFreqRef;
+    unsigned int ulTestP1Start;
+    unsigned int ulTestP1End;
+    unsigned int ulTestP2Start;
+    unsigned int ulTestP2End;
+    unsigned int ulTestMStart;
+    unsigned int ulTestMEnd;
+    unsigned int ulTestNStart;
+    unsigned int ulTestNEnd;
+
+    ulVCOMax        = 800000;
+    ulVCOMin        = 400000;
+    ulPLLFreqRef    = 25000;
+    ulTestP1Start   = 1;
+    ulTestP1End     = 8;
+    ulTestP2Start   = 1;
+    ulTestP2End     = 8;
+    ulTestMStart    = 1;
+    ulTestMEnd      = 26;
+    ulTestNStart    = 32;
+    ulTestNEnd      = 2048;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = lFo * 5 / 1000;
+
+    /* Then we need to minimize the M while staying within 0.5% */
+    for (ulTestP1 = ulTestP1Start; ulTestP1 < ulTestP1End; ulTestP1++) {
+        for (ulTestP2 = ulTestP2Start; ulTestP2 < ulTestP2End; ulTestP2++) {
+            if (ulTestP1 < ulTestP2) continue;
+            if ((lFo * ulTestP1 * ulTestP2) > ulVCOMax) continue;
+            if ((lFo * ulTestP1 * ulTestP2) < ulVCOMin) continue;
+
+            for (ulTestM = ulTestMStart; ulTestM < ulTestMEnd; ulTestM++) {
+                for (ulTestN = ulTestNStart; ulTestN < ulTestNEnd; ulTestN++) {
+                    ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP1 * ulTestP2);
+                    if (ulComputedFo > lFo)
+                        ulFTmpDelta = ulComputedFo - lFo;
+                    else
+                        ulFTmpDelta = lFo - ulComputedFo;
+
+                    if (ulFTmpDelta < ulFDelta) {
+                        ulFDelta = ulFTmpDelta;
+                        *M = (CARD8)((ulTestN & 0x100) >> 1) | 
+                             (CARD8)(ulTestM);
+                        *N = (CARD8)(ulTestN & 0xFF);
+                        *P = (CARD8)((ulTestN & 0x600) >> 3) | 
+                             (CARD8)(ulTestP2 << 3) | 
+                             (CARD8)ulTestP1;
+                    }
+                }
+            }
+        }
+    }
+}
+
 static void
 MGAG200EHComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
@@ -902,7 +970,14 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	    pReg->PllN = n;
 	    pReg->PllP = p;
 	} else if (pMga->is_G200WB) {
-	    MGAG200WBComputePLLParam(pScrn, f_out, &m, &n, &p);
+            if (pMga->Chipset == PCI_CHIP_MGAG200_EW3_PCI)
+            {
+                 MGAG200EW3ComputePLLParam(pScrn, f_out, &m, &n, &p);
+            }
+            else
+            {
+	         MGAG200WBComputePLLParam(pScrn, f_out, &m, &n, &p);
+            }
 
 	    pReg->PllM = m;
 	    pReg->PllN = n;
@@ -1092,6 +1167,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 
         case PCI_CHIP_MGAG200_WINBOND_PCI:
+        case PCI_CHIP_MGAG200_EW3_PCI:
                 pReg->DacRegs[MGA1064_VREF_CTL] = 0x07;
                 pReg->Option = 0x41049120;
                 pReg->Option2 = 0x0000b000;
@@ -1232,7 +1308,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         if (pMga->is_G200WB){
             pReg->ExtVga[1] |= 0x88;
         }
-	pReg->ExtVga_Index24 = 0x05;
+	pReg->ExtVga_MgaReq = 0x05;
 		
 	pVga->CRTC[0]	= ht - 4;
 	pVga->CRTC[1]	= hd;
@@ -1528,7 +1604,15 @@ MGA_NOT_HAL(
 
            if (pMga->is_G200ER) {
                OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
-               OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_Index24);			   
+               OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_MgaReq);			   
+           }
+
+           if (pMga->is_G200WB) {
+               if(pMga->Chipset == PCI_CHIP_MGAG200_EW3_PCI)
+               {
+                   OUTREG8(MGAREG_CRTCEXT_INDEX, 0x34);
+                   OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_MgaReq);
+               } 
            }
 
 	   /* This handles restoring the generic VGA registers. */
@@ -1717,8 +1801,16 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	if (pMga->is_G200ER)
 	{
 		OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
-		mgaReg->ExtVga_Index24 = INREG8(MGAREG_CRTCEXT_DATA);
-	}
+		mgaReg->ExtVga_MgaReq = INREG8(MGAREG_CRTCEXT_DATA);
+ 	}
+        if (pMga->is_G200WB) 
+        {
+            if(pMga->Chipset == PCI_CHIP_MGAG200_EW3_PCI)
+            {
+                OUTREG8(MGAREG_CRTCEXT_INDEX, 0x34);
+                mgaReg->ExtVga_MgaReq = INREG8(MGAREG_CRTCEXT_DATA);                
+            }
+        }
 
 #ifdef DEBUG		
 	ErrorF("Saved values:\nDAC:");
