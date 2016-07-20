@@ -51,6 +51,75 @@ static Bool MGAGInit(ScrnInfoPtr, DisplayModePtr);
 static void MGAGLoadPalette(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
 static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
 
+#define P_ARRAY_SIZE 9
+
+void
+MGAG200E4ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulVCOMax, ulVCOMin;
+    unsigned int ulTestP;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulFoInternal;
+    unsigned int ulPLLFreqRef;
+    unsigned int pulPValues[P_ARRAY_SIZE] = {16, 14, 12, 10, 8, 6, 4, 2, 1};
+    unsigned int i;
+    unsigned int ulVCO;
+    unsigned int ulFVV;
+
+    ulVCOMax        = 1600000;
+    ulVCOMin        = 800000;
+    ulPLLFreqRef    = 25000;
+
+    if(lFo < 25000)
+        lFo = 25000;
+
+    ulFoInternal = lFo * 2;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = ulFoInternal * 5 / 1000;  
+
+    for (i = 0 ; i < P_ARRAY_SIZE ; i++)
+    {
+        ulTestP = pulPValues[i];
+
+        if ((ulFoInternal * ulTestP) > ulVCOMax) continue;
+        if ((ulFoInternal * ulTestP) < ulVCOMin) continue;
+
+        for (ulTestN = 50; ulTestN <= 256; ulTestN++) {
+            for (ulTestM = 1; ulTestM <= 32; ulTestM++) {
+                ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
+                if (ulComputedFo > ulFoInternal)
+                    ulFTmpDelta = ulComputedFo - ulFoInternal;
+                else
+                    ulFTmpDelta = ulFoInternal - ulComputedFo;
+
+                if (ulFTmpDelta < ulFDelta) {
+                    ulFDelta = ulFTmpDelta;
+                    *M = ulTestM - 1;
+                    *N = ulTestN - 1;
+                    *P = ulTestP - 1;
+                }
+            }
+        }
+    }
+                                                                                                                    
+    ulVCO = ulPLLFreqRef * ((*N)+1) / ((*M)+1);
+    ulFVV = (ulVCO - 800000) / 50000;
+
+    if (ulFVV > 15)
+        ulFVV = 15;
+
+    *P |= (ulFVV << 4);                                                                                             
+
+    *M |= 0x80;
+}
+
 static void
 MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
@@ -958,7 +1027,11 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	}
 
 	if (pMga->is_G200SE) {
-	    MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
+            if (pMga->reg_1e24 >= 0x04) {
+                MGAG200E4ComputePLLParam(pScrn, f_out, &m, &n, &p);
+            } else {
+                MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
+            }
 
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
 	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n;
@@ -1557,7 +1630,12 @@ MGA_NOT_HAL(
         {
 			outMGAdac(0x90, mgaReg->Dac_Index90);
         }
-   
+           if (pMga->is_G200SE && (pMga->reg_1e24 >= 0x04)) {
+              outMGAdac( 0x1a, 0x09);
+              usleep(500);
+              outMGAdac( 0x1a, 0x01);
+           }
+    
 	   if (!MGAISGx50(pMga)) {
 	       /* restore pci_option register */
 #ifdef XSERVER_LIBPCIACCESS

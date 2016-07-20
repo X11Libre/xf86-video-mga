@@ -315,7 +315,7 @@ static const struct mga_device_attributes attribs[] = {
     },
 
     /* G200SE A PCI */
-    [10] = { 0, 1, 0, 0, 1, 0, 0, 1, new_BARs,
+    [10] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
             (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
 	{
 	    { 50000, 230000 }, /* System VCO frequencies */
@@ -331,7 +331,7 @@ static const struct mga_device_attributes attribs[] = {
     },
 
     /* G200SE B PCI */
-    [11] = { 0, 1, 0, 0, 1, 0, 0, 1, new_BARs,
+    [11] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
             (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
 	{
 	    { 50000, 114000 }, /* System VCO frequencies */
@@ -3854,7 +3854,7 @@ MGAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
 	        if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 244)
 	            return MODE_BANDWIDTH;
         } else {
-            if (pMga->reg_1e24 >= 0x02) {
+            if (pMga->reg_1e24 == 0x02) {
 	            if (mode->HDisplay > 1920)
 	                return MODE_VIRTUAL_X;
 	            if (mode->VDisplay > 1200)
