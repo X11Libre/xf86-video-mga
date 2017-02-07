@@ -393,6 +393,52 @@ MGAG200EHComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     }
 }
 
+void
+MGAG200EH3ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulTestP;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulVCOMax;
+    unsigned int ulVCOMin;
+    unsigned int ulPLLFreqRef;
+
+    ulVCOMax        = 3000000;
+    ulVCOMin        = 1500000;
+    ulPLLFreqRef    = 25000;
+
+    ulTestP         = 0;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = lFo * 5 / 1000;
+
+    /* Then we need to minimize the M while staying within 0.5% */
+    for (ulTestM = 150; ulTestM >= 6; ulTestM--) {
+        if ((lFo * ulTestM) > ulVCOMax) continue;
+        if ((lFo * ulTestM) < ulVCOMin) continue;
+
+        for (ulTestN = 120; ulTestN >= 60; ulTestN--) {
+            ulComputedFo = (ulPLLFreqRef * ulTestN) / ulTestM;
+            if (ulComputedFo > lFo)
+	        ulFTmpDelta = ulComputedFo - lFo;
+            else
+                ulFTmpDelta = lFo - ulComputedFo;
+
+            if (ulFTmpDelta < ulFDelta) {
+                ulFDelta = ulFTmpDelta;
+                *M = (CARD8)(ulTestM);
+                *N = (CARD8)(ulTestN);
+                *P = (CARD8)(ulTestP);
+            }
+        }
+    }
+}
+
 static void
 MGAG200EVPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
 {
@@ -1056,7 +1102,14 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	    pReg->PllN = n;
 	    pReg->PllP = p;
     } else if (pMga->is_G200EH) {
-	    MGAG200EHComputePLLParam(pScrn, f_out, &m, &n, &p);
+            if (pMga->Chipset == PCI_CHIP_MGAG200_EH3_PCI)
+            {
+                 MGAG200EH3ComputePLLParam(pScrn, f_out, &m, &n, &p);
+            }
+            else
+            {
+                 MGAG200EHComputePLLParam(pScrn, f_out, &m, &n, &p);
+            }
 
 	    pReg->PllM = m;
 	    pReg->PllN = n;
@@ -1263,6 +1316,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			break;
 
         case PCI_CHIP_MGAG200_EH_PCI:
+        case PCI_CHIP_MGAG200_EH3_PCI:
                 pReg->DacRegs[MGA1064_MISC_CTL] =
                     MGA1064_MISC_CTL_VGA8 |
                     MGA1064_MISC_CTL_DAC_RAM_CS;

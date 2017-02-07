@@ -150,7 +150,9 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define PCI_CHIP_MGAG200_EW3_PCI 0x0536
 #endif
 
-
+#ifndef PCI_CHIP_MGAG200_EH3_PCI
+#define PCI_CHIP_MGAG200_EH3_PCI 0x0538
+#endif
 
 /*
  * Read/write to the DAC via MMIO 

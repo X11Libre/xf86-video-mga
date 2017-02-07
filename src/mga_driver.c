@@ -424,6 +424,21 @@ static const struct mga_device_attributes attribs[] = {
 	},
 
 	16384, 0x4000,          /* Memory probe size & offset values */
+    },
+
+    [17] = { 0, 1, 0, 0, 1, 0, 0, new_BARs,
+            (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
+	{
+	    { 50000, 230000 }, /* System VCO frequencies */
+	    { 50000, 203400 }, /* Pixel VCO frequencies */
+	    { 0, 0 },          /* Video VCO frequencies */
+	    45000,            /* Memory clock */
+	    27050,             /* PLL reference frequency */
+	    0,                 /* Supports fast bitblt? */
+	    MGA_HOST_PCI       /* Host interface */
+	},
+
+	16384, 0x4000,          /* Memory probe size & offset values */
     }
 };
 
@@ -458,6 +473,8 @@ static const struct pci_id_match mga_device_match[] = {
 
     MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_EW3_PCI, 16 ),
 
+    MGA_DEVICE_MATCH( PCI_CHIP_MGAG200_EH3_PCI, 17 ),
+
     { 0, 0, 0 },
 };
 #endif
@@ -479,6 +496,7 @@ static SymTabRec MGAChipsets[] = {
     { PCI_CHIP_MGAG200_WINBOND_PCI,	"mgag200 eW Nuvoton" },
     { PCI_CHIP_MGAG200_EW3_PCI,	"mgag200 eW3 Nuvoton" },
     { PCI_CHIP_MGAG200_EH_PCI,	"mgag200eH" },
+     { PCI_CHIP_MGAG200_EH3_PCI,	"mgag200eH3" },
     { PCI_CHIP_MGAG400,		"mgag400" },
     { PCI_CHIP_MGAG550,		"mgag550" },
     {-1,			NULL }
@@ -506,6 +524,8 @@ static PciChipsets MGAPciChipsets[] = {
     { PCI_CHIP_MGAG200_EW3_PCI, PCI_CHIP_MGAG200_EW3_PCI,
 	RES_SHARED_VGA },
     { PCI_CHIP_MGAG200_EH_PCI, PCI_CHIP_MGAG200_EH_PCI,
+	RES_SHARED_VGA },
+    { PCI_CHIP_MGAG200_EH3_PCI, PCI_CHIP_MGAG200_EH3_PCI,
 	RES_SHARED_VGA },
     { PCI_CHIP_MGAG400,	    PCI_CHIP_MGAG400,	RES_SHARED_VGA },
     { PCI_CHIP_MGAG550,	    PCI_CHIP_MGAG550,	RES_SHARED_VGA },
@@ -693,6 +713,7 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	    case PCI_CHIP_MGAG200_ER_PCI:
 	    case PCI_CHIP_MGAG200_WINBOND_PCI:
 	    case PCI_CHIP_MGAG200_EH_PCI:
+	    case PCI_CHIP_MGAG200_EH3_PCI:
 		xf86DrvMsg(0, X_ERROR,
 	                   "mga: The PCI device 0x%x at %2.2d@%2.2d:%2.2d:%1.1d has a kernel module claiming it.\n",
 	                   dev->device_id, dev->bus, dev->domain, dev->dev, dev->func);
@@ -946,6 +967,10 @@ MGAProbe(DriverPtr drv, int flags)
 				
             case PCI_CHIP_MGAG200_EW3_PCI:
                 attrib_no = 16;
+                break;
+
+            case PCI_CHIP_MGAG200_EH3_PCI:
+                attrib_no = 17;
                 break;
 
 	    default:
@@ -1567,7 +1592,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     pMga->is_G200EV = (pMga->Chipset == PCI_CHIP_MGAG200_EV_PCI);
     pMga->is_G200WB = (pMga->Chipset == PCI_CHIP_MGAG200_WINBOND_PCI)
 	|| (pMga->Chipset ==  PCI_CHIP_MGAG200_EW3_PCI);
-    pMga->is_G200EH = (pMga->Chipset == PCI_CHIP_MGAG200_EH_PCI);
+    pMga->is_G200EH = (pMga->Chipset == PCI_CHIP_MGAG200_EH_PCI)
+        ||  (pMga->Chipset ==  PCI_CHIP_MGAG200_EH3_PCI);
     pMga->is_G200ER = (pMga->Chipset == PCI_CHIP_MGAG200_ER_PCI);
 
     pMga->DualHeadEnabled = FALSE;
@@ -1594,6 +1620,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGAG200_ER_PCI:
     case PCI_CHIP_MGAG200_WINBOND_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
+    case PCI_CHIP_MGAG200_EH3_PCI:
 	pMga->HWCursor = FALSE;
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		   "HW cursor is not supported with video redirection on"
@@ -2078,6 +2105,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
     case PCI_CHIP_MGAG200_ER_PCI:	
+    case PCI_CHIP_MGAG200_EH3_PCI:
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
 	MGAGSetupFuncs(pScrn);
@@ -2192,6 +2220,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	  case PCI_CHIP_MGAG200_EW3_PCI:
 	  case PCI_CHIP_MGAG200_EV_PCI:
 	  case PCI_CHIP_MGAG200_EH_PCI:
+	  case PCI_CHIP_MGAG200_EH3_PCI:
 	  case PCI_CHIP_MGAG200_ER_PCI:	  
 	    pMga->SrcOrg = 0;
 	    pMga->DstOrg = 0;
@@ -2376,7 +2405,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         case PCI_CHIP_MGAG200_WINBOND_PCI:
 	case PCI_CHIP_MGAG200_EW3_PCI:
 	case PCI_CHIP_MGAG200_EV_PCI:
-    case PCI_CHIP_MGAG200_EH_PCI:
+        case PCI_CHIP_MGAG200_EH_PCI:
+        case PCI_CHIP_MGAG200_EH3_PCI:
 	case PCI_CHIP_MGAG200_ER_PCI:	
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
@@ -3878,7 +3908,7 @@ MGAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
     } else if (pMga->is_G200EV
 	       && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 327)) {
 	return MODE_BANDWIDTH;
-    } else if (pMga->is_G200EH
+    } else if (pMga->is_G200EH && (pMga->Chipset != PCI_CHIP_MGAG200_EH3_PCI)
                && (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 375)) {
         return MODE_BANDWIDTH;
     } else if (pMga->is_G200ER
