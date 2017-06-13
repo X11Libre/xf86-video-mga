@@ -2971,12 +2971,20 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
             
             ulMemoryBandwidth = (mode->Clock * ulBitsPerPixel) / 1000;
 
-            if      (ulMemoryBandwidth    > 3100)  ucHiPriLvl = 0;
-            else if (ulMemoryBandwidth    > 2600)  ucHiPriLvl = 1;
-            else if (ulMemoryBandwidth    > 1900)  ucHiPriLvl = 2;
-            else if (ulMemoryBandwidth    > 1160)  ucHiPriLvl = 3;
-            else if (ulMemoryBandwidth    > 440)   ucHiPriLvl = 4;
-            else ucHiPriLvl = 5;
+            if (pMga->reg_1e24 >= 0x04)
+            {
+                ucHiPriLvl = 0;
+            }
+            else
+            {
+
+                if      (ulMemoryBandwidth    > 3100)  ucHiPriLvl = 0;
+                else if (ulMemoryBandwidth    > 2600)  ucHiPriLvl = 1;
+                else if (ulMemoryBandwidth    > 1900)  ucHiPriLvl = 2;
+                else if (ulMemoryBandwidth    > 1160)  ucHiPriLvl = 3;
+                else if (ulMemoryBandwidth    > 440)   ucHiPriLvl = 4;
+                else ucHiPriLvl = 5;
+            }
 
             OUTREG8(0x1FDE, 0x06);
 		    OUTREG8(0x1FDF, ucHiPriLvl);
@@ -3883,15 +3891,17 @@ MGAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
 	            return MODE_VIRTUAL_Y;
 	        if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 244)
 	            return MODE_BANDWIDTH;
-        } else {
-            if (pMga->reg_1e24 == 0x02) {
-	            if (mode->HDisplay > 1920)
-	                return MODE_VIRTUAL_X;
-	            if (mode->VDisplay > 1200)
-	                return MODE_VIRTUAL_Y;
-	            if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 301)
-	                return MODE_BANDWIDTH;
-            }
+        } else if (pMga->reg_1e24 == 0x02) {
+            if (mode->HDisplay > 1920)
+                return MODE_VIRTUAL_X;
+            if (mode->VDisplay > 1200)
+                return MODE_VIRTUAL_Y;
+            if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 301)
+                return MODE_BANDWIDTH;
+        }
+        else {
+            if (xf86ModeBandwidth(mode, pScrn->bitsPerPixel) > 550)
+                return MODE_BANDWIDTH;
         }
     } else if (pMga->is_G200WB){
         if (mode->Flags & V_DBLSCAN)
