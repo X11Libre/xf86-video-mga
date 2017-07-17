@@ -23,10 +23,6 @@
 #include "miline.h"
 #include "servermd.h"
 
-#ifdef MGADRI
-#include "GL/glxtokens.h"
-#endif
-
 #include "mga.h"
 #include "mga_reg.h"
 #include "mga_macros.h"

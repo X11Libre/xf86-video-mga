@@ -41,11 +41,7 @@
 #define _XF86DRI_SERVER_
 #include "mga_dripriv.h"
 #include "dri.h"
-#include "GL/glxint.h"
 
-#include "dri.h"
-
-#include "GL/glxint.h"
 #include "mga_dri.h"
 #endif
 
@@ -611,9 +607,6 @@ typedef struct {
     Bool 		directRenderingEnabled;
     DRIInfoPtr 		pDRIInfo;
     int 		drmFD;
-    int 		numVisualConfigs;
-    __GLXvisualConfig*	pVisualConfigs;
-    MGAConfigPrivPtr 	pVisualConfigsPriv;
     MGADRIServerPrivatePtr DRIServerInfo;
 
     MGARegRec		DRContextRegs;
