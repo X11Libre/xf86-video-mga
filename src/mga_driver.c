@@ -1971,6 +1971,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
 #ifdef USE_EXA
+#ifndef HAVE_XAA_H
+	pMga->Exa = TRUE;
+#endif
 	if (!xf86NameCmp(s, "EXA")) {
 	    pMga->Exa = TRUE;
 	    from = X_CONFIG;
