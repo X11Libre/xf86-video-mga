@@ -1124,7 +1124,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 			&scratch_ptr);
    }
 
-   xf85DrvMsg( pScrn->scrnIndex, X_INFO, "[dri] visual configs initialized\n" );
+   xf86DrvMsg( pScrn->scrnIndex, X_INFO, "[dri] visual configs initialized\n" );
 
    return TRUE;
 }
