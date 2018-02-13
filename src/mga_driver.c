@@ -426,7 +426,7 @@ static const struct mga_device_attributes attribs[] = {
 	16384, 0x4000,          /* Memory probe size & offset values */
     },
 
-    [17] = { 0, 1, 0, 0, 1, 0, 0, new_BARs,
+    [17] = { 0, 1, 0, 0, 1, 0, 0, 0, new_BARs,
             (TRANSC_SOLID_FILL | TWO_PASS_COLOR_EXPAND | USE_LINEAR_EXPANSION),
 	{
 	    { 50000, 230000 }, /* System VCO frequencies */
