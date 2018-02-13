@@ -1810,8 +1810,8 @@ MGA_NOT_HAL(
 		ErrorF("0x%02X, ", mgaReg->DacRegs[i]);
 #endif
 	}
-	ErrorF("\nOPTION  = %08lX\n", mgaReg->Option);
-	ErrorF("OPTION2 = %08lX\n", mgaReg->Option2);
+	ErrorF("\nOPTION  = %08X\n", (unsigned)mgaReg->Option);
+	ErrorF("OPTION2 = %08X\n", (unsigned)mgaReg->Option2);
 	ErrorF("CRTCEXT:");
 	for (i=0; i<6; i++) ErrorF(" %02X", mgaReg->ExtVga[i]);
 	ErrorF("\n");
@@ -1955,8 +1955,8 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 		ErrorF("0x%02X, ", mgaReg->DacRegs[i]);
 #endif
 	}
-	ErrorF("\nOPTION  = %08lX\n:", mgaReg->Option);
-	ErrorF("OPTION2 = %08lX\nCRTCEXT:", mgaReg->Option2);
+	ErrorF("\nOPTION  = %08X\n:", (unsigned)mgaReg->Option);
+	ErrorF("OPTION2 = %08X\nCRTCEXT:", (unsigned)mgaReg->Option2);
 	for (i=0; i<6; i++) ErrorF(" %02X", mgaReg->ExtVga[i]);
 	ErrorF("\n");
 #endif
@@ -2173,7 +2173,7 @@ MGAG_I2CPutBits(I2CBusPtr b, int clock, int data)
 
 
 static I2CBusPtr
-mgag_create_i2c_bus(const char *name, unsigned bus_index, unsigned scrn_index)
+mgag_create_i2c_bus(char *name, unsigned bus_index, unsigned scrn_index)
 {
     I2CBusPtr I2CPtr = xf86CreateI2CBusRec();
 
@@ -2183,7 +2183,7 @@ mgag_create_i2c_bus(const char *name, unsigned bus_index, unsigned scrn_index)
 	I2CPtr->I2CPutBits = MGAG_I2CPutBits;
 	I2CPtr->I2CGetBits = MGAG_I2CGetBits;
 	I2CPtr->AcknTimeout = 5;
-	I2CPtr->DriverPrivate.ptr = & i2c_priv[bus_index];
+	I2CPtr->DriverPrivate.ptr = (void *) &i2c_priv[bus_index];
 
 	if (!xf86I2CBusInit(I2CPtr)) {
 	    xf86DestroyI2CBusRec(I2CPtr, TRUE, TRUE);

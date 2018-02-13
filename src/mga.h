@@ -218,9 +218,9 @@ typedef struct {
     unsigned char       * DacRegs;
     unsigned long	crtc2[0x58];
     unsigned char	dac2[0x21];
-    CARD32		Option;
-    CARD32		Option2;
-    CARD32		Option3;
+    uint32_t		Option;
+    uint32_t		Option2;
+    uint32_t		Option3;
     long                Clock;
     unsigned char	Pan_Ctl;
     Bool                PIXPLLCSaved;
@@ -521,7 +521,7 @@ typedef struct {
     MessageType		BiosFrom;
 #endif
     unsigned long	FbAddress;
-    unsigned char *     IOBase;
+    void *		IOBase;
     unsigned char *	FbBase;
     unsigned char *	ILOADBase;
     unsigned char *	FbStart;

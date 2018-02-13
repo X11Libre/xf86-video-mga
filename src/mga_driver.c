@@ -1024,7 +1024,9 @@ MGASoftReset(ScrnInfoPtr pScrn)
 	MGAPtr pMga = MGAPTR(pScrn);
 
 	pMga->FbMapSize = 8192 * 1024;
-	MGAMapMem(pScrn);
+	if (!MGAMapMem(pScrn)) {
+	    return;
+	}
 
 	/* set soft reset bit */
 	OUTREG(MGAREG_Reset, 1);
@@ -1145,7 +1147,9 @@ MGACountRam(ScrnInfoPtr pScrn)
 	    ProbeSize = 16384;
 	    ProbeSizeOffset = 0x10000;
 	    pMga->FbMapSize = ProbeSize * 1024;
-	    MGAMapMem(pScrn);
+	    if (!MGAMapMem(pScrn)) {
+		return 0;
+	    }
 	    base = pMga->FbBase;
 	}
 
@@ -1160,7 +1164,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	}
 
         if (pMga->is_G200WB) {
-            CARD32 Option, MaxMapSize;
+            uint32_t Option, MaxMapSize;
 
 #ifdef XSERVER_LIBPCIACCESS
             pci_device_cfg_read_u32(pMga->PciInfo, &Option, 
@@ -1185,7 +1189,9 @@ MGACountRam(ScrnInfoPtr pScrn)
             else {
                 MGAUnmapMem(pScrn);
                 pMga->FbMapSize = ProbeSize * 1024;
-                MGAMapMem(pScrn);
+                if (!MGAMapMem(pScrn)) {
+		    return 0;
+		}
                 base = pMga->FbBase;
             }
         }
@@ -1960,7 +1966,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     } else {
 	int from = X_DEFAULT;
 #ifdef USE_EXA
-	char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
+	const char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
 #endif
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
@@ -2667,7 +2673,7 @@ MGAMapMem(ScrnInfoPtr pScrn)
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		       "MAPPED Framebuffer %08llX %llx to %08llX.\n",
 		       (long long)fbaddr, (long long)fbsize,
-		       (long long)pMga->FbBase);
+		       (long long)(uintptr_t)pMga->FbBase);
 
 	if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedIOUsage == 0) {
 	    region = &dev->regions[pMga->io_bar];
@@ -2803,7 +2809,7 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 			pMga->entityPrivate->mappedIOBase = NULL;
 	    }
 
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "UNMAPPING framebuffer 0x%08llX, 0x%llX.\n", (long long)pMga->FbBase, (long long)pMga->FbMapSize);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "UNMAPPING framebuffer 0x%08llX, 0x%llX.\n", (long long)(uintptr_t)pMga->FbBase, (long long)pMga->FbMapSize);
         pci_device_unmap_range(dev, pMga->FbBase, 
 			       pMga->FbMapSize);
 #else
@@ -2989,9 +2995,9 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
             OUTREG8(0x1FDE, 0x06);
 		    OUTREG8(0x1FDF, ucHiPriLvl);
 
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Clock           == %d\n",   mode->Clock);
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BitsPerPixel    == %d\n",   pScrn->bitsPerPixel);
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MemoryBandwidth == %d\n",   ulMemoryBandwidth);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Clock           == %u\n",   mode->Clock);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BitsPerPixel    == %u\n",   pScrn->bitsPerPixel);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MemoryBandwidth == %u\n",   (unsigned)ulMemoryBandwidth);
             xf86DrvMsg(pScrn->scrnIndex, X_INFO, "HiPriLvl        == %02X\n", ucHiPriLvl);
         }
         else
@@ -3170,7 +3176,7 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
     int width, height, displayWidth;
     MGAEntPtr pMgaEnt = NULL;
     int f;
-    CARD32 VRTemp, FBTemp;
+    CARD32 VRTemp = 0, FBTemp = 0;
 #ifdef MGADRI
     MessageType driFrom = X_DEFAULT;
 #endif
@@ -3750,7 +3756,7 @@ MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     MGAPtr pMga = MGAPTR(pScrn);
     MGAEntPtr pMgaEnt = NULL;
-    CARD32 VRTemp, FBTemp;
+    CARD32 VRTemp = 0, FBTemp = 0;
 
     if (pMga->MergedFB)
          MGACloseScreenMerged(pScreen);

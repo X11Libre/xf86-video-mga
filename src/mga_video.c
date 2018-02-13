@@ -1374,6 +1374,7 @@ static void CopyMungedScanline_AXP(CARD32 *fb_ptr, short src_w,
     }
 }
 
+#if 0
 static void CopyMungedScanline_AXP2(CARD32 *fb_ptr, short src_w,
 				    CARD32 *tsp, CARD32 *tpu, CARD32 *tpv)
 {
@@ -1393,6 +1394,7 @@ static void CopyMungedScanline_AXP2(CARD32 *fb_ptr, short src_w,
 	fb_ptr+=4;
     }
 }
+#endif
 
 
 static void CopyMungedScanlineFilter_AXP(CARD32 *fb_ptr, short src_w,
@@ -1466,6 +1468,7 @@ static void CopyMungedScanlineFilter_AXP(CARD32 *fb_ptr, short src_w,
     }
 }
 
+#if 0
 static void CopyMungedScanlineFilterDown_AXP(CARD32 *fb_ptr, short src_w,
 					     CARD32 *tsp1, CARD32 *tpu1, CARD32 *tpv1,
 					     CARD32 *tsp2, CARD32 *tpu2, CARD32 *tpv2,
@@ -1504,6 +1507,7 @@ static void CopyMungedScanlineFilterDown_AXP(CARD32 *fb_ptr, short src_w,
 	fb_ptr+=4;
     }
 }
+#endif
 
 static void MGACopyScaledILOAD(
 			       ScrnInfoPtr pScrn,
