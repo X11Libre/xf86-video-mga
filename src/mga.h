@@ -737,8 +737,9 @@ Bool mgaExaInit(ScreenPtr pScreen);
 
 Bool MGAHWCursorInit(ScreenPtr pScreen);
 
-
+#ifdef USE_XAA
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
+#endif /* USE_XAA */
 
 Bool MGADGAInit(ScreenPtr pScreen);
 
