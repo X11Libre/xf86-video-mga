@@ -700,7 +700,6 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	    intptr_t match_data)
 {
     ScrnInfoPtr pScrn = NULL;
-    EntityInfoPtr pEnt;
     MGAPtr pMga;
 
     if (pci_device_has_kernel_driver(dev)) {
@@ -758,7 +757,6 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	 * For cards that can do dual head per entity, mark the entity
 	 * as sharable. 
 	 */
-	pEnt = xf86GetEntityInfo(entity_num);
 	if (pMga->chip_attribs->dual_head_possible) {
 	    MGAEntPtr pMgaEnt = NULL;
 	    DevUnion *pPriv;
@@ -3179,9 +3177,6 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
     MGAEntPtr pMgaEnt = NULL;
     int f;
     CARD32 VRTemp = 0, FBTemp = 0;
-#ifdef MGADRI
-    MessageType driFrom = X_DEFAULT;
-#endif
     DPMSSetProcPtr mga_dpms_set_proc = NULL;
 
     hwp = VGAHWPTR(pScrn);
@@ -3363,20 +3358,16 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		   "Not supported by hardware, not initializing the DRI\n");
 	pMga->directRenderingEnabled = FALSE;
-	driFrom = X_PROBED;
     } else if (!xf86ReturnOptValBool(pMga->Options, OPTION_DRI, TRUE)) {
-	driFrom = X_CONFIG;
     } else if ( pMga->NoAccel ) {
        xf86DrvMsg( pScrn->scrnIndex, X_ERROR,
 		   "Acceleration disabled, not initializing the DRI\n" );
        pMga->directRenderingEnabled = FALSE;
-       driFrom = X_CONFIG;
     }
     else if ( pMga->TexturedVideo == TRUE ) {
        xf86DrvMsg( pScrn->scrnIndex, X_ERROR,
 		   "Textured video enabled, not initializing the DRI\n" );
        pMga->directRenderingEnabled = FALSE;
-       driFrom = X_CONFIG;
     }
     else if (pMga->SecondCrtc == TRUE) {
        xf86DrvMsg( pScrn->scrnIndex, X_ERROR,
@@ -3391,7 +3382,6 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 	  "Need at least %d kB video memory at this resolution, bit depth\n",
 	  (3 * displayWidth * height * (pScrn->bitsPerPixel >> 3)) / 1024 );
        pMga->directRenderingEnabled = FALSE;
-       driFrom = X_PROBED;
     }
     else {
        pMga->directRenderingEnabled = MGADRIScreenInit(pScreen);

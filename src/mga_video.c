@@ -1530,7 +1530,12 @@ static void MGACopyScaledILOAD(
     CARD32 *fb_ptr;
     unsigned char *ubuf, *vbuf, *tbuf;
     CARD32 *pu, *pv;
-    int k,l, pl, dl, xds, yds;
+    int k,l;
+#ifdef MGA2164_BLIT_DUP
+    int pl;
+#endif /* MGA2164_BLIT_DUP */
+    int dl;
+    int xds, yds;
     short box_h;
     short scr_pitch = ( pScrn->virtualX + 15) & ~15;
 
@@ -1616,8 +1621,10 @@ static void MGACopyScaledILOAD(
     ubuf=vbuf+width*height/4;
     pu = (CARD32 *)(ubuf+(src_y/2)*(width/2));
     pv = (CARD32 *)(vbuf+(src_y/2)*(width/2));
-
-    for(pl=-1,dl=0;dl<box_h;dl++) {
+#ifdef MGA2164_BLIT_DUP
+    pl = -1;
+#endif /* MGA2164_BLIT_DUP */
+    for(dl=0;dl<box_h;dl++) {
 	int beta;
 	l=(dl+(pbox->y1-drw_y))*src_h/drw_h;
 	/* FIXME: check the math */
@@ -1774,7 +1781,9 @@ static void MGACopyScaledILOAD(
 		    default:
 			break;
 		    }
+#ifdef MGA2164_BLIT_DUP
 		    pl=l;
+#endif /* MGA2164_BLIT_DUP */
 		} else {
 		    /* dup lines */
 
@@ -1981,7 +1990,6 @@ MGAPutImageILOAD(
     MGAPortPrivPtr pPriv = pMga->portPrivate;
     INT32 x1, x2, y1, y2;
     int dstPitch = 0;
-    int bpp;
     BoxRec dstBox;
     int nbox;
     BoxPtr pbox;
@@ -1996,8 +2004,6 @@ MGAPutImageILOAD(
     if(!xf86XVClipVideoHelper(&dstBox, &x1, &x2, &y1, &y2,
 			      clipBoxes, width, height))
 	return Success;
-
-    bpp = pScrn->bitsPerPixel >> 3;
 
 #ifdef HAVE_XAA_H
     if( pMga->AccelInfoRec->NeedToSync && ((long)data != pPriv->lastPort) ) {

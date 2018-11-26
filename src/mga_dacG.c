@@ -58,7 +58,6 @@ MGAG200E4ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulVCOMax, ulVCOMin;
     unsigned int ulTestP;
@@ -81,8 +80,6 @@ MGAG200E4ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulFoInternal = lFo * 2;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = ulFoInternal * 5 / 1000;  
 
     for (i = 0 ; i < P_ARRAY_SIZE ; i++)
     {
@@ -125,7 +122,6 @@ MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulVCOMax, ulVCOMin;
     unsigned int ulTestP;
@@ -138,8 +134,6 @@ MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulPLLFreqRef    = 25000;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;  
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestP = 8; ulTestP > 0; ulTestP >>= 1) {
@@ -170,7 +164,6 @@ MGAG200EVComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulTestP;
     unsigned int ulTestM;
@@ -184,8 +177,6 @@ MGAG200EVComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulPLLFreqRef    = 50000;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;  
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestP = 16; ulTestP > 0; ulTestP--) {
@@ -221,7 +212,6 @@ MGAG200WBComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulVCOMax, ulVCOMin;
     unsigned int ulTestP;
@@ -244,8 +234,6 @@ MGAG200WBComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulTestMEnd      = 16;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestP = ulTestPStart; ulTestP < 9; ulTestP++) {
@@ -281,7 +269,6 @@ MGAG200EW3ComputePLLParam(ScrnInfoPtr pScrn ,long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulVCOMax, ulVCOMin;
     unsigned int ulTestP1;
@@ -311,8 +298,6 @@ MGAG200EW3ComputePLLParam(ScrnInfoPtr pScrn ,long lFo, int *M, int *N, int *P)
     ulTestNEnd      = 2048;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestP1 = ulTestP1Start; ulTestP1 < ulTestP1End; ulTestP1++) {
@@ -349,7 +334,6 @@ MGAG200EHComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulTestP;
     unsigned int ulTestM;
@@ -363,8 +347,6 @@ MGAG200EHComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulPLLFreqRef    = 33333;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;  
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestP = 16; ulTestP > 0; ulTestP>>= 1) {
@@ -398,7 +380,6 @@ MGAG200EH3ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
     unsigned int ulFDelta;
-    unsigned int ulFPermitedDelta;
     unsigned int ulFTmpDelta;
     unsigned int ulTestP;
     unsigned int ulTestM;
@@ -414,8 +395,6 @@ MGAG200EH3ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     ulTestP         = 0;
 
     ulFDelta = 0xFFFFFFFF;
-    /* Permited delta is 0.5% as VESA Specification */
-    ulFPermitedDelta = lFo * 5 / 1000;
 
     /* Then we need to minimize the M while staying within 0.5% */
     for (ulTestM = 150; ulTestM >= 6; ulTestM--) {
