@@ -827,12 +827,8 @@ MGAG200EHPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
 {
     MGAPtr pMga = MGAPTR(pScrn);
 
-    unsigned long ulFallBackCounter, ulLoopCount, ulLockCheckIterations = 0, ulTempCount, ulVCount;
+    unsigned long ulLoopCount, ulLockCheckIterations = 0, ulTempCount, ulVCount;
     unsigned char ucTempByte, ucPixCtrl, ucPLLLocked = FALSE;
-    unsigned char ucM;
-    unsigned char ucN;
-    unsigned char ucP;
-    unsigned char ucS;
 
     while(ulLockCheckIterations <= 32 && ucPLLLocked == FALSE)
     {

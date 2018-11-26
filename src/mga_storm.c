@@ -577,10 +577,19 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 #endif
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr pMga = MGAPTR(pScrn);
-    int maxFastBlitMem, maxlines;
+//  int maxFastBlitMem, maxlines;
+#ifdef HAVE_XAA_H
+    int maxFastBlitMem;
+#endif /* HAVE_XAA_H */
+    int maxlines;
+
+#if defined(HAVE_XAA_H) && defined(RENDER)
     Bool doRender = FALSE;
+#endif /* defined(HAVE_XAA_H) && defined(RENDER) */
     BoxRec AvailFBArea;
+#ifdef HAVE_XAA_H
     int i;
+#endif /* HAVE_XAA_H */
 
     pMga->ScratchBuffer = malloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
     if(!pMga->ScratchBuffer) return FALSE;

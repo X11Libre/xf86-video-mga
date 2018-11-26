@@ -565,8 +565,12 @@ MGAAllocateMemory(
    void **mem_struct,
    int size
 ){
+#if defined(USE_XAA) || defined(USE_EXA)
    MGAPtr pMga = MGAPTR(pScrn);
+#endif /* defined(USE_XAA) || defined(USE_EXA) */
+#ifdef USE_XAA
    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
+#endif /* USE_XAA */
    int offset = 0;
 
 #ifdef USE_EXA
@@ -644,7 +648,9 @@ MGAAllocateMemory(
 static void
 MGAFreeMemory(ScrnInfoPtr pScrn, void *mem_struct)
 {
+#if defined(USE_XAA) || defined(USE_EXA)
     MGAPtr pMga = MGAPTR(pScrn);
+#endif /* defined(USE_XAA) || defined(USE_EXA) */
 
 #ifdef USE_EXA
     if (pMga->Exa) {
@@ -1805,7 +1811,10 @@ static void MGACopyILOAD(
     CARD32 *fb_ptr;
     CARD8  *ubuf, *vbuf;
     CARD32 *pu, *pv;
-    int k,l;
+#ifdef CUSTOM_MEMCOPY
+    int k;
+#endif /* CUSTOM_MEMCOPY */
+    int l;
     short clip_x1, clip_x2, tmp_w;
 
 #ifdef DEBUG_MGA2164

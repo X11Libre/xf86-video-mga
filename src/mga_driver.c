@@ -2651,7 +2651,7 @@ MGAMapMem(ScrnInfoPtr pScrn)
 #ifdef XSERVER_LIBPCIACCESS
     struct pci_device *const dev = pMga->PciInfo;
     struct pci_mem_region *region;
-    int i, err;
+    int err;
 #endif
 
 
@@ -3173,7 +3173,6 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
     vgaHWPtr hwp;
     MGAPtr pMga;
     MGARamdacPtr MGAdac;
-    int ret;
     VisualPtr visual;
     unsigned char *FBStart;
     int width, height, displayWidth;

@@ -121,12 +121,13 @@ static void MGAWaitForIdleDMA( ScrnInfoPtr pScrn )
 void MGAGetQuiescence( ScrnInfoPtr pScrn )
 {
    MGAPtr pMga = MGAPTR(pScrn);
+#ifdef USE_XAA
+   MGAFBLayout *pLayout = &pMga->CurrentLayout;
+#endif /* USE_XAA */
 
    pMga->haveQuiescense = 1;
 
    if ( pMga->directRenderingEnabled ) {
-      MGAFBLayout *pLayout = &pMga->CurrentLayout;
-
       MGAWaitForIdleDMA( pScrn );
 
         /* FIXME what about EXA? */
