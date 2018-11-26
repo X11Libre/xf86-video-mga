@@ -961,8 +961,8 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 			/*
 			 * Pick the closest frequency.
 			 */
-			if ( abs(calc_f - f_vco) < m_err ) {
-				m_err = abs(calc_f - f_vco);
+			if ( fabs(calc_f - f_vco) < m_err ) {
+				m_err = fabs(calc_f - f_vco);
 				*best_m = m;
 				*best_n = n;
 			}
