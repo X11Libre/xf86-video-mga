@@ -753,7 +753,7 @@ mgaWaitMarker(ScreenPtr pScreen, int marker)
 
     WAITFIFO(1);
 
-    OUTREG(MGAREG_CACHEFLUSH, 0);
+    OUTREG8(MGAREG_CACHEFLUSH, 0);
 
     /* wait until the "drawing engine busy" bit is unset */
     while (INREG (MGAREG_Status) & 0x10000);
