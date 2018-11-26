@@ -2005,7 +2005,7 @@ MGAPutImageILOAD(
 			      clipBoxes, width, height))
 	return Success;
 
-#ifdef HAVE_XAA_H
+#ifdef USE_XAA
     if( pMga->AccelInfoRec->NeedToSync && ((long)data != pPriv->lastPort) ) {
 	MGAStormSync(pScrn);
     }
@@ -2039,7 +2039,7 @@ MGAPutImageILOAD(
 	pbox++;
     }
 
-#ifdef HAVE_XAA_H
+#ifdef USE_XAA
     pMga->AccelInfoRec->NeedToSync = TRUE;
 #endif
     pPriv->videoStatus = FREE_TIMER;

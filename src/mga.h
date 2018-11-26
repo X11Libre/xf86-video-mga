@@ -559,7 +559,7 @@ typedef struct {
     CARD32		MAccess;
     int			FifoSize;
     int			StyleLen;
-#ifdef HAVE_XAA_H
+#ifdef USE_XAA
     XAAInfoRecPtr	AccelInfoRec;
 #endif
     xf86CursorInfoPtr	CursorInfoRec;

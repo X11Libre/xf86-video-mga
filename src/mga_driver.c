@@ -1969,7 +1969,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
 #ifdef USE_EXA
-#ifndef HAVE_XAA_H
+#ifndef USE_XAA
 	pMga->Exa = TRUE;
 #endif
 	if (!xf86NameCmp(s, "EXA")) {
@@ -3148,7 +3148,7 @@ MGACrtc2FillStrip(ScrnInfoPtr pScrn)
 	    (pScrn->bitsPerPixel >> 3) * pScrn->displayWidth * pScrn->virtualY);
     } else {
 	xf86SetLastScrnFlag(pScrn->entityList[0], pScrn->scrnIndex);
-#ifdef HAVE_XAA_H
+#ifdef USE_XAA
 	pMga->RestoreAccelState(pScrn);
 	pMga->SetupForSolidFill(pScrn, 0, GXcopy, 0xFFFFFFFF);
 	pMga->SubsequentSolidFillRect(pScrn, pScrn->virtualX, 0,
