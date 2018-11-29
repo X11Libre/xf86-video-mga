@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xf86-video-mga],
-        [1.6.5],
+        [1.6.900],
         [https://gitlab.freedesktop.org/xorg/driver/xf86-video-mga/issues],
         [xf86-video-mga])
 AC_CONFIG_SRCDIR([Makefile.am])
