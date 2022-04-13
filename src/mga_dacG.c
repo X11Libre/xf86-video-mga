@@ -1754,6 +1754,7 @@ MGA_NOT_HAL(
 	} else {
 	   /* Second Crtc */
 	   xMODEINFO ModeInfo;
+	   memset( &ModeInfo, 0, sizeof(ModeInfo) );
 
 MGA_NOT_HAL(
 	   /* Enable Dual Head */
