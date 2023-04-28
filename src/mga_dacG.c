@@ -1115,7 +1115,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	/*
 	 * initial values of the DAC registers
 	 */
-	const static unsigned char initDAC[] = {
+	static const unsigned char initDAC[] = {
 	/* 0x00: */	   0,    0,    0,    0,    0,    0, 0x00,    0,
 	/* 0x08: */	   0,    0,    0,    0,    0,    0,    0,    0,
 	/* 0x10: */	   0,    0,    0,    0,    0,    0,    0,    0,
