@@ -309,7 +309,6 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
    CARD32 ulMaxIndex;
    CARD32 ulMNP;
    CARD32 ulMNPTable[MNP_TABLE_SIZE];
-   CARD32 ulIndex;
    CARD32 ulTryMNP;
    long lCompareResult;
    MGAPtr pMga = MGAPTR(pScrn);
@@ -323,7 +322,6 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
    ulMaxIndex = 1;
    while(ulMNP != 0xffffffff)
    {
-      int ulIndex;
       Bool bSkipValue;
 
       bSkipValue = FALSE;
@@ -344,6 +342,7 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
 
       if(!bSkipValue)
       {
+         int ulIndex;
          for(ulIndex = ulMaxIndex; !bSkipValue && (ulIndex > 0); ulIndex--)
          {
             G450CompareMNP(pScrn, f_out, ulMNP, ulMNPTable[ulIndex - 1],
@@ -374,7 +373,7 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
        OUTREG8(0x1fc2, (CARD8)(ucMisc | CLKSEL_MGA));    
    }
 
-   for(ulIndex = 0; !bFoundValidPLL && (ulIndex < ulMaxIndex); ulIndex++)
+   for(CARD32 ulIndex = 0; !bFoundValidPLL && (ulIndex < ulMaxIndex); ulIndex++)
    {
        ulTryMNP = ulMNPTable[ulIndex];
        
