@@ -1,4 +1,4 @@
-# $XFree86: $
+AM_CFLAGS = $(BASE_CFLAGS)
 
 # this is not even built in the monolith, so don't install it
 noinst_PROGRAMS = stormdwg
