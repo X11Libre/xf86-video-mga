@@ -53,7 +53,7 @@ static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
 
 #define P_ARRAY_SIZE 9
 
-void
+static void
 MGAG200E4ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
@@ -264,7 +264,7 @@ MGAG200WBComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 #endif
 }
 
-void
+static void
 MGAG200EW3ComputePLLParam(ScrnInfoPtr pScrn ,long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
@@ -375,7 +375,7 @@ MGAG200EHComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
     }
 }
 
-void
+static void
 MGAG200EH3ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
 {
     unsigned int ulComputedFo;
