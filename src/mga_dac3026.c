@@ -513,7 +513,7 @@ MGA3026Init(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	
 	/* Allocate the DacRegs space if not done already */
 	if (pReg->DacRegs == NULL) {
-		pReg->DacRegs = xnfcalloc(DACREGSIZE, 1);
+		pReg->DacRegs = XNFcallocarray(DACREGSIZE, 1);
 	}
 	for (i = 0; i < DACREGSIZE; i++) {
 	    pReg->DacRegs[i] = initDAC[i]; 
@@ -811,7 +811,7 @@ MGA3026Save(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	
 	/* Allocate the DacRegs space if not done already */
 	if (mgaReg->DacRegs == NULL) {
-		mgaReg->DacRegs = xnfcalloc(DACREGSIZE, 1);
+		mgaReg->DacRegs = XNFcallocarray(DACREGSIZE, 1);
 	}
 
 	/*

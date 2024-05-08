@@ -666,7 +666,7 @@ MGAGetRec(ScrnInfoPtr pScrn)
     if (pScrn->driverPrivate != NULL)
 	return TRUE;
 
-    pScrn->driverPrivate = xnfcalloc(sizeof(MGARec), 1);
+    pScrn->driverPrivate = XNFcallocarray(sizeof(MGARec), 1);
     /* Initialise it */
 
     MGAPTR(pScrn)->Dac = DacInit;
@@ -767,7 +767,7 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	      MGAEntityIndex = xf86AllocateEntityPrivateIndex();
 	    pPriv = xf86GetEntityPrivate(pScrn->entityList[0], MGAEntityIndex);
 	    if (!pPriv->ptr) {
-		pPriv->ptr = xnfcalloc(sizeof(MGAEntRec), 1);
+		pPriv->ptr = XNFcallocarray(sizeof(MGAEntRec), 1);
 		pMgaEnt = pPriv->ptr;
 		pMgaEnt->lastInstance = -1;
 	    } else {
@@ -987,7 +987,7 @@ MGAProbe(DriverPtr drv, int flags)
 		    MGAEntityIndex = xf86AllocateEntityPrivateIndex();
 		pPriv = xf86GetEntityPrivate(pScrn->entityList[0], MGAEntityIndex);
 		if (!pPriv->ptr) {
-		    pPriv->ptr = xnfcalloc(sizeof(MGAEntRec), 1);
+		    pPriv->ptr = XNFcallocarray(sizeof(MGAEntRec), 1);
 		    pMgaEnt = pPriv->ptr;
 		    pMgaEnt->lastInstance = -1;
 		} else {
@@ -2340,7 +2340,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * Setup the ClockRanges, which describe what clock ranges are available,
      * and what sort of modes they can be used for.
      */
-    clockRanges = xnfcalloc(sizeof(ClockRange), 1);
+    clockRanges = XNFcallocarray(sizeof(ClockRange), 1);
     clockRanges->next = NULL;
     clockRanges->minClock = pMga->MinClock;
     clockRanges->maxClock = pMga->MaxClock;
