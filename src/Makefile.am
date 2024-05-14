@@ -65,8 +65,3 @@ if USE_EXA
 mga_drv_la_SOURCES += \
     mga_exa.c
 endif
-
-if XAA
-mga_drv_la_SOURCES += \
-    mga_arc.c
-endif

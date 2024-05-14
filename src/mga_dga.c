@@ -15,12 +15,6 @@ static Bool MGA_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,
 static Bool MGA_SetMode(ScrnInfoPtr, DGAModePtr);
 static int  MGA_GetViewport(ScrnInfoPtr);
 static void MGA_SetViewport(ScrnInfoPtr, int, int, int);
-#ifdef USE_XAA
-static void MGA_FillRect(ScrnInfoPtr, int, int, int, int, unsigned long);
-static void MGA_BlitRect(ScrnInfoPtr, int, int, int, int, int, int);
-static void MGA_BlitTransRect(ScrnInfoPtr, int, int, int, int, int, int, 
-					unsigned long);
-#endif
 
 static
 DGAFunctionRec MGA_DGAFuncs = {
@@ -30,13 +24,7 @@ DGAFunctionRec MGA_DGAFuncs = {
    MGA_SetViewport,
    MGA_GetViewport,
    MGAStormSync,
-#ifdef USE_XAA
-   MGA_FillRect,
-   MGA_BlitRect,
-   MGA_BlitTransRect
-#else
    NULL, NULL, NULL
-#endif
 };
 
 
@@ -124,13 +112,6 @@ SECOND_PASS:
 	    mode->flags = DGA_CONCURRENT_ACCESS;
             if(pixmap)
 		mode->flags |= DGA_PIXMAP_AVAILABLE;
-#ifdef USE_XAA
-	    if(!pMga->NoAccel) {
-		mode->flags |= DGA_FILL_RECT | DGA_BLIT_RECT;
-		if((Bpp != 3) && (pMga->Chipset != PCI_CHIP_MGA2064))
-		    mode->flags |= DGA_BLIT_RECT_TRANS;
-	    }
-#endif
 	    if(pMode->Flags & V_DBLSCAN)
 		mode->flags |= DGA_DOUBLESCAN;
 	    if(pMode->Flags & V_INTERLACE)
@@ -364,74 +345,6 @@ MGA_SetViewport(
    MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, x, y));
    pMga->DGAViewportStatus = 0;  /* MGAAdjustFrame loops until finished */
 }
-
-#ifdef USE_XAA
-static void 
-MGA_FillRect (
-   ScrnInfoPtr pScrn, 
-   int x, int y, int w, int h, 
-   unsigned long color
-){
-    MGAPtr pMga = MGAPTR(pScrn);
-
-    if(!pMga->AccelInfoRec) return;
-
-    mgaDoSetupForSolidFill(pScrn, color, GXcopy, ~0, 
-			   pMga->CurrentLayout.bitsPerPixel);
-    (*pMga->AccelInfoRec->SubsequentSolidFillRect)(pScrn, x, y, w, h);
-
-    SET_SYNC_FLAG(pMga->AccelInfoRec);
-}
-
-static void 
-MGA_BlitRect(
-   ScrnInfoPtr pScrn, 
-   int srcx, int srcy, 
-   int w, int h, 
-   int dstx, int dsty
-){
-    MGAPtr pMga = MGAPTR(pScrn);
-    int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
-    int ydir = (srcy < dsty) ? -1 : 1;
-
-    if(!pMga->AccelInfoRec) return;
-
-    mgaDoSetupForScreenToScreenCopy( pScrn, xdir, ydir, GXcopy, ~0, -1,
-				     pMga->CurrentLayout.bitsPerPixel );
-
-    (*pMga->AccelInfoRec->SubsequentScreenToScreenCopy)(
-		pScrn, srcx, srcy, dstx, dsty, w, h);
-
-    SET_SYNC_FLAG(pMga->AccelInfoRec);
-}
-
-
-static void MGA_BlitTransRect( ScrnInfoPtr pScrn, int srcx, int srcy, 
-			       int w, int h, int dstx, int dsty,
-			       unsigned long color )
-{
-    MGAPtr pMga = MGAPTR(pScrn);
-
-    if( (pMga->AccelInfoRec != NULL)
-	&& (pMga->CurrentLayout.bitsPerPixel != 24)
-	&& (pMga->Chipset != PCI_CHIP_MGA2064) ) {
-	const int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
-	const int ydir = (srcy < dsty) ? -1 : 1;
-
-	pMga->DrawTransparent = TRUE;
-
-	mgaDoSetupForScreenToScreenCopy( pScrn, xdir, ydir, GXcopy, ~0, color,
-					 pMga->CurrentLayout.bitsPerPixel );
-
-	pMga->DrawTransparent = FALSE;
-
-	(*pMga->AccelInfoRec->SubsequentScreenToScreenCopy)(
-	    pScrn, srcx, srcy, dstx, dsty, w, h);
-
-	SET_SYNC_FLAG(pMga->AccelInfoRec);
-    }
-}
-#endif
 
 static Bool 
 MGA_OpenFramebuffer(

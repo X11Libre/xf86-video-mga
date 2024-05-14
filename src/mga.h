@@ -20,9 +20,6 @@
 #include <stdio.h>
 
 #include "compiler.h"
-#ifdef HAVE_XAA_H
-#include "xaa.h"
-#endif
 #include "xf86fbman.h"
 #include "exa.h"
 #include "xf86Cursor.h"
@@ -559,9 +556,6 @@ typedef struct {
     CARD32		MAccess;
     int			FifoSize;
     int			StyleLen;
-#ifdef USE_XAA
-    XAAInfoRecPtr	AccelInfoRec;
-#endif
     xf86CursorInfoPtr	CursorInfoRec;
     DGAModePtr		DGAModes;
     int			numDGAModes;
@@ -724,22 +718,16 @@ void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);
 void MGAGSetupFuncs(ScrnInfoPtr pScrn);
 
-/*#ifdef USE_XAA */
 void MGAStormSync(ScrnInfoPtr pScrn);
 void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
 Bool mgaAccelInit(ScreenPtr pScreen);
-/* #endif */
 
 #ifdef USE_EXA
 Bool mgaExaInit(ScreenPtr pScreen);
 #endif
 
 Bool MGAHWCursorInit(ScreenPtr pScreen);
-
-#ifdef USE_XAA
-void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
-#endif /* USE_XAA */
 
 Bool MGADGAInit(ScreenPtr pScreen);
 
@@ -816,10 +804,6 @@ MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
     if (pMga->Exa)
         exaMarkSync(pScrn->pScreen);
 #endif
-#ifdef USE_XAA
-    if (!pMga->Exa)
-        SET_SYNC_FLAG(pMga->AccelInfoRec);
-#endif
 }
 
 static __inline__ void
@@ -828,10 +812,6 @@ MGA_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
 #ifdef USE_EXA
     if (pMga->Exa)
         exaWaitSync(pScrn->pScreen);
-#endif
-#ifdef USE_XAA
-    if (!pMga->Exa && pMga->AccelInfoRec && pMga->AccelInfoRec->NeedToSync)
-        pMga->AccelInfoRec->Sync(pScrn);
 #endif
 }
 

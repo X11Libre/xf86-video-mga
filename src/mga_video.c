@@ -15,11 +15,6 @@
 #include "xf86xv.h"
 #include <X11/extensions/Xv.h>
 
-#ifdef USE_XAA
-#include "xaa.h"
-#include "xaalocal.h"
-#endif
-
 #include "dixstruct.h"
 #include "fourcc.h"
 
@@ -565,15 +560,11 @@ MGAAllocateMemory(
    void **mem_struct,
    int size
 ){
-#if defined(USE_XAA) || defined(USE_EXA)
-   MGAPtr pMga = MGAPTR(pScrn);
-#endif /* defined(USE_XAA) || defined(USE_EXA) */
-#ifdef USE_XAA
-   ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
-#endif /* USE_XAA */
    int offset = 0;
 
 #ifdef USE_EXA
+   MGAPtr pMga = MGAPTR(pScrn);
+
    if (pMga->Exa) {
        ExaOffscreenArea *area = *mem_struct;
 
@@ -594,53 +585,6 @@ MGAAllocateMemory(
 	offset = area->offset;
    }
 #endif /* USE_EXA */
-#ifdef USE_XAA
-   FBLinearPtr linear = *mem_struct;
-   int cpp = pMga->CurrentLayout.bitsPerPixel / 8;
-
-   /* XAA allocates in units of pixels at the screen bpp, so adjust size
-    * appropriately.
-    */
-   size = (size + cpp - 1) / cpp;
-
-   if (!pMga->Exa) {
-       if (linear) {
-           if (linear->size >= size)
-               return linear->offset * cpp;
-
-           if (xf86ResizeOffscreenLinear(linear, size))
-               return linear->offset * cpp;
-
-           xf86FreeOffscreenLinear(linear);
-       }
-
-
-       linear = xf86AllocateOffscreenLinear(pScreen, size, 16,
-                                            NULL, NULL, NULL);
-       *mem_struct = linear;
-
-       if (!linear) {
-           int max_size;
-
-           xf86QueryLargestOffscreenLinear(pScreen, &max_size, 16,
-                                           PRIORITY_EXTREME);
-
-           if (max_size < size)
-               return 0;
-
-           xf86PurgeUnlockedOffscreenAreas(pScreen);
-
-           linear = xf86AllocateOffscreenLinear(pScreen, size, 16,
-                                                NULL, NULL, NULL);
-           *mem_struct = linear;
-
-           if (!linear)
-               return 0;
-       }
-
-       offset = linear->offset * cpp;
-   }
-#endif /* USE_XAA */
 
    return offset;
 }
@@ -648,11 +592,9 @@ MGAAllocateMemory(
 static void
 MGAFreeMemory(ScrnInfoPtr pScrn, void *mem_struct)
 {
-#if defined(USE_XAA) || defined(USE_EXA)
-    MGAPtr pMga = MGAPTR(pScrn);
-#endif /* defined(USE_XAA) || defined(USE_EXA) */
-
 #ifdef USE_EXA
+    MGAPtr pMga = MGAPTR(pScrn);
+
     if (pMga->Exa) {
 	ExaOffscreenArea *area = mem_struct;
 
@@ -660,14 +602,6 @@ MGAFreeMemory(ScrnInfoPtr pScrn, void *mem_struct)
 	    exaOffscreenFree(pScrn->pScreen, area);
     }
 #endif /* USE_EXA */
-#ifdef USE_XAA
-    if (!pMga->Exa) {
-	FBLinearPtr linear = mem_struct;
-
-	if (linear)
-	    xf86FreeOffscreenLinear(linear);
-    }
-#endif /* USE_XAA */
 }
 
 static void
@@ -2005,12 +1939,6 @@ MGAPutImageILOAD(
 			      clipBoxes, width, height))
 	return Success;
 
-#ifdef USE_XAA
-    if( pMga->AccelInfoRec->NeedToSync && ((long)data != pPriv->lastPort) ) {
-	MGAStormSync(pScrn);
-    }
-#endif
-
     pPriv->lastPort = (long)data;
     nbox=REGION_NUM_RECTS(clipBoxes);
     pbox=REGION_RECTS(clipBoxes);
@@ -2039,9 +1967,6 @@ MGAPutImageILOAD(
 	pbox++;
     }
 
-#ifdef USE_XAA
-    pMga->AccelInfoRec->NeedToSync = TRUE;
-#endif
     pPriv->videoStatus = FREE_TIMER;
     pPriv->freeTime = currentTime.milliseconds + FREE_DELAY;
     pMga->VideoTimerCallback = MGAVideoTimerCallback;

@@ -56,11 +56,6 @@
 #include "xf86Modes.h"
 #endif
 
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
-#include "xf86Resources.h"
-#include "xf86RAC.h"
-#endif
-
 /* All drivers need this */
 
 #include "compiler.h"
@@ -86,10 +81,6 @@
 #include "mga.h"
 #include "mga_macros.h"
 #include "mga_maven.h"
-
-#ifdef USE_XAA
-#include "xaa.h"
-#endif
 
 #include "xf86cmap.h"
 #include "shadowfb.h"
@@ -1969,16 +1960,14 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
 #ifdef USE_EXA
-#ifndef USE_XAA
 	pMga->Exa = TRUE;
-#endif
 	if (!xf86NameCmp(s, "EXA")) {
 	    pMga->Exa = TRUE;
 	    from = X_CONFIG;
 	}
 #endif
 	xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration\n",
-		   pMga->Exa ? "EXA" : "XAA");
+		   pMga->Exa ? "EXA" : "no");
     }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_PCI_RETRY, FALSE)) {
 	pMga->UsePCIRetry = TRUE;
@@ -2069,7 +2058,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
         }
     }
 
-    /* Load XAA if needed */
+    /* Load EXA if needed */
     if (!pMga->NoAccel) {
 #ifdef USE_EXA
 	if (pMga->Exa) {
@@ -2081,14 +2070,10 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    }
 	} else {
 #endif
-#ifdef USE_XAA
-	    if (!xf86LoadSubModule(pScrn, "xaa")) {
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		           "Falling back to shadowfb\n");
-		pMga->ShadowFB = TRUE;
-		pMga->NoAccel = TRUE;
-	    }
-#endif
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "Falling back to shadowfb\n");
+	    pMga->ShadowFB = TRUE;
+	    pMga->NoAccel = TRUE;
 #ifdef USE_EXA
 	}
 #endif
@@ -3148,13 +3133,6 @@ MGACrtc2FillStrip(ScrnInfoPtr pScrn)
 	    (pScrn->bitsPerPixel >> 3) * pScrn->displayWidth * pScrn->virtualY);
     } else {
 	xf86SetLastScrnFlag(pScrn->entityList[0], pScrn->scrnIndex);
-#ifdef USE_XAA
-	pMga->RestoreAccelState(pScrn);
-	pMga->SetupForSolidFill(pScrn, 0, GXcopy, 0xFFFFFFFF);
-	pMga->SubsequentSolidFillRect(pScrn, pScrn->virtualX, 0,
-				  pScrn->displayWidth - pScrn->virtualX,
-				  pScrn->virtualY);
-#endif
 	MGAStormSync(pScrn);
     }
 }
@@ -3800,10 +3778,6 @@ MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
        pMgaEnt->refCount--;
    }
 
-#ifdef USE_XAA
-    if (pMga->AccelInfoRec)
-	XAADestroyInfoRec(pMga->AccelInfoRec);
-#endif
 #ifdef USE_EXA
     if (pMga->ExaDriver) {
 	exaDriverFini(pScreen);
