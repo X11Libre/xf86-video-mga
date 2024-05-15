@@ -115,16 +115,6 @@ AC_CHECK_DECL(XSERVER_LIBPCIACCESS,
               [#include "xorg-server.h"])
 CFLAGS="$save_CFLAGS"
 
-save_CFLAGS="$CFLAGS"
-CFLAGS="$XORG_CFLAGS"
-AC_CHECK_DECL(xf86ModeBandwidth,
-	      [AC_DEFINE(HAVE_XF86MODEBANDWIDTH, 1, [Have xf86ModeBandwidth])],
-	      [],
-	      [#include <X11/extensions/randr.h>
-	       #include "xorg-server.h"
-	       #include "xf86Modes.h"])
-CFLAGS="$save_CFLAGS"
-
 if test "x$XSERVER_LIBPCIACCESS" = xyes; then
     PKG_CHECK_MODULES([PCIACCESS], [pciaccess >= 0.8.0])
 fi

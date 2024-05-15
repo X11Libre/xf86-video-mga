@@ -52,9 +52,7 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
-#ifdef HAVE_XF86MODEBANDWIDTH
 #include "xf86Modes.h"
-#endif
 
 /* All drivers need this */
 
@@ -3821,29 +3819,6 @@ MGAFreeScreen(FREE_SCREEN_ARGS_DECL)
     MGAFreeRec(pScrn);
 
 }
-
-#ifndef HAVE_XF86MODEBANDWIDTH
-
-#define MODE_BANDWIDTH MODE_BAD
-
-/** Calculates the memory bandwidth (in MiB/sec) of a mode. */
-static unsigned int
-xf86ModeBandwidth(DisplayModePtr mode, int depth)
-{
-    float a_active, a_total, active_percent, pixels_per_second;
-    int bytes_per_pixel = (depth + 7) / 8;
-
-    if (!mode->HTotal || !mode->VTotal || !mode->Clock)
-	return 0;
-
-    a_active = mode->HDisplay * mode->VDisplay;
-    a_total = mode->HTotal * mode->VTotal;
-    active_percent = a_active / a_total;
-    pixels_per_second = active_percent * mode->Clock * 1000.0;
-
-    return (unsigned int)(pixels_per_second * bytes_per_pixel / (1024 * 1024));
-}
-#endif
 
 /* Checks if a mode is suitable for the selected chipset. */
 
