@@ -754,7 +754,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->SAREASize = SAREA_MAX;
 
-   pMGADRI = (MGADRIPtr)calloc( sizeof(MGADRIRec), 1 );
+   pMGADRI = (MGADRIPtr)calloc( 1, sizeof(MGADRIRec) );
    if ( !pMGADRI ) {
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
@@ -764,7 +764,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    }
 
    pMGADRIServer = (MGADRIServerPrivatePtr)
-      calloc( sizeof(MGADRIServerPrivateRec), 1 );
+      calloc( 1, sizeof(MGADRIServerPrivateRec) );
    if ( !pMGADRIServer ) {
       free( pMGADRI );
       DRIDestroyInfoRec( pMga->pDRIInfo );
