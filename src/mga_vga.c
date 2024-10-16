@@ -34,7 +34,7 @@ MGAG200SERestoreFonts(ScrnInfoPtr scrninfp, vgaRegPtr restore)
 	doMap = TRUE;
 	if (!vgaHWMapMem(scrninfp)) {
 	    xf86DrvMsg(scrninfp->scrnIndex, X_ERROR,
-		    "vgaHWRestoreFonts: vgaHWMapMem() failed\n");
+		    "MGAG200SERestoreFonts: vgaHWMapMem() failed\n");
 	    return;
 	}
     }
@@ -150,7 +150,7 @@ MGAG200SESaveFonts(ScrnInfoPtr scrninfp, vgaRegPtr save)
 	doMap = TRUE;
 	if (!vgaHWMapMem(scrninfp)) {
 	    xf86DrvMsg(scrninfp->scrnIndex, X_ERROR,
-		    "vgaHWSaveFonts: vgaHWMapMem() failed\n");
+		    "MGAG200SESaveFonts: vgaHWMapMem() failed\n");
 	    return;
 	}
     }
