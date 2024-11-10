@@ -2013,10 +2013,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                 "\"Merged Framebuffer\" mode only supported on G450 and G550 boards.\n");
         } else { 
-            { 
-                xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "HALLib not loaded! NOT using \"Merged Framebuffer\" mode.\n");
-            } /* MGA_NOT_HAL */
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                "HALLib not loaded! NOT using \"Merged Framebuffer\" mode.\n");
         } /* ISMGAGx50() */
     }
     if (pMga->FBDev) {
@@ -2469,7 +2467,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
      * driver and if the driver doesn't provide code to set them.  They
      * are not pre-initialised at all.
      */
-    MGA_NOT_HAL(xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V));
+    xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V);
 
     /* Set the current mode to the first in the list */
     pScrn->currentMode = pScrn->modes;
@@ -2897,7 +2895,7 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
    }
 #endif
 
-    MGA_NOT_HAL((*pMga->Restore)(pScrn, vgaReg, mgaReg, FALSE));
+    (*pMga->Restore)(pScrn, vgaReg, mgaReg, FALSE);
 
     MGAStormSync(pScrn);
     MGAStormEngineInit(pScrn);
@@ -2986,21 +2984,19 @@ MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         }
         else
         {
-            MGA_NOT_HAL(
-                xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Clock           == %d\n",   mode->Clock);
-                xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BitsPerPixel    == %d\n",   pScrn->bitsPerPixel);
-                OUTREG8(0x1FDE, 0x06);
-	            if (pMga->reg_1e24 >= 0x01)
-                {
-		            OUTREG8(0x1FDF, 0x03);
-                    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "HiPriLvl        == 03\n");
-                }
-	            else 
-                {
-		            OUTREG8(0x1FDF, 0x14);
-                    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "HiPriLvl        == 14h\n");
-                }
-            );
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Clock           == %d\n",   mode->Clock);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BitsPerPixel    == %d\n",   pScrn->bitsPerPixel);
+            OUTREG8(0x1FDE, 0x06);
+            if (pMga->reg_1e24 >= 0x01)
+            {
+                OUTREG8(0x1FDF, 0x03);
+                xf86DrvMsg(pScrn->scrnIndex, X_INFO, "HiPriLvl        == 03\n");
+            }
+            else
+            {
+                OUTREG8(0x1FDF, 0x14);
+                xf86DrvMsg(pScrn->scrnIndex, X_INFO, "HiPriLvl        == 14h\n");
+            }
         }
     }
 
@@ -3548,7 +3544,7 @@ MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
         /* wanted to improve panning granularity problems without risking
          * compatibility issues. Existing code looked hardware dependent.
          */
-    MGA_NOT_HAL(
+
         if(pMga->ShowCache && y && pScrn->vtSema)
             y += pScrn->virtualY - 1;
             
@@ -3581,8 +3577,6 @@ MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
         OUTREG8(MGAREG_CRTCEXT_INDEX, 0x00);
         tmp = INREG8(MGAREG_CRTCEXT_DATA);
         OUTREG8(MGAREG_CRTCEXT_DATA, (tmp & 0xF0) | ((Base & 0x0F0000) >> 16));
-    );
-
 }
 
 void
@@ -3595,20 +3589,19 @@ MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS_DECL)
 
     pMga = MGAPTR(pScrn);
     pLayout = &pMga->CurrentLayout;
-    MGA_NOT_HAL(
-        if(pMga->ShowCache && y && pScrn->vtSema)
-            y += pScrn->virtualY - 1;
 
-        /* 3-85 c2offset
-            * 3-93 c2startadd0
-            * 3-96 c2vcount
-            */
+    if(pMga->ShowCache && y && pScrn->vtSema)
+        y += pScrn->virtualY - 1;
 
-        Base = (y * pLayout->displayWidth + x) * pLayout->bitsPerPixel >> 3;
-        Base += pMga->DstOrg;
-        Base &= 0x01ffffc0;
-        OUTREG(MGAREG_C2STARTADD0, Base);
-    );
+    /* 3-85 c2offset
+     * 3-93 c2startadd0
+     * 3-96 c2vcount
+     */
+
+    Base = (y * pLayout->displayWidth + x) * pLayout->bitsPerPixel >> 3;
+    Base += pMga->DstOrg;
+    Base &= 0x01ffffc0;
+    OUTREG(MGAREG_C2STARTADD0, Base);
 }
 
 /*

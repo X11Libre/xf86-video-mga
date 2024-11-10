@@ -74,8 +74,6 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 #define CHECK_DMA_QUIESCENT(pMGA, pScrn)
 #endif
 
-#define MGA_NOT_HAL(x) { x; }
-
 #define MGAISGx50(x) ((x)->is_Gx50)
 
 #define MGA_DH_NEEDS_HAL(x) (((x)->Chipset == PCI_CHIP_MGAG400) && \

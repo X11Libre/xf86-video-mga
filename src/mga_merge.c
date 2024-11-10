@@ -562,7 +562,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
      * driver and if the driver doesn't provide code to set them.  They
      * are not pre-initialised at all.
      */
-    MGA_NOT_HAL(xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V));
+    xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V);
 
     /* Set the current mode to the first in the list */
     pScrn->currentMode = pScrn->modes;
