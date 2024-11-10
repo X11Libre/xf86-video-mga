@@ -72,26 +72,6 @@ static __inline__ CARD16 get_u16( const CARD8 * data )
 
 
 /**
- * Read a little-endian, unaligned data value and return as 32-bit.
- */
-static __inline__ CARD32 get_u32( const CARD8 * data )
-{
-    CARD32 temp;
-
-
-    temp = data[3];
-    temp <<= 8;
-    temp += data[2];
-    temp <<= 8;
-    temp += data[1];
-    temp <<= 8;
-    temp += data[0];
-
-    return temp;
-}
-
-
-/**
  * Parse version 0x01XX of the BIOS PInS structure.
  * 
  * Version 0x01XX of the BIOS PInS structure is only found in Millennium cards.
