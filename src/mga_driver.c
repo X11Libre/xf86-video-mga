@@ -1858,7 +1858,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	    return FALSE;
 	} else {
 	    /* XXX check that weight returned is supported */
-            ;
         }
     }
 
@@ -2610,7 +2609,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     
     if(pMga->MergedFB) {
         MGAPreInitMergedFB(pScrn,flags);
-    };
+    }
 
     
     xf86SetPrimInitDone(pScrn->entityList[0]);

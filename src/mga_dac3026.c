@@ -293,7 +293,7 @@ MGATi3026SetMCLK( ScrnInfoPtr pScrn, long f_out )
 	
 	/* Wait for PCLK PLL to lock on frequency */
 	while (( inTi3026( TVP3026_PIX_CLK_DATA ) & 0x40 ) == 0 ) {
-		;
+
 	}
 	
 	/* Output PCLK on MCLK pin */
@@ -313,7 +313,7 @@ MGATi3026SetMCLK( ScrnInfoPtr pScrn, long f_out )
 	
 	/* Wait for MCLK PLL to lock on frequency */
 	while (( inTi3026( TVP3026_MEM_CLK_DATA ) & 0x40 ) == 0 ) {
-		;
+
 	}
 
 	/* Output MCLK PLL on MCLK pin */
@@ -332,7 +332,7 @@ MGATi3026SetMCLK( ScrnInfoPtr pScrn, long f_out )
 	
 	/* Wait for PCLK PLL to lock on frequency */
 	while (( inTi3026( TVP3026_PIX_CLK_DATA ) & 0x40 ) == 0 ) {
-		;
+
 	}
 }
 
