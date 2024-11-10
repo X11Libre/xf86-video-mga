@@ -65,13 +65,13 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 	OUTREG(MGAREG_CXBNDRY, 0xFFFF0000); }
 
 #ifdef MGADRI
-#define CHECK_DMA_QUIESCENT(pMGA, pScrn) {	\
+#define CHECK_DMA_QUIESCENT(pMGA, pScrn) do {	\
    if (!pMGA->haveQuiescense) {			\
       pMGA->GetQuiescence( pScrn );		\
    }						\
-}
+} while (0)
 #else
-#define CHECK_DMA_QUIESCENT(pMGA, pScrn)
+#define CHECK_DMA_QUIESCENT(pMGA, pScrn) do { } while (0)
 #endif
 
 #define MGAISGx50(x) ((x)->is_Gx50)
