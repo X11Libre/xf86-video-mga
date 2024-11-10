@@ -664,16 +664,16 @@ InRegion(int x, int y, region r) {
 }
 
 
-#define BOUND(test,low,hi) { \
+#define BOUND(test,low,hi) do { \
     if(test < low) test = low; \
-    if(test > hi) test = hi; }
-#define REBOUND(low,hi,test) { \
+    if(test > hi) test = hi; } while (0)
+#define REBOUND(low,hi,test) do { \
     if(test < low) { \
         hi += test-low; \
         low = test; } \
     if(test > hi) { \
         low += test-hi; \
-        hi = test; } }
+        hi = test; } } while (0)
  void 
 MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
 {
