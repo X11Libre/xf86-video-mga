@@ -29,14 +29,15 @@ while(INREG(MGAREG_DWGSYNC) != MGA_SYNC_XTAG) ; \
 
 #define MGAISBUSY() (INREG8(MGAREG_Status + 2) & 0x01)
 
-#define WAITFIFO(cnt) \
+#define WAITFIFO(cnt) do { \
    if(!pMga->UsePCIRetry) {\
 	register int n = cnt; \
 	if(n > pMga->FifoSize) n = pMga->FifoSize; \
 	while(pMga->fifoCount < (n))\
 	    pMga->fifoCount = INREG8(MGAREG_FIFOSTATUS);\
 	pMga->fifoCount -= n;\
-   }
+   } \
+} while (0)
 
 #define XYADDRESS(x,y) \
     ((y) * pMga->CurrentLayout.displayWidth + (x) + pMga->YDstOrg)
