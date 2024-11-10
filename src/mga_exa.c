@@ -53,10 +53,10 @@
 #endif
 
 #define PMGA(x) \
-    MGAPtr pMga = xf86ScreenToScrn(x->drawable.pScreen)->driverPrivate;
+    MGAPtr pMga = xf86ScreenToScrn(x->drawable.pScreen)->driverPrivate
 
 #define QUIESCE_DMA(x) \
-    CHECK_DMA_QUIESCENT(pMga, xf86ScreenToScrn(x->drawable.pScreen));
+    CHECK_DMA_QUIESCENT(pMga, xf86ScreenToScrn(x->drawable.pScreen))
 
 /* stuff stolen from mga_storm.c */
 #define BLIT_LEFT   1
