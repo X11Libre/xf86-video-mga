@@ -233,7 +233,7 @@ Offset  Type      Description
                   15       Primary hardware detect
                            0 = hardware detection is off
                            1 = use hardware detection to determine main output
-                           
+
                   Display info values:
                   0000     None
                   0001     HD15

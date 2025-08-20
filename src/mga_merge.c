@@ -33,7 +33,7 @@ StrToRanges(range* r, const char* s) {
                     gotdash = nextdash;
                     nextdash = FALSE;
                  }
-  
+
                 break;
             case '-':
             case ' ': case 0:
@@ -51,12 +51,12 @@ StrToRanges(range* r, const char* s) {
                     nextdash = (rangenum != 0); /*ignore dash if before any number.*/
                 break;
             default :
-                return 0;        
+                return 0;
         }
     } while(*(s++) != 0); /* run loop for every char including null terminator.*/
-       
+
     return rangenum;
-}            
+}
 
 
 /* Copies mode i, links the result to dest, and returns it.
@@ -75,14 +75,14 @@ CopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest, DisplayModePtr i, DisplayM
     ((MergedDisplayModePtr)mode->Private)->Monitor2 = j;
     ((MergedDisplayModePtr)mode->Private)->Monitor2Pos = srel;
     mode->PrivSize = 0;
-    
+
         switch(srel) {
-            case mgaLeftOf: 
+            case mgaLeftOf:
             case mgaRightOf:
                 dx = min(pScrn->virtualX,i->HDisplay + j->HDisplay) -  mode->HDisplay;
                 dy = min(pScrn->virtualY,  max(i->VDisplay,j->VDisplay)) - mode->VDisplay;
                 break;
-            case mgaAbove: 
+            case mgaAbove:
             case mgaBelow:
                 dy = min(pScrn->virtualY,i->VDisplay + j->VDisplay) - mode->VDisplay;
                 dx = min(pScrn->virtualX, max(i->HDisplay,j->HDisplay)) - mode->HDisplay;
@@ -101,17 +101,17 @@ CopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest, DisplayModePtr i, DisplayM
     mode->VSyncEnd += dy;
     mode->VTotal += dy;
     mode->Clock = 0; /* Shows we're in Merge mode. */
-   
+
     mode->next = mode;
     mode->prev = mode;
 
     if(dest) {
         /* Insert node after "dest" */
-        mode->next = dest->next; 
+        mode->next = dest->next;
         dest->next->prev = mode;
         mode->prev = dest;
         dest->next = mode;
-    } 
+    }
 
     return mode;
 }
@@ -136,7 +136,7 @@ GenerateModeList(ScrnInfoPtr pScrn, const char* str,
     char modename[256];
     Bool gotdash = FALSE;
     MgaScrn2Rel sr;
-    
+
     DisplayModePtr mode1 = NULL;
     DisplayModePtr mode2 = NULL;
     DisplayModePtr result = NULL;
@@ -151,7 +151,7 @@ GenerateModeList(ScrnInfoPtr pScrn, const char* str,
                     /* read new entry */
                     strncpy(modename,strmode,str - strmode);
                     modename[str - strmode] = 0;
-                    
+
                     if(gotdash) {
                         if(mode1 == NULL) return NULL;
                         mode2 = GetModeFromName(modename,j);
@@ -161,7 +161,7 @@ GenerateModeList(ScrnInfoPtr pScrn, const char* str,
                             xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
                                 "Skipping metamode \"%s-%s\".\n",mode1->name,modename);
                             mode1 = NULL;
-                        } 
+                        }
                     } else {
                         mode1 = GetModeFromName(modename,i);
                         if(!mode1) {
@@ -183,25 +183,25 @@ GenerateModeList(ScrnInfoPtr pScrn, const char* str,
                             xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
                                 "Skipping metamode \"%s\".\n",modename);
                             mode1 = NULL;
-                        } 
+                        }
                     }
                     gotdash = FALSE;
                 }
                 strmode = str+1; /* number starts on next char */
                 gotdash |= (*str == '-' || *str == ',');
-                
+
                 if(*str != 0) break; /* if end of string, we won't get a chance to catch a char and run the
                                         default case. do it now */
-                
+
             default:
                 if(!gotdash && mode1) { /* complete previous pair */
                     sr = srel;
-                    if(!mode2) { 
+                    if(!mode2) {
                         mode2 = GetModeFromName(mode1->name,j);
                         sr = mgaClone;
                     }
-                    if(!mode2) { 
-                        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, 
+                    if(!mode2) {
+                        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
                             "Mode: \"%s\" is not a supported mode for monitor 2\n",mode1->name);
                         xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
                             "Skipping clone mode \"%s\".\n", mode1->name);
@@ -213,15 +213,15 @@ GenerateModeList(ScrnInfoPtr pScrn, const char* str,
                     }
                 }
                 break;
-                
+
         }
     } while(*(str++) != 0);
     return result;
 }
-    
+
 
 /* second CRTC init functions. Used to check monitor timings and refreshes.
- * this function looses lots of maintainability points due to redundancy, 
+ * this function looses lots of maintainability points due to redundancy,
  * but it still was the cleanest and least-intrusive way I found. */
 
 Bool
@@ -239,8 +239,8 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     xf86DrvMsg(pScrn1->scrnIndex, X_INFO, "==== Start of second screen initialization ====\n");
     pScrn = malloc(sizeof(ScrnInfoRec));
     memcpy(pScrn,pScrn1,sizeof(ScrnInfoRec));
-   
-    pScrn->driverPrivate = NULL; 
+
+    pScrn->driverPrivate = NULL;
     /* Allocate the MGARec driverPrivate */
     if (!MGAGetRec(pScrn)) {
 	return FALSE;
@@ -249,13 +249,13 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     pMga = MGAPTR(pScrn);
     pMga1 = MGAPTR(pScrn1);
     pMga1->pScrn2 = pScrn;
-  
+
     /* Get the entity, and make sure it is PCI. */
     pMga->pEnt = pMga1->pEnt;
-    
+
     /* Set pMga->device to the relevant Device section */
     pMga->device = pMga1->device;
-    
+
     if (flags & PROBE_DETECT) {
 	MGAProbeDDC(pScrn, pMga->pEnt->index); /*FIXME make sure this probes second monitor */
 	return TRUE;
@@ -271,24 +271,24 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
         pScrn->monitor = malloc(sizeof(MonRec));
         /* copy everything we don't care about */
         memcpy(pScrn->monitor,pScrn1->monitor,sizeof(MonRec));
-        pScrn->monitor->DDC = NULL;   /*FIXME:have to try this */ 
-        if ((s = xf86GetOptValString(pMga1->Options, OPTION_HSYNC2))) { 
+        pScrn->monitor->DDC = NULL;   /*FIXME:have to try this */
+        if ((s = xf86GetOptValString(pMga1->Options, OPTION_HSYNC2))) {
             pScrn->monitor->nHsync = StrToRanges(pScrn->monitor->hsync,s);
         }
-        if ((s = xf86GetOptValString(pMga1->Options, OPTION_VREFRESH2))) { 
+        if ((s = xf86GetOptValString(pMga1->Options, OPTION_VREFRESH2))) {
             pScrn->monitor->nVrefresh = StrToRanges(pScrn->monitor->vrefresh,s);
         }
-    
-    
-    
+
+
+
    }
-  
+
     pMga->SecondCrtc = TRUE;
     pMga->HWCursor = FALSE;
     pScrn->AdjustFrame = MGAAdjustMergeFrames;
     pScrn1->AdjustFrame = MGAAdjustMergeFrames;
-    
-/*    if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24))   FIXME:have to copy result form scrn1 
+
+/*    if (!xf86SetDepthBpp(pScrn, 0, 0, 0, flags24))   FIXME:have to copy result form scrn1
   if (!xf86SetWeight(pScrn, zeros, zeros)) {
 */
 
@@ -301,7 +301,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 /*   xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pMga->Options);*/
     pMga->Options = pMga1->Options;
 
-    
+
     /* Set the bits per RGB for 8bpp mode */
     if (pScrn->depth == 8)
 	pScrn->rgbBits = 8;
@@ -332,7 +332,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     pMga->HWCursor = FALSE;
     pMga->ShadowFB = FALSE;
     pMga->FBDev = FALSE;
-    
+
     pMga->OverclockMem = pMga1->OverclockMem;
     pMga->TexturedVideo = pMga1->TexturedVideo;
     pMga->MergedFB = TRUE;
@@ -388,7 +388,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
     if ( (!pMga->Primary && !pMga->FBDev) )
         MGASoftReset(pScrn);
 
-    
+
     pScrn->videoRam = pScrn1->videoRam;
     pMga->FbMapSize = pMga1->FbMapSize;
     pMga->SrcOrg = pMga1->SrcOrg;
@@ -507,10 +507,10 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	case PCI_CHIP_MGAG200_SE_A_PCI:
 	case PCI_CHIP_MGAG200_SE_B_PCI:
         case PCI_CHIP_MGAG200_WINBOND_PCI:
-	case PCI_CHIP_MGAG200_EW3_PCI:		
+	case PCI_CHIP_MGAG200_EW3_PCI:
         case PCI_CHIP_MGAG200_EV_PCI:
         case PCI_CHIP_MGAG200_EH_PCI:
-	case PCI_CHIP_MGAG200_ER_PCI:		
+	case PCI_CHIP_MGAG200_ER_PCI:
 	case PCI_CHIP_MGAG200_EH3_PCI:
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
@@ -529,7 +529,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 			      pScrn->display->virtualY,
 			      pMga->FbMapSize,
 			      LOOKUP_BEST_REFRESH);
-        
+
 	free(linePitches);
     }
 
@@ -582,7 +582,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
      * This is only needed for WRAM.
      */
 
-    pMga->YDstOrg = pMga1->YDstOrg; 
+    pMga->YDstOrg = pMga1->YDstOrg;
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2, "CRTC2: YDstOrg is set to %d\n",
 		   pMga->YDstOrg);
     pMga->FbUsableSize = pMga1->FbUsableSize;
@@ -621,7 +621,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
             default:
                 Monitor2Pos = mgaRightOf;
                 break;
-        } 
+        }
     }
 
     /* Fool xf86 into thinking we have huge modes */
@@ -635,7 +635,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Parse Error reading MetaModes, or No modes left.\n");
             return FALSE;
         }
-            
+
         pScrn1->modes = pScrn1->modes->next;
         pScrn1->currentMode = pScrn1->modes;
     } else {
@@ -674,7 +674,7 @@ InRegion(int x, int y, region r) {
     if(test > hi) { \
         low += test-hi; \
         hi = test; } } while (0)
- void 
+ void
 MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
 {
   SCRN_INFO_PTR(arg);
@@ -702,37 +702,37 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
   out.y0 = pScrn->frameY0;
   out.y1 = pScrn->frameY1+1;
 
-  /* 
+  /*
    * specify inner sliding window. being outsize both frames, and inside
    * the outer clipping window, causes corresponding frame to slide
    */
   in1 = out;
   in2 = out;
   switch(((MergedDisplayModePtr)pScrn->currentMode->Private)->Monitor2Pos) {
-      case mgaLeftOf : 
-          in1.x0 = f1.x0; 
-          in2.x1 = f2.x1; 
+      case mgaLeftOf :
+          in1.x0 = f1.x0;
+          in2.x1 = f2.x1;
           break;
-      case mgaRightOf : 
-          in1.x1 = f1.x1; 
-          in2.x0 = f2.x0; 
+      case mgaRightOf :
+          in1.x1 = f1.x1;
+          in2.x0 = f2.x0;
           break;
-      case mgaBelow : 
-          in1.y1 = f1.y1; 
-          in2.y0 = f2.y0; 
+      case mgaBelow :
+          in1.y1 = f1.y1;
+          in2.y0 = f2.y0;
           break;
-      case mgaAbove : 
-          in1.y0 = f1.y0; 
-          in2.y1 = f2.y1; 
+      case mgaAbove :
+          in1.y0 = f1.y0;
+          in2.y1 = f2.y1;
           break;
-      case mgaClone : 
+      case mgaClone :
           break;
       }
 
-  
+
     deltay = 0;
     deltax = 0;
-  
+
     if(InRegion(x,y,out)) {
         if( InRegion(x,y, in1) && !InRegion(x,y, f1) ) {
             REBOUND(f1.x0,f1.x1,x);
@@ -746,10 +746,10 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
         }
     }
     else {  /*outside outer clipping region*/
-        if ( out.x0 > x) { 
+        if ( out.x0 > x) {
             deltax = x - out.x0;
         }
-        if ( out.x1 < x) { 
+        if ( out.x1 < x) {
             deltax = x - out.x1;
         }
         f1.x0 += deltax;
@@ -758,12 +758,12 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
         f2.x1 += deltax;
         pScrn->frameX0 += deltax;
         pScrn->frameX1 += deltax;
-        
 
-        if ( out.y0 > y) { 
+
+        if ( out.y0 > y) {
             deltay = y - out.y0;
         }
-        if ( out.y1 < y) { 
+        if ( out.y1 < y) {
             deltay = y - out.y1;
         }
         f1.y0 += deltay;
@@ -772,12 +772,12 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
         f2.y1 += deltay;
         pScrn->frameY0 += deltay;
         pScrn->frameY1 += deltay;
-    } 
+    }
 
-    
+
     if (deltax != 0 || deltay != 0) {
         /* back to reality. */
-        pMga->M1frameX0 = f1.x0; 
+        pMga->M1frameX0 = f1.x0;
         pMga->M1frameY0 = f1.y0;
         pScr2->frameX0 = f2.x0;
         pScr2->frameY0 = f2.y0;
@@ -786,37 +786,37 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
         MGAAdjustGranularity(pScrn,&pMga->M1frameX0,&pMga->M1frameY0);
         MGAAdjustGranularity(pScrn,&pScr2->frameX0,&pScr2->frameY0);
         MGAAdjustGranularity(pScrn,&pScrn->frameX0,&pScrn->frameY0);
-        
+
         pMga->M1frameX1 = pMga->M1frameX0 + MDMPTR(pScrn)->Monitor1->HDisplay -1;
         pMga->M1frameY1 = pMga->M1frameY0 + MDMPTR(pScrn)->Monitor1->VDisplay -1;
         pScr2->frameX1 = pScr2->frameX0 + MDMPTR(pScrn)->Monitor2->HDisplay -1;
         pScr2->frameY1 = pScr2->frameY0 + MDMPTR(pScrn)->Monitor2->VDisplay -1;
         pScrn->frameX1 = pScrn->frameX0 + pScrn->currentMode->HDisplay -1;
         pScrn->frameY1 = pScrn->frameY0 + pScrn->currentMode->VDisplay -1;
-        
+
         MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pMga->M1frameX0, pMga->M1frameY0));
         MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS(pScrn, pScr2->frameX0, pScr2->frameY0));
     }
 
-/*  if(pMga->PointerMoved)  
+/*  if(pMga->PointerMoved)
       (*pMga->PointerMoved)(scrnIndex, x, y);  FIXME: do I need to call old func?*/
 
 }
 
-   
+
 void
 MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL) {
     SCRN_INFO_PTR(arg);
     ScrnInfoPtr pScrn1 = pScrn;
-    MGAPtr pMga = MGAPTR(pScrn1); 
+    MGAPtr pMga = MGAPTR(pScrn1);
     ScrnInfoPtr pScrn2 = pMga->pScrn2;
-    int VTotal = pScrn1->currentMode->VDisplay; 
-    int HTotal = pScrn1->currentMode->HDisplay; 
+    int VTotal = pScrn1->currentMode->VDisplay;
+    int HTotal = pScrn1->currentMode->HDisplay;
     int VMax = VTotal;
     int HMax = HTotal;
 
     BOUND(x,0,pScrn1->virtualX-HTotal);
-    BOUND(y,0,pScrn1->virtualY-VTotal); 
+    BOUND(y,0,pScrn1->virtualY-VTotal);
     switch(MDMPTR(pScrn1)->Monitor2Pos) {
         case mgaLeftOf:
             pScrn2->frameX0 = x;
@@ -854,15 +854,15 @@ MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL) {
     BOUND(pMga->M1frameY0,0,pScrn1->virtualY -MDMPTR(pScrn1)->Monitor1->VDisplay);
     BOUND(pScrn2->frameX0,0,pScrn2->virtualX -MDMPTR(pScrn1)->Monitor2->HDisplay);
     BOUND(pScrn2->frameY0,0,pScrn2->virtualY -MDMPTR(pScrn1)->Monitor2->VDisplay);
-    
+
     pScrn1->frameX0 = x;
     pScrn1->frameY0 = y;
-    
+
     /* check granularity */
     MGAAdjustGranularity(pScrn1,&pMga->M1frameX0,&pMga->M1frameY0);
     MGAAdjustGranularity(pScrn1,&pScrn2->frameX0,&pScrn2->frameY0);
     MGAAdjustGranularity(pScrn1,&pScrn1->frameX0,&pScrn1->frameY0);
-    
+
     /* complete shitty redundant info */
     pMga->M1frameX1 = pMga->M1frameX0 + MDMPTR(pScrn1)->Monitor1->HDisplay -1;
     pMga->M1frameY1 = pMga->M1frameY0 + MDMPTR(pScrn1)->Monitor1->VDisplay -1;
@@ -879,7 +879,7 @@ MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL) {
 Bool
 MGACloseScreenMerged(ScreenPtr pScreen) {
     ScrnInfoPtr pScrn1 = xf86ScreenToScrn(pScreen);
-    MGAPtr pMga = MGAPTR(pScrn1); 
+    MGAPtr pMga = MGAPTR(pScrn1);
     ScrnInfoPtr pScrn2 = pMga->pScrn2;
 
     if(pScrn2) {
@@ -893,27 +893,27 @@ MGACloseScreenMerged(ScreenPtr pScreen) {
     if(pScrn1->modes) {
         pScrn1->currentMode = pScrn1->modes;
         do {
-            DisplayModePtr p = pScrn1->currentMode->next; 
+            DisplayModePtr p = pScrn1->currentMode->next;
             free(pScrn1->currentMode->Private);
             free(pScrn1->currentMode);
             pScrn1->currentMode = p;
         }while( pScrn1->currentMode != pScrn1->modes);
     }
- 
+
     pScrn1->currentMode = pMga->M1currentMode;
     pScrn1->modes = pMga->M1modes;
-        
-    return TRUE;       
+
+    return TRUE;
 }
 
 Bool
 MGASaveScreenMerged(ScreenPtr pScreen, int mode)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
-    MGAPtr pMga = MGAPTR(pScrn); 
+    MGAPtr pMga = MGAPTR(pScrn);
     BOOL on = xf86IsUnblank(mode);
     CARD8 reg;
-    
+
     if (on) {
 /*        SetTimdeSinceLastInputEvent();*/
 

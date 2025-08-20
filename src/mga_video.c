@@ -40,12 +40,12 @@ static int  MGASetPortAttributeTexture(ScrnInfoPtr, Atom, INT32, pointer);
 static int  MGAGetPortAttributeTexture(ScrnInfoPtr, Atom ,INT32 *, pointer);
 
 static void MGAStopVideo(ScrnInfoPtr, pointer, Bool);
-static void MGAQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short, 
+static void MGAQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			unsigned int *, unsigned int *, pointer);
-static int  MGAPutImage(ScrnInfoPtr, short, short, short, short, short, 
-			short, short, short, int, unsigned char*, short, 
+static int  MGAPutImage(ScrnInfoPtr, short, short, short, short, short,
+			short, short, short, int, unsigned char*, short,
 			short, Bool, RegionPtr, pointer, DrawablePtr);
-static int  MGAQueryImageAttributes(ScrnInfoPtr, int, unsigned short *, 
+static int  MGAQueryImageAttributes(ScrnInfoPtr, int, unsigned short *,
 			unsigned short *,  int *, int *);
 static void MGAFreeMemory(ScrnInfoPtr pScrn, void *mem_struct);
 
@@ -54,7 +54,7 @@ static void MGAResetVideoOverlay(ScrnInfoPtr);
 static void MGAVideoTimerCallback(ScrnInfoPtr pScrn, Time time);
 
 static XF86VideoAdaptorPtr MGASetupImageVideoILOAD(ScreenPtr);
-static int MGAPutImageILOAD(ScrnInfoPtr, short, short, short, short, short, 
+static int MGAPutImageILOAD(ScrnInfoPtr, short, short, short, short, short,
 			    short, short, short, int, unsigned char*, short,
 			    short, Bool, RegionPtr, pointer, DrawablePtr);
 
@@ -86,23 +86,23 @@ void MGAInitVideo(ScreenPtr pScreen)
     if ((pScrn->bitsPerPixel != 8) && !pMga->NoAccel &&
 	(pMga->SecondCrtc == FALSE) &&
 	((pMga->Chipset == PCI_CHIP_MGA2164) ||
-	 (pMga->Chipset == PCI_CHIP_MGA2164_AGP) ||     
+	 (pMga->Chipset == PCI_CHIP_MGA2164_AGP) ||
 /*	 (pMga->Chipset == PCI_CHIP_MGA2064) ||     */
-	 (pMga->Chipset == PCI_CHIP_MGAG200) ||     
+	 (pMga->Chipset == PCI_CHIP_MGAG200) ||
 	 (pMga->Chipset == PCI_CHIP_MGAG200_PCI) ||
 	 (pMga->Chipset == PCI_CHIP_MGAG400) ||
 	 (pMga->Chipset == PCI_CHIP_MGAG550))) {
 	if ((pMga->Chipset == PCI_CHIP_MGA2164) ||
-/*	    (pMga->Chipset == PCI_CHIP_MGA2064) ||   */  
+/*	    (pMga->Chipset == PCI_CHIP_MGA2064) ||   */
 	    (pMga->Chipset == PCI_CHIP_MGA2164_AGP)) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using MGA 2164W ILOAD video\n");
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		       "This is an experimental driver and may not work on your machine.\n");
 
 	    newAdaptor = MGASetupImageVideoILOAD(pScreen);
-	    pMga->TexturedVideo = TRUE; 
-	    /* ^^^ this is not really true but the ILOAD scaler shares 
-	     * much more code with the textured video than the overlay 
+	    pMga->TexturedVideo = TRUE;
+	    /* ^^^ this is not really true but the ILOAD scaler shares
+	     * much more code with the textured video than the overlay
 	     */
 	} else if (pMga->TexturedVideo && (pScrn->bitsPerPixel != 24)) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using texture video\n");
@@ -127,7 +127,7 @@ void MGAInitVideo(ScreenPtr pScreen)
 	    /* need to free this someplace */
 	    newAdaptors = malloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr *));
 	    if(newAdaptors) {
-		memcpy(newAdaptors, adaptors, num_adaptors * 
+		memcpy(newAdaptors, adaptors, num_adaptors *
 					sizeof(XF86VideoAdaptorPtr));
 		newAdaptors[num_adaptors] = newAdaptor;
 		adaptors = newAdaptors;
@@ -161,7 +161,7 @@ static XF86VideoEncodingRec DummyEncoding[2] =
 
 #define NUM_FORMATS 6
 
-static XF86VideoFormatRec Formats[NUM_FORMATS] = 
+static XF86VideoFormatRec Formats[NUM_FORMATS] =
 {
    {15, TrueColor}, {16, TrueColor}, {24, TrueColor},
    {15, DirectColor}, {16, DirectColor}, {24, DirectColor}
@@ -187,24 +187,24 @@ static XF86ImageRec Images[NUM_IMAGES] =
 	XVIMAGE_UYVY
 };
 
-static void 
-MGAResetVideoOverlay(ScrnInfoPtr pScrn) 
+static void
+MGAResetVideoOverlay(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
     MGAPortPrivPtr pPriv = pMga->portPrivate;
 
     CHECK_DMA_QUIESCENT(pMga, pScrn);
-   
+
     outMGAdac(0x51, 0x01); /* keying on */
     outMGAdac(0x52, 0xff); /* full mask */
     outMGAdac(0x53, 0xff);
     outMGAdac(0x54, 0xff);
 
-    outMGAdac(0x55, (pPriv->colorKey & pScrn->mask.red) >> 
+    outMGAdac(0x55, (pPriv->colorKey & pScrn->mask.red) >>
 		    pScrn->offset.red);
-    outMGAdac(0x56, (pPriv->colorKey & pScrn->mask.green) >> 
+    outMGAdac(0x56, (pPriv->colorKey & pScrn->mask.green) >>
 		    pScrn->offset.green);
-    outMGAdac(0x57, (pPriv->colorKey & pScrn->mask.blue) >> 
+    outMGAdac(0x57, (pPriv->colorKey & pScrn->mask.blue) >>
 		    pScrn->offset.blue);
 
     OUTREG(MGAREG_BESLUMACTL, ((pPriv->brightness & 0xff) << 16) |
@@ -224,7 +224,7 @@ MGAAllocAdaptor(ScrnInfoPtr pScrn, Bool doublebuffer)
 	return NULL;
 
     if(!(pPriv = calloc(1, sizeof(MGAPortPrivRec) +
-			(sizeof(DevUnion) * MGA_MAX_PORTS)))) 
+			(sizeof(DevUnion) * MGA_MAX_PORTS))))
     {
 	free(adapt);
 	return NULL;
@@ -238,15 +238,15 @@ MGAAllocAdaptor(ScrnInfoPtr pScrn, Bool doublebuffer)
     xvBrightness = MAKE_ATOM("XV_BRIGHTNESS");
     xvContrast   = MAKE_ATOM("XV_CONTRAST");
     xvColorKey   = MAKE_ATOM("XV_COLORKEY");
-    xvDoubleBuffer = MAKE_ATOM("XV_DOUBLE_BUFFER");   
+    xvDoubleBuffer = MAKE_ATOM("XV_DOUBLE_BUFFER");
 
     pPriv->colorKey = pMga->videoKey;
     pPriv->videoStatus = 0;
     pPriv->brightness = 0;
     pPriv->contrast = 128;
     pPriv->lastPort = -1;
-    pPriv->doubleBuffer = doublebuffer;       
-    pPriv->currentBuffer = 0;         
+    pPriv->doubleBuffer = doublebuffer;
+    pPriv->currentBuffer = 0;
 
     pMga->adaptor = adapt;
     pMga->portPrivate = pPriv;
@@ -254,7 +254,7 @@ MGAAllocAdaptor(ScrnInfoPtr pScrn, Bool doublebuffer)
     return adapt;
 }
 
-static XF86VideoAdaptorPtr 
+static XF86VideoAdaptorPtr
 MGASetupImageVideoOverlay(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
@@ -274,7 +274,7 @@ MGASetupImageVideoOverlay(ScreenPtr pScreen)
     adapt->pFormats = Formats;
     adapt->nPorts = 1;
     adapt->pAttributes = Attributes;
-    if (pMga->Chipset == PCI_CHIP_MGAG400 || 
+    if (pMga->Chipset == PCI_CHIP_MGAG400 ||
 	pMga->Chipset == PCI_CHIP_MGAG550) {
 	adapt->nImages = 4;
 	adapt->nAttributes = 4;
@@ -303,7 +303,7 @@ MGASetupImageVideoOverlay(ScreenPtr pScreen)
 }
 
 
-static XF86VideoAdaptorPtr 
+static XF86VideoAdaptorPtr
 MGASetupImageVideoTexture(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
@@ -345,7 +345,7 @@ MGASetupImageVideoTexture(ScreenPtr pScreen)
 }
 
 
-static void 
+static void
 MGAStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 {
   MGAPtr pMga = MGAPTR(pScrn);
@@ -353,7 +353,7 @@ MGAStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 
   if(pMga->TexturedVideo) return;
 
-  REGION_EMPTY(pScrn->pScreen, &pPriv->clip);   
+  REGION_EMPTY(pScrn->pScreen, &pPriv->clip);
 
   if(shutdown) {
      if(pPriv->videoStatus & CLIENT_VIDEO_ON)
@@ -366,16 +366,16 @@ MGAStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
   } else {
      if(pPriv->videoStatus & CLIENT_VIDEO_ON) {
 	pPriv->videoStatus |= OFF_TIMER;
-	pPriv->offTime = currentTime.milliseconds + OFF_DELAY; 
+	pPriv->offTime = currentTime.milliseconds + OFF_DELAY;
      }
   }
 }
 
-static int 
+static int
 MGASetPortAttributeOverlay(
-  ScrnInfoPtr pScrn, 
+  ScrnInfoPtr pScrn,
   Atom attribute,
-  INT32 value, 
+  INT32 value,
   pointer data
 ){
   MGAPtr pMga = MGAPTR(pScrn);
@@ -399,28 +399,28 @@ MGASetPortAttributeOverlay(
   } else
   if(attribute == xvColorKey) {
 	pPriv->colorKey = value;
-	outMGAdac(0x55, (pPriv->colorKey & pScrn->mask.red) >> 
+	outMGAdac(0x55, (pPriv->colorKey & pScrn->mask.red) >>
 		    pScrn->offset.red);
-	outMGAdac(0x56, (pPriv->colorKey & pScrn->mask.green) >> 
+	outMGAdac(0x56, (pPriv->colorKey & pScrn->mask.green) >>
 		    pScrn->offset.green);
-	outMGAdac(0x57, (pPriv->colorKey & pScrn->mask.blue) >> 
+	outMGAdac(0x57, (pPriv->colorKey & pScrn->mask.blue) >>
 		    pScrn->offset.blue);
-	REGION_EMPTY(pScrn->pScreen, &pPriv->clip);   
+	REGION_EMPTY(pScrn->pScreen, &pPriv->clip);
   } else
   if(attribute == xvDoubleBuffer) {
 	if((value < 0) || (value > 1))
           return BadValue;
-	pPriv->doubleBuffer = value;  
+	pPriv->doubleBuffer = value;
   } else return BadMatch;
 
   return Success;
 }
 
-static int 
+static int
 MGAGetPortAttributeOverlay(
-  ScrnInfoPtr pScrn, 
+  ScrnInfoPtr pScrn,
   Atom attribute,
-  INT32 *value, 
+  INT32 *value,
   pointer data
 ){
   MGAPtr pMga = MGAPTR(pScrn);
@@ -443,38 +443,38 @@ MGAGetPortAttributeOverlay(
 }
 
 
-static int 
+static int
 MGASetPortAttributeTexture(
-  ScrnInfoPtr pScrn, 
+  ScrnInfoPtr pScrn,
   Atom attribute,
-  INT32 value, 
+  INT32 value,
   pointer data
 ) {
   return BadMatch;
 }
 
 
-static int 
+static int
 MGAGetPortAttributeTexture(
-  ScrnInfoPtr pScrn, 
+  ScrnInfoPtr pScrn,
   Atom attribute,
-  INT32 *value, 
+  INT32 *value,
   pointer data
 ){
   return BadMatch;
 }
 
-static void 
+static void
 MGAQueryBestSize(
-  ScrnInfoPtr pScrn, 
+  ScrnInfoPtr pScrn,
   Bool motion,
-  short vid_w, short vid_h, 
-  short drw_w, short drw_h, 
-  unsigned int *p_w, unsigned int *p_h, 
+  short vid_w, short vid_h,
+  short drw_w, short drw_h,
+  unsigned int *p_w, unsigned int *p_h,
   pointer data
 ){
   *p_w = drw_w;
-  *p_h = drw_h; 
+  *p_h = drw_h;
 }
 
 
@@ -610,7 +610,7 @@ MGADisplayVideoOverlay(
     int id,
     int offset,
     short width, short height,
-    int pitch, 
+    int pitch,
     int x1, int y1, int x2, int y2,
     BoxPtr dstBox,
     short src_w, short src_h,
@@ -656,16 +656,16 @@ MGADisplayVideoOverlay(
 
     if(y1 & 0x00010000)
 	OUTREG(MGAREG_BESCTL, 0x00040c41);
-    else 
+    else
 	OUTREG(MGAREG_BESCTL, 0x00040c01);
- 
+
     OUTREG(MGAREG_BESHCOORD, (dstBox->x1 << 16) | (dstBox->x2 - 1));
     OUTREG(MGAREG_BESVCOORD, (dstBox->y1 << 16) | (dstBox->y2 - 1));
 
     OUTREG(MGAREG_BESHSRCST, x1 & 0x03fffffc);
     OUTREG(MGAREG_BESHSRCEND, (x2 - 0x00010000) & 0x03fffffc);
     OUTREG(MGAREG_BESHSRCLST, (width - 1) << 16);
-   
+
     OUTREG(MGAREG_BESPITCH, pitch >> 1);
 
     OUTREG(MGAREG_BESV1WGHT, y1 & 0x0000fffc);
@@ -706,16 +706,16 @@ MGADisplayVideoTexture(
 ){
     MGAPtr pMga = MGAPTR(pScrn);
     int log2w = 0, log2h = 0, i, incx, incy, padw, padh;
-    
+
     pitch >>= 1;
 
     i = 12;
     while(--i) {
 	if(width & (1 << i)) {
 	    log2w = i;
-	    if(width & ((1 << i) - 1)) 
+	    if(width & ((1 << i) - 1))
 		log2w++;
-	    break;		
+	    break;
 	}
     }
 
@@ -723,9 +723,9 @@ MGADisplayVideoTexture(
     while(--i) {
 	if(height & (1 << i)) {
 	    log2h = i;
-	    if(height & ((1 << i) - 1)) 
-		log2h++;		
-	    break;		
+	    if(height & ((1 << i) - 1))
+		log2h++;
+	    break;
 	}
     }
 
@@ -733,7 +733,7 @@ MGADisplayVideoTexture(
     padh = 1 << log2h;
     incx = (src_w << 20)/(drw_w * padw);
     incy = (src_h << 20)/(drw_h * padh);
-   
+
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
     WAITFIFO(15);
@@ -741,20 +741,20 @@ MGADisplayVideoTexture(
     OUTREG(MGAREG_TMR1, 0);  /* sy inc */
     OUTREG(MGAREG_TMR2, 0);  /* tx inc */
     OUTREG(MGAREG_TMR3, incy);  /* ty inc */
-    OUTREG(MGAREG_TMR4, 0x00000000); 
+    OUTREG(MGAREG_TMR4, 0x00000000);
     OUTREG(MGAREG_TMR5, 0x00000000);
     OUTREG(MGAREG_TMR8, 0x00010000);
     OUTREG(MGAREG_TEXORG, offset);
-    OUTREG(MGAREG_TEXWIDTH,  log2w | (((8 - log2w) & 63) << 9) | 
+    OUTREG(MGAREG_TEXWIDTH,  log2w | (((8 - log2w) & 63) << 9) |
 				((width - 1) << 18));
-    OUTREG(MGAREG_TEXHEIGHT, log2h | (((8 - log2h) & 63) << 9) | 
+    OUTREG(MGAREG_TEXHEIGHT, log2h | (((8 - log2h) & 63) << 9) |
 				((height - 1) << 18));
     if(id == FOURCC_UYVY)
 	OUTREG(MGAREG_TEXCTL, 0x1A00010b | ((pitch & 0x07FF) << 9));
     else
 	OUTREG(MGAREG_TEXCTL, 0x1A00010a | ((pitch & 0x07FF) << 9));
     OUTREG(MGAREG_TEXCTL2, 0x00000014);
-    OUTREG(MGAREG_DWGCTL, 0x000c7076);   
+    OUTREG(MGAREG_DWGCTL, 0x000c7076);
     OUTREG(MGAREG_TEXFILTER, 0x01e00020);
     OUTREG(MGAREG_ALPHACTRL, 0x00000001);
 
@@ -766,7 +766,7 @@ MGADisplayVideoTexture(
 	OUTREG(MGAREG_TMR6, (incx * (pbox->x1 - drw_x)) + padw);
 	OUTREG(MGAREG_TMR7, (incy * (pbox->y1 - drw_y)) + padh);
 	OUTREG(MGAREG_FXBNDRY, (pbox->x2 << 16) | (pbox->x1 & 0xffff));
-	OUTREG(MGAREG_YDSTLEN + MGAREG_EXEC, 
+	OUTREG(MGAREG_YDSTLEN + MGAREG_EXEC,
 				(pbox->y1 << 16) | (pbox->y2 - pbox->y1));
 	pbox++;
     }
@@ -774,15 +774,15 @@ MGADisplayVideoTexture(
     MGA_MARK_SYNC(pMga, pScrn);
 }
 
-static int 
-MGAPutImage( 
-  ScrnInfoPtr pScrn, 
-  short src_x, short src_y, 
+static int
+MGAPutImage(
+  ScrnInfoPtr pScrn,
+  short src_x, short src_y,
   short drw_x, short drw_y,
-  short src_w, short src_h, 
+  short src_w, short src_h,
   short drw_w, short drw_h,
-  int id, unsigned char* buf, 
-  short width, short height, 
+  int id, unsigned char* buf,
+  short width, short height,
   Bool Sync,
   RegionPtr clipBoxes, pointer data,
   DrawablePtr pDraw
@@ -821,7 +821,7 @@ MGAPutImage(
 
    dstPitch = ((width << 1) + 15) & ~15;
    new_size = dstPitch * height;
-   
+
    switch(id) {
    case FOURCC_YV12:
    case FOURCC_I420:
@@ -835,7 +835,7 @@ MGAPutImage(
    default:
 	srcPitch = (width << 1);
 	break;
-   }  
+   }
 
    pPriv->video_offset = MGAAllocateMemory(pScrn, &pPriv->video_memory,
 					   pPriv->doubleBuffer ?
@@ -872,7 +872,7 @@ MGAPutImage(
 	   offset3 = tmp;
 	}
 	nlines = ((((y2 + 0xffff) >> 16) + 1) & ~1) - top;
-	MGACopyMungedData(buf + (top * srcPitch) + (left >> 1), 
+	MGACopyMungedData(buf + (top * srcPitch) + (left >> 1),
 			  buf + offset2, buf + offset3, dst_start,
 			  srcPitch, srcPitch2, dstPitch, nlines, npixels);
 	break;
@@ -887,7 +887,7 @@ MGAPutImage(
 
     if(pMga->TexturedVideo) {
 	pPriv->lastPort = (long)data;
-	MGADisplayVideoTexture(pScrn, id, offset, 
+	MGADisplayVideoTexture(pScrn, id, offset,
 		REGION_NUM_RECTS(clipBoxes), REGION_RECTS(clipBoxes),
 		width, height, dstPitch, src_x, src_y, src_w, src_h,
 		drw_x, drw_y, drw_w, drw_h);
@@ -913,11 +913,11 @@ MGAPutImage(
 }
 
 
-static int 
+static int
 MGAQueryImageAttributes(
-    ScrnInfoPtr pScrn, 
-    int id, 
-    unsigned short *w, unsigned short *h, 
+    ScrnInfoPtr pScrn,
+    int id,
+    unsigned short *w, unsigned short *h,
     int *pitches, int *offsets
 ){
     MGAPtr pMga = MGAPTR(pScrn);
@@ -996,11 +996,11 @@ typedef struct {
   Bool isOn;
 } OffscreenPrivRec, * OffscreenPrivPtr;
 
-static int 
+static int
 MGAAllocateSurface(
     ScrnInfoPtr pScrn,
     int id,
-    unsigned short w, 	
+    unsigned short w,
     unsigned short h,
     XF86SurfacePtr surface
 ){
@@ -1043,7 +1043,7 @@ MGAAllocateSurface(
     pPriv->isOn = FALSE;
 
     surface->pScrn = pScrn;
-    surface->id = id;   
+    surface->id = id;
     surface->pitches[0] = pitch;
     surface->offsets[0] = offset;
     surface->devPrivate.ptr = (pointer)pPriv;
@@ -1051,7 +1051,7 @@ MGAAllocateSurface(
     return Success;
 }
 
-static int 
+static int
 MGAStopSurface(
     XF86SurfacePtr surface
 ){
@@ -1068,7 +1068,7 @@ MGAStopSurface(
 }
 
 
-static int 
+static int
 MGAFreeSurface(
     XF86SurfacePtr surface
 ){
@@ -1104,12 +1104,12 @@ MGASetSurfaceAttribute(
 }
 
 
-static int 
+static int
 MGADisplaySurface(
     XF86SurfacePtr surface,
-    short src_x, short src_y, 
+    short src_x, short src_y,
     short drw_x, short drw_y,
-    short src_w, short src_h, 
+    short src_w, short src_h,
     short drw_w, short drw_h,
     RegionPtr clipBoxes
 ){
@@ -1130,7 +1130,7 @@ MGADisplaySurface(
     dstBox.y1 = drw_y;
     dstBox.y2 = drw_y + drw_h;
 
-    if(!xf86XVClipVideoHelper(&dstBox, &x1, &x2, &y1, &y2, clipBoxes, 
+    if(!xf86XVClipVideoHelper(&dstBox, &x1, &x2, &y1, &y2, clipBoxes,
 			      surface->width, surface->height))
     {
 	return Success;
@@ -1143,7 +1143,7 @@ MGADisplaySurface(
 
     MGAResetVideoOverlay(pScrn);
 
-    MGADisplayVideoOverlay(pScrn, surface->id, surface->offsets[0], 
+    MGADisplayVideoOverlay(pScrn, surface->id, surface->offsets[0],
 	     surface->width, surface->height, surface->pitches[0],
 	     x1, y1, x2, y2, &dstBox, src_w, src_h, drw_w, drw_h);
 
@@ -1152,7 +1152,7 @@ MGADisplaySurface(
     pPriv->isOn = TRUE;
     /* we've prempted the XvImage stream so set its free timer */
     if(portPriv->videoStatus & CLIENT_VIDEO_ON) {
-	REGION_EMPTY(pScrn->pScreen, &portPriv->clip);   
+	REGION_EMPTY(pScrn->pScreen, &portPriv->clip);
 	UpdateCurrentTime();
 	portPriv->videoStatus = FREE_TIMER;
 	portPriv->freeTime = currentTime.milliseconds + FREE_DELAY;
@@ -1163,7 +1163,7 @@ MGADisplaySurface(
 }
 
 
-static void 
+static void
 MGAInitOffscreenImages(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
@@ -1176,7 +1176,7 @@ MGAInitOffscreenImages(ScreenPtr pScreen)
 	return;
 
     offscreenImages[0].image = &Images[0];
-    offscreenImages[0].flags = VIDEO_OVERLAID_IMAGES | 
+    offscreenImages[0].flags = VIDEO_OVERLAID_IMAGES |
 			       VIDEO_CLIP_TO_VIEWPORT;
     offscreenImages[0].alloc_surface = MGAAllocateSurface;
     offscreenImages[0].free_surface = MGAFreeSurface;
@@ -1191,7 +1191,7 @@ MGAInitOffscreenImages(ScreenPtr pScreen)
 
     if(num == 2) {
 	offscreenImages[1].image = &Images[3];
-	offscreenImages[1].flags = VIDEO_OVERLAID_IMAGES | 
+	offscreenImages[1].flags = VIDEO_OVERLAID_IMAGES |
 				   VIDEO_CLIP_TO_VIEWPORT;
 	offscreenImages[1].alloc_surface = MGAAllocateSurface;
 	offscreenImages[1].free_surface = MGAFreeSurface;
@@ -1210,7 +1210,7 @@ MGAInitOffscreenImages(ScreenPtr pScreen)
 
 
 /* Matrox MGA 2164W Xv extension support.
-*  The extension is implemented as a HOST->FB image load in YUV format. 
+*  The extension is implemented as a HOST->FB image load in YUV format.
 *  I decided not to use real hardware overlay since on the Millennium II
 *  it would limit the size of the frame buffer to 4Mb (even on a 16Mb
 *  card) due to an hardware limitation.
@@ -1253,7 +1253,7 @@ MGASetupImageVideoILOAD(ScreenPtr pScreen)
     adapt->nPorts = MGA_MAX_PORTS;
     adapt->pAttributes = NULL;
     adapt->nAttributes = 0;
-    
+
     /* number of supported color formats */
     adapt->pImages = Images;
     adapt->nImages = 4;
@@ -1263,7 +1263,7 @@ MGASetupImageVideoILOAD(ScreenPtr pScreen)
     adapt->GetVideo = NULL;
     adapt->GetStill = NULL;
     adapt->StopVideo = MGAStopVideo;
-    
+
     adapt->SetPortAttribute = MGASetPortAttributeTexture;
     adapt->GetPortAttribute = MGAGetPortAttributeTexture;
     adapt->QueryBestSize = MGAQueryBestSize;
@@ -1275,14 +1275,14 @@ MGASetupImageVideoILOAD(ScreenPtr pScreen)
     return adapt;
 }
 
-/* this function is optimized for alpha. It might be better also for 
-other load/store risc architectures but I never tested on anything else 
+/* this function is optimized for alpha. It might be better also for
+other load/store risc architectures but I never tested on anything else
 than my ev56 */
 static void CopyMungedScanline_AXP(CARD32 *fb_ptr, short src_w,
 				   CARD32 *tsp, CARD32 *tpu, CARD32 *tpv)
 {
     CARD32 k,y0,y1,u,v;
-  
+
     for(k=src_w/8;k;k--) {
 	y0=*tsp;
 	y1=*(tsp+1);
@@ -1309,7 +1309,7 @@ static void CopyMungedScanline_AXP(CARD32 *fb_ptr, short src_w,
 	      *(fb_ptr+3)=((y1&0x00ff0000)>>16)|((y1&0xff000000)>>8) |
 	      (v&0xff000000) | (u&0xff000000)>>16; */
 
-	tsp+=2; tpu++; tpv++;    
+	tsp+=2; tpu++; tpv++;
 	fb_ptr+=4;
     }
 }
@@ -1354,7 +1354,7 @@ static void CopyMungedScanlineFilter_AXP(CARD32 *fb_ptr, short src_w,
 	u=*tpu1;
 	v=*tpv1;
 
-	tsp1+=2; tsp2+=2; tpu1++; tpv1++; 
+	tsp1+=2; tsp2+=2; tpu1++; tpv1++;
 	yf[0] = ((y0_1&0x000000ff)*oneminbeta + (y0_2&0x000000ff)*beta )>>8;
 	yf[1] = (((y0_1&0x0000ff00)>>8)*oneminbeta + ((y0_2&0x0000ff00)>>8)*beta )>>8;
 	yf[2] = (((y0_1&0x00ff0000)>>16)*oneminbeta + ((y0_2&0x00ff0000)>>16)*beta )>>8;
@@ -1416,7 +1416,7 @@ static void CopyMungedScanlineFilterDown_AXP(CARD32 *fb_ptr, short src_w,
 {
     unsigned int k,y0_1,y1_1,y0_2,y1_2,u,v;
     int yf[8], uf[4], vf[4];
-  
+
     for(k=src_w/8;k;k--) {
 	y0_1=*tsp1;
 	y1_1=*(tsp1+1);
@@ -1581,7 +1581,7 @@ static void MGACopyScaledILOAD(
 
 		    OUTREG(MGAREG_DWGCTL, MGADWG_ILOAD_HIQH | MGADWG_BUYUV | MGADWG_SHIFTZERO
 			   | MGADWG_SGNZERO | 0xc0000);
-    
+
 		    OUTREG(MGAREG_AR0, pbox->x1 + drw_w -1);    /* SRC LINE END   why -1 ? */
 		    OUTREG(MGAREG_AR2, ( ( (src_w-1)<<16) / (drw_w-1)) + 1 ); /* ((SRC_X_DIM -1)<<16) / (DST_X_DIM-1) +1 */
 		    OUTREG(MGAREG_AR3, pbox->x1 );                            /* SRC LINE START*/
@@ -1591,11 +1591,11 @@ static void MGACopyScaledILOAD(
 		    OUTREG(MGAREG_CXBNDRY, pbox->x1 | ((pbox->x2-1)<<16 ) );
 		    OUTREG(MGAREG_YDST , pbox->y1+dl );                       /* Y_START_POS */
 		    OUTREG(MGAREG_LEN + MGAREG_EXEC , 1);                     /* # of LINES */
-    
+
 		    /* xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Data finished\n"); */
-    
+
 		    fb_ptr=(CARD32 *)pMga->ILOADBase;
-  
+
 		    switch(id) {
 		    case FOURCC_YV12:
 		    case FOURCC_I420:
@@ -1616,7 +1616,7 @@ static void MGACopyScaledILOAD(
 			    /*		CopyMungedScanline_AXP(fb_ptr,src_w,tsp,tpu,tpv); */
 
 			    /* Filter does not work yet */
-			    CopyMungedScanlineFilter_AXP(fb_ptr,src_w,tsp,tpu,tpv,tsp2,tpu,tpv, beta, xds); 
+			    CopyMungedScanlineFilter_AXP(fb_ptr,src_w,tsp,tpu,tpv,tsp2,tpu,tpv, beta, xds);
 			    /*	if(l&1) {
 				pu+=width/8;
 				pv+=width/8;
@@ -1762,12 +1762,12 @@ static void MGACopyILOAD(
 
 #ifdef DEBUG_MGA2164
     char sbuf[255];
-  
+
     sprintf(sbuf,"---- PBOX: x1=%d y1=%d w=%d h=%d (x2=%d y2=%d)\n",
 	    pbox->x1,pbox->y1,pbox->x2-pbox->x1,pbox->y2-pbox->y1,
 	    pbox->x2,pbox->y2);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, sbuf);
-  
+
     sprintf(sbuf,"in src: src_x=%d src_y=%d src_w=%d src_h=%d\n",
 	    src_x,src_y,src_w,src_h);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, sbuf);

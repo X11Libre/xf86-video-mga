@@ -135,7 +135,7 @@ if test "x$EXA" = xyes; then
     CPPFLAGS="$SAVE_CPPFLAGS"
 else
     AC_MSG_RESULT(no)
-fi 
+fi
 
 SAVE_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"

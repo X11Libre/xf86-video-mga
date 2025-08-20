@@ -61,7 +61,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 
     pMga->RenderTime = 0;
     pMga->LinearScratch = 0;
-    
+
     pMga->MaxFastBlitY = 0;
     pMga->MaxBlitDWORDS = 0x40000 >> 5;
 
@@ -357,7 +357,7 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
     case PCI_CHIP_MGAG200_EW3_PCI:
     case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
-    case PCI_CHIP_MGAG200_ER_PCI:	
+    case PCI_CHIP_MGAG200_ER_PCI:
     case PCI_CHIP_MGAG200_EH3_PCI:
 	pMga->SrcOrg = 0;
 	OUTREG(MGAREG_SRCORG, pMga->realSrcOrg);

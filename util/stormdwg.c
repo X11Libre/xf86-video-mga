@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	{
 		fprintf(stderr, "usage: %s hexval\n", argv[0]);
 		return 1;
-	}	
+	}
 
 	val = strtoul(argv[1], NULL, 16);
 
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	printf("atype: %s\n", atype[tmp]);
 
 
-	if ( val & 128 ) 
+	if ( val & 128 )
 		printf("xy bitblt\n");
 	else
 		printf("linear bitblt\n");
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 		printf("shift is not affected\n");
 
 
-	tmp = (val>>16) & 0x0f; 
+	tmp = (val>>16) & 0x0f;
 
 	if ( ((val >> 4) & 7) == 4 && tmp != 0x0c )
 		printf("Error! Block (BLK) atype and non-source binary op chosen. Replace (S) bop will be used.\n");

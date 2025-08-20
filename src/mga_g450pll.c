@@ -33,8 +33,8 @@ static CARD32 G450RemovePFactor(ScrnInfoPtr pScrn, CARD8 ucP, CARD32 *pulFIn)
    {
       *pulFIn = *pulFIn * (2L << (ucP & 3));
    }
-  
-   return TRUE; 
+
+   return TRUE;
 }
 
 
@@ -46,7 +46,7 @@ static CARD32 G450CalculVCO(ScrnInfoPtr pScrn, CARD32 ulMNP, CARD32 *pulF)
    ucN = (CARD8)((ulMNP >>  8) & 0xff);
 
    *pulF = (27000 * (2 * (ucN + 2)) + ((ucM + 1) >> 1)) / (ucM + 1);
-   
+
    return TRUE;
 }
 
@@ -62,7 +62,7 @@ static CARD32 G450CalculDeltaFreq(ScrnInfoPtr pScrn, CARD32 ulF1,
    {
       *pulDelta = ((ulF2 - ulF1) * 1000) / ulF1;
    }
- 
+
    return TRUE;
 }
 
@@ -85,7 +85,7 @@ static CARD32 G450FindNextPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout,
    {
       ulVCOMin = 230000;
    }
-   
+
    if((ucM == 9) && (ucP & 0x40))
    {
       *pulPLLMNP = 0xffffffff;
@@ -132,7 +132,7 @@ static CARD32 G450FindNextPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout,
       *pulPLLMNP |= (CARD32)ucM << 16;
       *pulPLLMNP |= (CARD32)ucN << 8;
       *pulPLLMNP |= (CARD32)ucP;
-      
+
 #ifdef DEBUG
       ErrorF("FINS_S: VCO = %d, S = %02X, *pulPLLMNP = %08X\n", (unsigned)ulVCO, (unsigned)ucS, (unsigned)*pulPLLMNP);
 #endif
@@ -141,8 +141,8 @@ static CARD32 G450FindNextPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout,
    return TRUE;
 }
 
- 
-static CARD32 G450FindFirstPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout, 
+
+static CARD32 G450FindFirstPLLParam(ScrnInfoPtr pScrn, CARD32 ulFout,
                                     CARD32 *pulPLLMNP)
 {
    CARD8 ucP;
@@ -191,12 +191,12 @@ static CARD32 G450WriteMNP(ScrnInfoPtr pScrn, CARD32 ulMNP)
    MGAPtr pMga = MGAPTR(pScrn);
 
    if (!pMga->SecondCrtc) {
-      outMGAdac(MGA1064_PIX_PLLC_M, (CARD8)(ulMNP >> 16));   
-      outMGAdac(MGA1064_PIX_PLLC_N, (CARD8)(ulMNP >>  8));   
-      outMGAdac(MGA1064_PIX_PLLC_P, (CARD8) ulMNP);   
+      outMGAdac(MGA1064_PIX_PLLC_M, (CARD8)(ulMNP >> 16));
+      outMGAdac(MGA1064_PIX_PLLC_N, (CARD8)(ulMNP >>  8));
+      outMGAdac(MGA1064_PIX_PLLC_P, (CARD8) ulMNP);
    } else {
       outMGAdac(MGA1064_VID_PLL_M, (CARD8)(ulMNP >> 16));
-      outMGAdac(MGA1064_VID_PLL_N, (CARD8)(ulMNP >> 8)); 
+      outMGAdac(MGA1064_VID_PLL_N, (CARD8)(ulMNP >> 8));
       outMGAdac(MGA1064_VID_PLL_P, (CARD8) ulMNP);
    }
    return TRUE;
@@ -208,12 +208,12 @@ static CARD32 G450ReadMNP(ScrnInfoPtr pScrn)
    CARD32 ret = 0;
 
    if (!pMga->SecondCrtc) {
-      ret = (CARD8)inMGAdac(MGA1064_PIX_PLLC_M) << 16;   
-      ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_N) << 8;   
-      ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_P);   
+      ret = (CARD8)inMGAdac(MGA1064_PIX_PLLC_M) << 16;
+      ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_N) << 8;
+      ret |= (CARD8)inMGAdac(MGA1064_PIX_PLLC_P);
    } else {
       ret = (CARD8)inMGAdac(MGA1064_VID_PLL_M) << 16;
-      ret |= (CARD8)inMGAdac(MGA1064_VID_PLL_N) << 8; 
+      ret |= (CARD8)inMGAdac(MGA1064_VID_PLL_N) << 8;
       ret |= (CARD8)inMGAdac(MGA1064_VID_PLL_P);
    }
    return ret;
@@ -276,7 +276,7 @@ static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, Bool *lpbLocked)
 
    ulFallBackCounter = 0;
 
-   do 
+   do
    {
       ucPLLStatus = INREG8(0x3c0a);
       ulFallBackCounter++;
@@ -301,7 +301,7 @@ static CARD32 G450IsPllLocked(ScrnInfoPtr pScrn, Bool *lpbLocked)
 }
 
 
-double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out) 
+double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
 {
    Bool bFoundValidPLL;
    Bool bLocked;
@@ -370,13 +370,13 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
    /* For pixel pll */
    if (!pMga->SecondCrtc) {
        ucMisc = INREG8(0x1FCC);
-       OUTREG8(0x1fc2, (CARD8)(ucMisc | CLKSEL_MGA));    
+       OUTREG8(0x1fc2, (CARD8)(ucMisc | CLKSEL_MGA));
    }
 
    for(CARD32 ulIndex = 0; !bFoundValidPLL && (ulIndex < ulMaxIndex); ulIndex++)
    {
        ulTryMNP = ulMNPTable[ulIndex];
-       
+
        ucSTable[3] = 0xff;
        ucSTable[2] = 0xff;
        ucSTable[0] = (CARD8) (ulTryMNP & 0x38);
@@ -389,12 +389,12 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
        } else {
 	   ucSTable[1] = 8;
        }
-       
+
        for(ucSIndex = 0; !bFoundValidPLL && (ucSTable[ucSIndex] != 0xff);
 	   ucSIndex++) {
 	    ulTryMNP &= 0xffffffc7;
 	    ulTryMNP |= (CARD32)ucSTable[ucSIndex];
-         
+
          bLocked = TRUE;
          if((ulMNPTable[ulIndex] & 0xff00) < 0x300 ||
             (ulMNPTable[ulIndex] & 0xff00) > 0x7a00)
@@ -406,50 +406,50 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
          {
             G450WriteMNP(pScrn, ulTryMNP - 0x300);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP + 0x300);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP - 0x200);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP + 0x200);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP - 0x100);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP + 0x100);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
 
          if(bLocked)
          {
             G450WriteMNP(pScrn, ulTryMNP);
             G450IsPllLocked(pScrn, &bLocked);
-         }     
+         }
          else if(!ulMNP)
          {
             G450WriteMNP(pScrn, ulTryMNP);
             G450IsPllLocked(pScrn, &bLocked);
             if(bLocked)
             {
-               ulMNP = ulMNPTable[ulIndex]; 
+               ulMNP = ulMNPTable[ulIndex];
             }
             bLocked = FALSE;
          }
@@ -472,12 +472,12 @@ double MGAG450SetPLLFreq(ScrnInfoPtr pScrn, long f_out)
          G450WriteMNP(pScrn, ulMNPTable[0]);
       }
    }
-  
+
    return TRUE;
 }
 
 long
-MGAG450SavePLLFreq(ScrnInfoPtr pScrn) 
+MGAG450SavePLLFreq(ScrnInfoPtr pScrn)
 {
     CARD32 ulMNP = G450ReadMNP(pScrn);
     CARD8  ucP;

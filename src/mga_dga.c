@@ -10,7 +10,7 @@
 #include "dgaproc.h"
 
 
-static Bool MGA_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **, 
+static Bool MGA_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,
 					int *, int *, int *);
 static Bool MGA_SetMode(ScrnInfoPtr, DGAModePtr);
 static int  MGA_GetViewport(ScrnInfoPtr);
@@ -34,14 +34,14 @@ FindSmallestPitch(
    int Bpp,
    int width
 ){
-   int Pitches1[] = 
+   int Pitches1[] =
 	  {640, 768, 800, 960, 1024, 1152, 1280, 1600, 1920, 2048, 0};
-   int Pitches2[] = 
-	  {512, 640, 768, 800, 832, 960, 1024, 1152, 1280, 1600, 1664, 
+   int Pitches2[] =
+	  {512, 640, 768, 800, 832, 960, 1024, 1152, 1280, 1600, 1664,
 		1920, 2048, 0};
    int *linePitches = NULL;
    int pitch;
-        
+
 
    if(!pMga->NoAccel) {
 	switch(pMga->Chipset) {
@@ -62,9 +62,9 @@ FindSmallestPitch(
 	while((*linePitches < width) || (*linePitches & pitch))
 	   linePitches++;
 	return *linePitches;
-   } 
+   }
 
-   return ((width + pitch) & ~pitch); 
+   return ((width + pitch) & ~pitch);
 }
 
 static DGAModePtr
@@ -92,7 +92,7 @@ SECOND_PASS:
 
    while(1) {
 
-        
+
 	pitch = FindSmallestPitch(pMga, Bpp, pMode->HDisplay);
 	size = pitch * Bpp * pMode->VDisplay;
 
@@ -100,7 +100,7 @@ SECOND_PASS:
 		(size <= pMga->FbUsableSize)) {
 
 	    if(secondPitch)
-		pitch = secondPitch; 
+		pitch = secondPitch;
 
 	    if(!(newmodes = realloc(modes, (*num + 1) * sizeof(DGAModeRec))))
 		break;
@@ -126,7 +126,7 @@ SECOND_PASS:
 	    mode->viewportWidth = pMode->HDisplay;
 	    mode->viewportHeight = pMode->VDisplay;
 	    mode->xViewportStep = (3 - pMga->BppShifts[Bpp - 1]);
-	    if((Bpp == 3) && 
+	    if((Bpp == 3) &&
 		    (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550))
 		mode->xViewportStep <<= 1;
 	    mode->yViewportStep = 1;
@@ -135,7 +135,7 @@ SECOND_PASS:
 	    mode->address = pMga->FbStart;
 	    mode->bytesPerScanline = pitch * Bpp;
 	    mode->imageWidth = pitch;
-	    mode->imageHeight =  pMga->FbUsableSize / mode->bytesPerScanline; 
+	    mode->imageHeight =  pMga->FbUsableSize / mode->bytesPerScanline;
 	    mode->pixmapWidth = pitch;
 	    switch (pMga->Chipset) {
 	    case PCI_CHIP_MGAG200_SE_A_PCI:
@@ -144,7 +144,7 @@ SECOND_PASS:
 				     mode->bytesPerScanline;
 		break;
 	    default:
-		mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) / 
+		mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) /
 				     mode->bytesPerScanline;
 	    }
 	    mode->maxViewportX = mode->imageWidth - mode->viewportWidth;
@@ -153,7 +153,7 @@ SECOND_PASS:
 
 	    if( (pMga->Chipset == PCI_CHIP_MGA2064) ||
 		(pMga->Chipset == PCI_CHIP_MGA2164) ||
-		(pMga->Chipset == PCI_CHIP_MGA2164_AGP)) 
+		(pMga->Chipset == PCI_CHIP_MGA2164_AGP))
 	    {
 		int tmp;
 
@@ -183,58 +183,58 @@ SECOND_PASS:
 
 Bool
 MGADGAInit(ScreenPtr pScreen)
-{   
+{
    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
    MGAPtr pMga = MGAPTR(pScrn);
    DGAModePtr modes = NULL;
    int num = 0;
 
    /* 8 */
-   modes = MGASetupDGAMode (pScrn, modes, &num, 8, 8, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 8, 8,
 		(pScrn->bitsPerPixel == 8),
 		(pScrn->bitsPerPixel != 8) ? 0 : pScrn->displayWidth,
 		0, 0, 0, PseudoColor);
 
    /* 15 */
-   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 15, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 15,
 		(pScrn->bitsPerPixel == 16),
 		(pScrn->depth != 15) ? 0 : pScrn->displayWidth,
 		0x7c00, 0x03e0, 0x001f, TrueColor);
 
-   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 15, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 15,
 		(pScrn->bitsPerPixel == 16),
 		(pScrn->depth != 15) ? 0 : pScrn->displayWidth,
 		0x7c00, 0x03e0, 0x001f, DirectColor);
 
    /* 16 */
-   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 16, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 16,
 		(pScrn->bitsPerPixel == 16),
 		(pScrn->depth != 16) ? 0 : pScrn->displayWidth,
 		0xf800, 0x07e0, 0x001f, TrueColor);
 
-   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 16, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 16, 16,
 		(pScrn->bitsPerPixel == 16),
 		(pScrn->depth != 16) ? 0 : pScrn->displayWidth,
 		0xf800, 0x07e0, 0x001f, DirectColor);
 
    /* 24 */
-   modes = MGASetupDGAMode (pScrn, modes, &num, 24, 24, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 24, 24,
 		(pScrn->bitsPerPixel == 24),
 		(pScrn->bitsPerPixel != 24) ? 0 : pScrn->displayWidth,
 		0xff0000, 0x00ff00, 0x0000ff, TrueColor);
 
-   modes = MGASetupDGAMode (pScrn, modes, &num, 24, 24, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 24, 24,
 		(pScrn->bitsPerPixel == 24),
 		(pScrn->bitsPerPixel != 24) ? 0 : pScrn->displayWidth,
 		0xff0000, 0x00ff00, 0x0000ff, DirectColor);
 
    /* 32 */
-   modes = MGASetupDGAMode (pScrn, modes, &num, 32, 24, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 32, 24,
 		(pScrn->bitsPerPixel == 32),
 		(pScrn->bitsPerPixel != 32) ? 0 : pScrn->displayWidth,
 		0xff0000, 0x00ff00, 0x0000ff, TrueColor);
 
-   modes = MGASetupDGAMode (pScrn, modes, &num, 32, 24, 
+   modes = MGASetupDGAMode (pScrn, modes, &num, 32, 24,
 		(pScrn->bitsPerPixel == 32),
 		(pScrn->bitsPerPixel != 32) ? 0 : pScrn->displayWidth,
 		0xff0000, 0x00ff00, 0x0000ff, DirectColor);
@@ -242,18 +242,18 @@ MGADGAInit(ScreenPtr pScreen)
    pMga->numDGAModes = num;
    pMga->DGAModes = modes;
 
-   return DGAInit(pScreen, &MGA_DGAFuncs, modes, num);  
+   return DGAInit(pScreen, &MGA_DGAFuncs, modes, num);
 }
 
 
-static int 
+static int
 BitsSet(unsigned long data)
 {
    unsigned long mask;
    int set = 0;
 
    for(mask = 1; mask; mask <<= 1)
-        if(mask & data) set++;   
+        if(mask & data) set++;
 
    return set;
 }
@@ -269,10 +269,10 @@ mgaDGASetPalette(ScrnInfoPtr pScrn)
     MGARamdacPtr MGAdac = &pMga->Dac;
     unsigned char DAC[256*3];
     int i;
-    
+
     if (!MGAdac->RestorePalette)
 	return;
-    
+
     for (i = 0; i < 256; i++) {
 	DAC[i*3] = i;
 	DAC[i*3 + 1] = i;
@@ -295,7 +295,7 @@ MGA_SetMode(
    if(!pMode) { /* restore the original mode */
       if(pMga->DGAactive)
         memcpy(&pMga->CurrentLayout, &SavedLayouts[index], sizeof(MGAFBLayout));
-                
+
       pScrn->currentMode = pMga->CurrentLayout.mode;
       pScrn->SwitchMode(SWITCH_MODE_ARGS(pScrn, pScrn->currentMode));
       MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
@@ -308,7 +308,7 @@ MGA_SetMode(
       /* update CurrentLayout */
       pMga->CurrentLayout.bitsPerPixel = pMode->bitsPerPixel;
       pMga->CurrentLayout.depth = pMode->depth;
-      pMga->CurrentLayout.displayWidth = pMode->bytesPerScanline / 
+      pMga->CurrentLayout.displayWidth = pMode->bytesPerScanline /
                               (pMode->bitsPerPixel >> 3);
       pMga->CurrentLayout.weight.red = BitsSet(pMode->red_mask);
       pMga->CurrentLayout.weight.green = BitsSet(pMode->green_mask);
@@ -319,13 +319,13 @@ MGA_SetMode(
       /* not strictly required but nice */
       mgaDGASetPalette(pScrn);
    }
-   
+
    return TRUE;
 }
 
 
 
-static int  
+static int
 MGA_GetViewport(
   ScrnInfoPtr pScrn
 ){
@@ -334,10 +334,10 @@ MGA_GetViewport(
     return pMga->DGAViewportStatus;
 }
 
-static void 
+static void
 MGA_SetViewport(
-   ScrnInfoPtr pScrn, 
-   int x, int y, 
+   ScrnInfoPtr pScrn,
+   int x, int y,
    int flags
 ){
    MGAPtr pMga = MGAPTR(pScrn);
@@ -346,9 +346,9 @@ MGA_SetViewport(
    pMga->DGAViewportStatus = 0;  /* MGAAdjustFrame loops until finished */
 }
 
-static Bool 
+static Bool
 MGA_OpenFramebuffer(
-   ScrnInfoPtr pScrn, 
+   ScrnInfoPtr pScrn,
    char **name,
    unsigned char **mem,
    int *size,

@@ -1,7 +1,7 @@
 
 Tech Note: dwg.c
 
-author:		ajv 
+author:		ajv
 
 purpose: 	to display MGA Storm's dwg register in human readable output.
 
@@ -10,12 +10,12 @@ compilation:	cc -o stormdwg stormdwg.c or just type make
 usage:		stormdwg hexval
 
 hexval will then be decomposed into it's constituent parts and displayed in human
-readable format. 
+readable format.
 
 BUGS:		none known except that it needs to kept up to date if the storms
 		spec is changed
 
-NOTE:		This is not by itself a very usable utility. 
+NOTE:		This is not by itself a very usable utility.
 
 Andrew van der Stock
 ajv@greebo.net

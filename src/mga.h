@@ -148,7 +148,7 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #endif
 
 /*
- * Read/write to the DAC via MMIO 
+ * Read/write to the DAC via MMIO
  */
 
 /*
@@ -188,7 +188,7 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 	    count++; \
     	} while( !( status & 0x08 ) && (count < 250000) );\
     } while (0)
-    
+
 #define MGAWAITBUSY() \
     do { \
     	unsigned int count = 0; \
@@ -354,10 +354,10 @@ struct mga_VCO {
      * Minimum selectable frequency for this VCO, measured in kHz.
      */
     unsigned min_freq;
-    
+
     /**
      * Maximum selectable frequency for this VCO, measured in kHz.
-     * 
+     *
      * If this value is zero, then the VCO is not available.
      */
     unsigned max_freq;
@@ -401,7 +401,7 @@ struct mga_bios_values {
     struct mga_VCO   pixel;     /**< Pixel VCO. */
     struct mga_VCO   video;     /**< Video VCO. */
     /*@}*/
-    
+
     /**
      * Memory clock speed, measured in kHz.
      */
@@ -439,7 +439,7 @@ struct mga_device_attributes {
 
     unsigned dri_capable:1;
     unsigned dri_chipset:3;
-    
+
     unsigned HAL_chipset:1;
 
     enum {
@@ -447,12 +447,12 @@ struct mga_device_attributes {
 	probe_BARs,
 	new_BARs
     } BARs:2;
-    
+
     uint32_t accel_flags;
-    
+
     /** Default BIOS values. */
     struct mga_bios_values default_bios_values;
-    
+
     /** Default memory probe offset / size values. */
     unsigned probe_size;
     unsigned probe_offset;
@@ -613,7 +613,7 @@ typedef struct {
 
     int                 irq;
     CARD32              reg_ien;
-    
+
     Bool                useOldDmaInit;
     Bool                forcePciDma;
 #endif
@@ -663,7 +663,7 @@ typedef struct {
     int			M1frameY0;
     int			M1frameX1;
     int			M1frameY1;
-    
+
     ScrnInfoPtr       pScrn2; /*pointer to second CRTC screeninforec,
                                        if in merged mode */
 /* End of Merged Framebuffer Data */
@@ -712,7 +712,7 @@ void MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS_DECL);
 void MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn,
 					     int PowerManagementMode,
 					     int flags);
-void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y); 
+void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 
 
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);

@@ -342,9 +342,9 @@ MGAG200SEHWProtect(ScrnInfoPtr pScrn, Bool on)
 {
   vgaHWPtr hwp = VGAHWPTR(pScrn);
   MGAPtr pMga = MGAPTR(pScrn);
-  
+
   unsigned char tmp;
-  
+
   if (pScrn->vtSema) {
     if (on) {
       /*
@@ -362,7 +362,7 @@ MGAG200SEHWProtect(ScrnInfoPtr pScrn, Bool on)
       /*
        * Re-enable sequencer, then turn on screen.
        */
-  
+
       tmp = hwp->readSeq(hwp, 0x01);
 
       MGAWAITVSYNC();
