@@ -28,9 +28,9 @@
 /*
  * implementation
  */
- 
+
 #define DACREGSIZE 0x50
-    
+
 /*
  * Only change bits shown in this mask.  Ideally reserved bits should be
  * zeroed here.  Also, don't change the vgaioen bit here since it is
@@ -105,14 +105,14 @@ MGAG200E4ComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
             }
         }
     }
-                                                                                                                    
+
     ulVCO = ulPLLFreqRef * ((*N)+1) / ((*M)+1);
     ulFVV = (ulVCO - 800000) / 50000;
 
     if (ulFVV > 15)
         ulFVV = 15;
 
-    *P |= (ulFVV << 4);                                                                                             
+    *P |= (ulFVV << 4);
 
     *M |= 0x80;
 }
@@ -316,11 +316,11 @@ MGAG200EW3ComputePLLParam(ScrnInfoPtr pScrn ,long lFo, int *M, int *N, int *P)
 
                     if (ulFTmpDelta < ulFDelta) {
                         ulFDelta = ulFTmpDelta;
-                        *M = (CARD8)((ulTestN & 0x100) >> 1) | 
+                        *M = (CARD8)((ulTestN & 0x100) >> 1) |
                              (CARD8)(ulTestM);
                         *N = (CARD8)(ulTestN & 0xFF);
-                        *P = (CARD8)((ulTestN & 0x600) >> 3) | 
-                             (CARD8)(ulTestP2 << 3) | 
+                        *P = (CARD8)((ulTestN & 0x600) >> 3) |
+                             (CARD8)(ulTestP2 << 3) |
                              (CARD8)ulTestP1;
                     }
                 }
@@ -524,7 +524,7 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         usleep(500);
 
         // Reset the PLL
-        //   When we are varying the output frequency by more than 
+        //   When we are varying the output frequency by more than
         //   10%, we must reset the PLL. However to be prudent, we
         //   will reset it each time that we are changing it.
         ucTempByte = inMGAdac(MGA1064_VREF_CTL);
@@ -571,7 +571,7 @@ MGAG200WBPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         ucTempByte &= ~MGA1064_PIX_CLK_CTL_CLK_DIS;
         outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
 
-        // Poll VCount. If it increments twice inside 150us, 
+        // Poll VCount. If it increments twice inside 150us,
         // we assume that the PLL has locked.
         ulLoopCount = 0;
         ulVCount = INREG(MGAREG_VCOUNT);
@@ -677,7 +677,7 @@ static void MGAG200ERComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *piM, int 
 static void
 MGAG200ERPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
 {
-    //TODO  G200ER Validate sequence 
+    //TODO  G200ER Validate sequence
     CARD8 ucPixCtrl, ucTempByte;
     MGAPtr pMga = MGAPTR(pScrn);
 
@@ -748,7 +748,7 @@ MGAG200WBPrepareForModeSwitch(ScrnInfoPtr pScrn)
     }
 
     // 3b- This step occurs only if the remote is actually scanning
-    // We are waiting for the end of the frame which is a 1 on 
+    // We are waiting for the end of the frame which is a 1 on
     // remvsyncsts (XSPAREREG<1>)
     if (ulIterationMax)
     {
@@ -853,7 +853,7 @@ MGAG200EHPIXPLLSET(ScrnInfoPtr pScrn, MGARegPtr mgaReg)
         ucTempByte &= ~MGA1064_PIX_CLK_CTL_CLK_POW_DOWN;
         outMGAdac(MGA1064_PIX_CLK_CTL, ucTempByte);
 
-        // Poll VCount. If it increments twice inside 150us, 
+        // Poll VCount. If it increments twice inside 150us,
         // we assume that the PLL has locked.
         ulLoopCount = 0;
         ulVCount = INREG(MGAREG_VCOUNT);
@@ -939,7 +939,7 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 
 	/*
 	 * f_pll = f_vco / (p+1)
-	 * Choose p so that 
+	 * Choose p so that
 	 * pMga->bios.pixel.min_freq <= f_vco <= pMga->bios.pixel.max_freq
 	 * we don't have to bother checking for this maximum limit.
 	 */
@@ -955,7 +955,7 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	{
 		/* see values of ( n ) which we can't use */
 		for ( n = feed_div_min; n <= feed_div_max; n++ )
-		{ 
+		{
 			calc_f = ref_freq * (n + 1) / (m + 1) ;
 
 			/*
@@ -968,22 +968,22 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 			}
 		}
 	}
-	
+
 	/* Now all the calculations can be completed */
 	f_vco = ref_freq * (*best_n + 1) / (*best_m + 1);
 
 	/* Adjustments for filtering pll feed back */
 	if ( (50000.0 <= f_vco)
 	&& (f_vco < 100000.0) )
-		*s = 0;	
+		*s = 0;
 	if ( (100000.0 <= f_vco)
 	&& (f_vco < 140000.0) )
-		*s = 1;	
+		*s = 1;
 	if ( (140000.0 <= f_vco)
 	&& (f_vco < 180000.0) )
-		*s = 2;	
+		*s = 2;
 	if ( (180000.0 <= f_vco) )
-		*s = 3;	
+		*s = 3;
 
 #ifdef DEBUG
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -995,7 +995,7 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 /*
  * MGAGSetPCLK - Set the pixel (PCLK) clock.
  */
-static void 
+static void
 MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 {
 	MGAPtr pMga = MGAPTR(pScrn);
@@ -1088,12 +1088,12 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 
 	    pReg->PllM = m;
 	    pReg->PllN = n;
-	    pReg->PllP = p;		
+	    pReg->PllP = p;
 	} else if (pMga->is_G200ER) {
 	    MGAG200ERComputePLLParam(pScrn, f_out, &m, &n, &p);
 	    pReg->PllM = m;
 	    pReg->PllN = n;
-	    pReg->PllP = p;		
+	    pReg->PllP = p;
     } else {
 	    /* Do the calculations for m, n, p and s */
 	    MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
@@ -1107,7 +1107,7 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 }
 
 /*
- * MGAGInit 
+ * MGAGInit
  */
 static Bool
 MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
@@ -1139,8 +1139,8 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 	ModeInfo.ulDispWidth = mode->HDisplay;
         ModeInfo.ulDispHeight = mode->VDisplay;
-        ModeInfo.ulFBPitch = mode->HDisplay; 
-        ModeInfo.ulBpp = pScrn->bitsPerPixel;    
+        ModeInfo.ulFBPitch = mode->HDisplay;
+        ModeInfo.ulBpp = pScrn->bitsPerPixel;
         ModeInfo.flSignalMode = 0;
         ModeInfo.ulPixClock = mode->Clock;
         ModeInfo.ulHFPorch = mode->HSyncStart - mode->HDisplay;
@@ -1162,9 +1162,9 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		pReg->DacRegs = XNFcallocarray(DACREGSIZE, 1);
 	}
 	for (i = 0; i < DACREGSIZE; i++) {
-	    pReg->DacRegs[i] = initDAC[i]; 
+	    pReg->DacRegs[i] = initDAC[i];
 	}
-	    
+
 	switch(pMga->Chipset)
 	{
 	case PCI_CHIP_MGA1064:
@@ -1227,7 +1227,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			pReg->DacRegs[ MGA1064_SYS_PLL_P ] = 0x18;
 			pReg->Option3 = 0x019B8419;
 			pReg->Option = 0x5053C120;
-		   } 
+		   }
 		} else {
 	           if(pMga->OverclockMem) {
 			/* 125/166  */
@@ -1243,7 +1243,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			pReg->DacRegs[ MGA1064_SYS_PLL_P ] = 0x08;
 			pReg->Option3 = 0x0190a421;
 			pReg->Option = 0x50044120;
-		   } 
+		   }
 		}
 		if(pMga->HasSDRAM)
 		   pReg->Option &= ~(1 << 14);
@@ -1320,7 +1320,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		break;
 	}
 
-	/* must always have the pci retries on but rely on 
+	/* must always have the pci retries on but rely on
 	   polling to keep them from occurring */
 	pReg->Option &= ~0x20000000;
 
@@ -1345,7 +1345,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	default:
 		FatalError("MGA: unsupported depth\n");
 	}
-		
+
 	/*
 	 * This will initialize all of the generic VGA registers.
 	 */
@@ -1363,13 +1363,13 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	vs = mode->CrtcVSyncStart		- 1;
 	ve = mode->CrtcVSyncEnd			- 1;
 	vt = mode->CrtcVTotal			- 2;
-	
+
 	/* HTOTAL & 0x7 equal to 0x6 in 8bpp or 0x4 in 24bpp causes strange
 	 * vertical stripes
-	 */  
+	 */
 	if((ht & 0x07) == 0x06 || (ht & 0x07) == 0x04)
 		ht++;
-		
+
 	if (pLayout->bitsPerPixel == 24)
 		wd = (pLayout->displayWidth * 3) >> (4 - BppShift);
 	else
@@ -1377,7 +1377,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 	pReg->ExtVga[0] = 0;
 	pReg->ExtVga[5] = 0;
-	
+
 	if (mode->Flags & V_INTERLACE)
 	{
 		pReg->ExtVga[0] = 0x80;
@@ -1407,7 +1407,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
             pReg->ExtVga[1] |= 0x88;
         }
 	pReg->ExtVga_MgaReq = 0x05;
-		
+
 	pVga->CRTC[0]	= ht - 4;
 	pVga->CRTC[1]	= hd;
 	pVga->CRTC[2]	= hd;
@@ -1435,7 +1435,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 	pReg->DacRegs[MGA1064_CURSOR_BASE_ADR_LOW] = pMga->FbCursorOffset >> 10;
 	pReg->DacRegs[MGA1064_CURSOR_BASE_ADR_HI] = pMga->FbCursorOffset >> 18;
-	
+
 	if (pMga->SyncOnGreen) {
             pReg->DacRegs[MGA1064_GEN_CTL] &=
                     ~MGA1064_GEN_CTL_SYNC_ON_GREEN_DIS;
@@ -1444,7 +1444,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	}
 
 	/* select external clock */
-	pVga->MiscOutReg |= 0x0C; 
+	pVga->MiscOutReg |= 0x0C;
 
 	if (mode->Flags & V_DBLSCAN)
 		pVga->CRTC[9] |= 0x80;
@@ -1458,7 +1458,7 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	/* This disables the VGA memory aperture */
 	pVga->MiscOutReg &= ~0x02;
 
-	/* Urgh. Why do we define our own xMODEINFO structure instead 
+	/* Urgh. Why do we define our own xMODEINFO structure instead
 	 * of just passing the blinkin' DisplayModePtr? If we're going to
 	 * just cut'n'paste routines from the HALlib, it would be better
 	 * just to strip the MacroVision stuff out of the HALlib and release
@@ -1468,8 +1468,8 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         /* Writing values to crtc2[] array */
         if (pMga->SecondCrtc)
         {
-            MGACRTC2Get(pScrn, &ModeInfo); 
-            MGACRTC2GetPitch(pScrn, &ModeInfo); 
+            MGACRTC2Get(pScrn, &ModeInfo);
+            MGACRTC2GetPitch(pScrn, &ModeInfo);
             MGACRTC2GetDisplayStart(pScrn, &ModeInfo,0,0,0);
         }
 
@@ -1494,7 +1494,7 @@ MGAPaletteLoadCallback(ScrnInfoPtr pScrn)
     MGAPaletteInfo *pal = pMga->palinfo;
     int i;
 
-    while (!(INREG8(0x1FDA) & 0x08)); 
+    while (!(INREG8(0x1FDA) & 0x08));
 
     for(i = 0; i < 256; i++) {
 	if(pal->update) {
@@ -1510,16 +1510,16 @@ MGAPaletteLoadCallback(ScrnInfoPtr pScrn)
 }
 
 void MGAGLoadPalette(
-    ScrnInfoPtr pScrn, 
-    int numColors, 
+    ScrnInfoPtr pScrn,
+    int numColors,
     int *indices,
     LOCO *colors,
     VisualPtr pVisual
 ){
     MGAPtr pMga = MGAPTR(pScrn);
 
-     if(pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550){ 
-	 /* load them at the retrace in the block handler instead to 
+     if(pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550){
+	 /* load them at the retrace in the block handler instead to
 	    work around some problems with static on the screen */
 	while(numColors--) {
 	    pMga->palinfo[*indices].update = TRUE;
@@ -1566,7 +1566,7 @@ MGAGSavePalette(ScrnInfoPtr pScrn, unsigned char* pntr)
     int i = 768;
 
     outMGAdreg(MGA1064_RADR_PAL, 0x00);
-    while(i--) 
+    while(i--)
 	*(pntr++) = inMGAdreg(MGA1064_COL_PAL);
 }
 
@@ -1576,7 +1576,7 @@ MGAGSavePalette(ScrnInfoPtr pScrn, unsigned char* pntr)
  * This function restores a video mode.	 It basically writes out all of
  * the registers that have previously been saved.
  */
-static void 
+static void
 MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	       Bool restoreFonts)
 {
@@ -1595,7 +1595,7 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * VESA modes. MATROX: hint, hint.
 	 */
 	if (MGAISGx50(pMga) && mgaReg->Clock) {
-	    /* 
+	    /*
 	     * With HALlib program only when restoring to console!
 	     * To test this we check for Clock == 0.
 	     */
@@ -1617,8 +1617,8 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	   /*
 	    * Code is needed to get things back to bank zero.
 	    */
-	   
-	   /* restore DAC registers 
+
+	   /* restore DAC registers
 	    * according to the docs we shouldn't write to reserved regs*/
 	   for (i = 0; i < DACREGSIZE; i++) {
 	      if( (i <= 0x03) ||
@@ -1633,17 +1633,17 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
                   (MGAISGx50(pMga) && !mgaReg->PIXPLLCSaved &&
 		   ((i == 0x2c) || (i == 0x2d) || (i == 0x2e) ||
 		    (i == 0x4c) || (i == 0x4d) || (i == 0x4e))))
-		 continue; 
+		 continue;
 	      if (pMga->is_G200SE
 		  && ((i == 0x2C) || (i == 0x2D) || (i == 0x2E)))
 	         continue;
 	      if ( (pMga->is_G200EV || pMga->is_G200WB || pMga->is_G200EH) &&
 		   (i >= 0x44) && (i <= 0x4E))
 	         continue;
-			 
+
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
-	   
+
 		if (pMga->is_G200ER)
         {
 			outMGAdac(0x90, mgaReg->Dac_Index90);
@@ -1653,18 +1653,18 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
               usleep(500);
               outMGAdac( 0x1a, 0x01);
            }
-    
+
 	   if (!MGAISGx50(pMga)) {
 	       /* restore pci_option register */
 #ifdef XSERVER_LIBPCIACCESS
-	       pci_device_cfg_write_bits(pMga->PciInfo, optionMask, 
+	       pci_device_cfg_write_bits(pMga->PciInfo, optionMask,
 					 mgaReg->Option, PCI_OPTION_REG);
 
 	      if (pMga->Chipset != PCI_CHIP_MGA1064) {
 		  pci_device_cfg_write_bits(pMga->PciInfo, OPTION2_MASK,
 					    mgaReg->Option2, PCI_MGA_OPTION2);
 
-		  if (pMga->Chipset == PCI_CHIP_MGAG400 
+		  if (pMga->Chipset == PCI_CHIP_MGAG400
 		      || pMga->Chipset == PCI_CHIP_MGAG550) {
 		      pci_device_cfg_write_bits(pMga->PciInfo, OPTION3_MASK,
 						mgaReg->Option3,
@@ -1685,7 +1685,7 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	   }
 
            if (pMga->is_G200ER) {
-               MGAG200ERPIXPLLSET(pScrn, mgaReg);               
+               MGAG200ERPIXPLLSET(pScrn, mgaReg);
            } else  if (pMga->is_G200EV) {
                MGAG200EVPIXPLLSET(pScrn, mgaReg);
            } else if (pMga->is_G200WB) {
@@ -1700,7 +1700,7 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
            if (pMga->is_G200ER) {
                OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
-               OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_MgaReq);			   
+               OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_MgaReq);
            }
 
            if (pMga->is_G200WB) {
@@ -1708,7 +1708,7 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
                {
                    OUTREG8(MGAREG_CRTCEXT_INDEX, 0x34);
                    OUTREG8(MGAREG_CRTCEXT_DATA,  mgaReg->ExtVga_MgaReq);
-               } 
+               }
            }
 
 	   /* This handles restoring the generic VGA registers. */
@@ -1720,14 +1720,14 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	      vgaHWRestore(pScrn, vgaReg,
 			VGA_SR_MODE | (restoreFonts ? VGA_SR_FONTS : 0));
 	   }
-  	   MGAGRestorePalette(pScrn, vgaReg->DAC); 
-	   
+  	   MGAGRestorePalette(pScrn, vgaReg->DAC);
+
 
            if (pMga->is_G200EV) {
                OUTREG16(MGAREG_CRTCEXT_INDEX, 6);
                OUTREG16(MGAREG_CRTCEXT_DATA, 0);
            }
-		   
+
 	   /*
 	    * this is needed to properly restore start address
 	    */
@@ -1744,11 +1744,11 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	   memset( &ModeInfo, 0, sizeof(ModeInfo) );
 
 	   /* Enable Dual Head */
-	   MGACRTC2Set(pScrn, &ModeInfo); 
-	   MGAEnableSecondOutPut(pScrn, &ModeInfo); 
-	   MGACRTC2SetPitch(pScrn, &ModeInfo); 
+	   MGACRTC2Set(pScrn, &ModeInfo);
+	   MGAEnableSecondOutPut(pScrn, &ModeInfo);
+	   MGACRTC2SetPitch(pScrn, &ModeInfo);
 	   MGACRTC2SetDisplayStart(pScrn, &ModeInfo,0,0,0);
-            
+
 	   for (i = 0x80; i <= 0xa0; i ++) {
                 if (i== 0x8d) {
 		   i = 0x8f;
@@ -1757,9 +1757,9 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
                 outMGAdac(i,   mgaReg->dac2[ i - 0x80]);
 	   }
 
-        } 
+        }
 
-#ifdef DEBUG		
+#ifdef DEBUG
 	ErrorF("Setting DAC:");
 	for (i=0; i<DACREGSIZE; i++) {
 #if 1
@@ -1776,7 +1776,7 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	for (i=0; i<6; i++) ErrorF(" %02X", mgaReg->ExtVga[i]);
 	ErrorF("\n");
 #endif
-	
+
 }
 
 /*
@@ -1817,7 +1817,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * Code is needed to get back to bank zero.
 	 */
 	OUTREG16(MGAREG_CRTCEXT_INDEX, 0x0004);
-	
+
 	/*
 	 * This function will handle creating the data structure and filling
 	 * in the generic VGA portion.
@@ -1831,7 +1831,7 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 				     (saveFonts ? VGA_SR_FONTS : 0));
 	}
 	MGAGSavePalette(pScrn, vgaReg->DAC);
-	/* 
+	/*
 	 * Work around another bug in HALlib: it doesn't restore the
 	 * DAC width register correctly.
 	 */
@@ -1891,16 +1891,16 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 		OUTREG8(MGAREG_CRTCEXT_INDEX, 0x24);
 		mgaReg->ExtVga_MgaReq = INREG8(MGAREG_CRTCEXT_DATA);
  	}
-        if (pMga->is_G200WB) 
+        if (pMga->is_G200WB)
         {
             if(pMga->Chipset == PCI_CHIP_MGAG200_EW3_PCI)
             {
                 OUTREG8(MGAREG_CRTCEXT_INDEX, 0x34);
-                mgaReg->ExtVga_MgaReq = INREG8(MGAREG_CRTCEXT_DATA);                
+                mgaReg->ExtVga_MgaReq = INREG8(MGAREG_CRTCEXT_DATA);
             }
         }
 
-#ifdef DEBUG		
+#ifdef DEBUG
 	ErrorF("Saved values:\nDAC:");
 	for (i=0; i<DACREGSIZE; i++) {
 #if 1
@@ -1927,7 +1927,7 @@ MGAGLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src)
     MGAPtr pMga = MGAPTR(pScrn);
     CARD32 *dst = (CARD32*)(pMga->FbBase + pMga->FbCursorOffset);
     int i = 128;
-    
+
     /* swap bytes in each line */
     while( i-- ) {
         *dst++ = (src[4] << 24) | (src[5] << 16) | (src[6] << 8) | src[7];
@@ -1936,7 +1936,7 @@ MGAGLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src)
     }
 }
 
-static void 
+static void
 MGAGShowCursor(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
@@ -1944,7 +1944,7 @@ MGAGShowCursor(ScrnInfoPtr pScrn)
     outMGAdac(MGA1064_CURSOR_CTL, 0x03);
 }
 
-static void 
+static void
 MGAGShowCursorG100(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
@@ -1969,7 +1969,7 @@ MGAGSetCursorPosition(ScrnInfoPtr pScrn, int x, int y)
 
     /* cursor update must never occurs during a retrace period (pp 4-160) */
     while( INREG( MGAREG_Status ) & 0x08 );
-    
+
     /* Output position - "only" 12 bits of location documented */
     OUTREG8( RAMDAC_OFFSET + MGA1064_CUR_XLOW, (x & 0xFF));
     OUTREG8( RAMDAC_OFFSET + MGA1064_CUR_XHI, (x & 0xF00) >> 8);
@@ -2010,7 +2010,7 @@ MGAGSetCursorColorsG100(ScrnInfoPtr pScrn, int bg, int fg)
     outMGAdac(MGA1064_CURSOR_COL2_BLUE,  (fg & 0x000000FF));
 }
 
-static Bool 
+static Bool
 MGAGUseHWCursor(ScreenPtr pScrn, CursorPtr pCurs)
 {
     MGAPtr pMga = MGAPTR(xf86ScreenToScrn(pScrn));
@@ -2034,7 +2034,7 @@ MGAGUseHWCursor(ScreenPtr pScrn, CursorPtr pCurs)
  * If we want DDC on second head (P2) then we must use DDC2 protocol (I2C)
  *
  * Be careful, DDC1 and DDC2 refer to protocols, DDC_P1 and DDC_P2 refer to
- * DDC data coming in on which videoport on the card 
+ * DDC data coming in on which videoport on the card
  */
 #define DDC_P1_SDA_MASK (1 << 1)
 #define DDC_P1_SCL_MASK (1 << 3)
@@ -2066,7 +2066,7 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
     i2c_index = 0;
 
   const struct mgag_i2c_private *p = & i2c_priv[i2c_index];
- 
+
   /* Define the SDA as an input */
   outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(p->scl_mask | p->sda_mask), 0);
 
@@ -2091,10 +2091,10 @@ MGAG_I2CGetBits(I2CBusPtr b, int *clock, int *data)
     const struct mgag_i2c_private *p =
 	(struct mgag_i2c_private *) b->DriverPrivate.ptr;
   unsigned char val;
-  
+
    /* Get the result. */
    val = inMGAdac(MGA1064_GEN_IO_DATA);
-   
+
    *clock = (val & p->scl_mask) != 0;
    *data  = (val & p->sda_mask) != 0;
 #ifdef DEBUG
@@ -2110,7 +2110,7 @@ MGAG_I2CGetBits(I2CBusPtr b, int *clock, int *data)
 static void
 MGAG_I2CPutBits(I2CBusPtr b, int clock, int data)
 {
-  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex]; 
+  ScrnInfoPtr pScrn = xf86Screens[b->scrnIndex];
   MGAPtr pMga = MGAPTR(pScrn);
     const struct mgag_i2c_private *p =
 	(struct mgag_i2c_private *) b->DriverPrivate.ptr;
@@ -2146,11 +2146,11 @@ mgag_create_i2c_bus(char *name, unsigned bus_index, unsigned scrn_index)
 	    I2CPtr = NULL;
 	}
     }
-    
+
     return I2CPtr;
 }
 
-	
+
 Bool
 MGAG_i2cInit(ScrnInfoPtr pScrn)
 {
@@ -2216,7 +2216,7 @@ MGAG_i2cInit(ScrnInfoPtr pScrn)
 	    }
 
 	    if (pMga->Maven == NULL) {
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 			   "Failed to register MGA-TVO I2C device!\n");
 	    }
 	}
@@ -2243,7 +2243,7 @@ MGAGRamdacInit(ScrnInfoPtr pScrn)
     MGAdac->SetCursorPosition      = MGAGSetCursorPosition;
     MGAdac->LoadCursorImage        = MGAGLoadCursorImage;
     MGAdac->HideCursor             = MGAGHideCursor;
-    if ((pMga->Chipset == PCI_CHIP_MGAG100) 
+    if ((pMga->Chipset == PCI_CHIP_MGAG100)
 	|| (pMga->Chipset == PCI_CHIP_MGAG100)) {
       MGAdac->SetCursorColors        = MGAGSetCursorColorsG100;
       MGAdac->ShowCursor             = MGAGShowCursorG100;

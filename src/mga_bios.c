@@ -63,7 +63,7 @@
 static __inline__ CARD16 get_u16( const CARD8 * data )
 {
     CARD16 temp;
-    
+
     temp = data[1];
     temp <<= 8;
     temp += data[0];
@@ -73,14 +73,14 @@ static __inline__ CARD16 get_u16( const CARD8 * data )
 
 /**
  * Parse version 0x01XX of the BIOS PInS structure.
- * 
+ *
  * Version 0x01XX of the BIOS PInS structure is only found in Millennium cards.
  *
  * \todo
  * There used to be an "OverclockMem" option that would scale the memory clock
  * by 12 instead 10.  Add support for this back in.
  */
-static void mga_parse_bios_ver_1( struct mga_bios_values * bios, 
+static void mga_parse_bios_ver_1( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     unsigned maxdac;
@@ -104,7 +104,7 @@ static void mga_parse_bios_ver_1( struct mga_bios_values * bios,
 	default: maxdac = 240000; break;
 	}
     }
-    
+
     if ( get_u16( & bios_data[28] ) ) {
 	bios->mem_clock = get_u16( & bios_data[28] ) * 10;
     }
@@ -119,11 +119,11 @@ static void mga_parse_bios_ver_1( struct mga_bios_values * bios,
 
 /**
  * Parse version 0x02XX of the BIOS PInS structure.
- * 
+ *
  * Version 0x02XX of the BIOS PInS structure is only found in Millennium II
  * and Mystique cards.
  */
-static void mga_parse_bios_ver_2( struct mga_bios_values * bios, 
+static void mga_parse_bios_ver_2( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     if ( bios_data[41] != 0xff ) {
@@ -142,11 +142,11 @@ static void mga_parse_bios_ver_2( struct mga_bios_values * bios,
 
 /**
  * Parse version 0x03XX of the BIOS PInS structure.
- * 
+ *
  * Version 0x03XX of the BIOS PInS structure is only found in G100 and G200
  * cards.
  */
-static void mga_parse_bios_ver_3( struct mga_bios_values * bios, 
+static void mga_parse_bios_ver_3( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     if ( bios_data[36] != 0xff ) {
@@ -164,10 +164,10 @@ static void mga_parse_bios_ver_3( struct mga_bios_values * bios,
 
 /**
  * Parse version 0x04XX of the BIOS PInS structure.
- * 
+ *
  * Version 0x04XX of the BIOS PInS structure is only found in G400 cards.
  */
-static void mga_parse_bios_ver_4( struct mga_bios_values * bios, 
+static void mga_parse_bios_ver_4( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     if ( bios_data[39] != 0xff ) {
@@ -198,11 +198,11 @@ static void mga_parse_bios_ver_4( struct mga_bios_values * bios,
 
 /**
  * Parse version 0x05XX of the BIOS PInS structure.
- * 
+ *
  * Version 0x05XX of the BIOS PInS structure is only found in G450 and G550
  * cards.
  */
-static void mga_parse_bios_ver_5( struct mga_bios_values * bios, 
+static void mga_parse_bios_ver_5( struct mga_bios_values * bios,
 				  const CARD8 * bios_data )
 {
     const unsigned scale = (bios_data[4] != 0) ? 8000 : 6000;
@@ -338,7 +338,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
 		   "Could not retrieve video BIOS!\n");
 	return FALSE;
     }
-        
+
     /* Get the output mode set by the BIOS */
     pMga->BiosOutputMode = bios_data[0x7ff1];
 
@@ -355,7 +355,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
      * image for the magic signature.  This is the 16-bit value 0x412d.  This
      * value is followed by the length of the PInS block.  We know that this
      * must (currently) be either 0x80 or 0x40.
-     * 
+     *
      * Happy hunting.
      */
     for (offset = 0 ; offset < 0x7ffc ; offset++) {
@@ -380,12 +380,12 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
 	       "Video BIOS info block at offset 0x%05lX\n",
 	       (long)(offset));
 
-    
+
     /* Determine the version of the PInS block.  This will determine how the
      * data is processed.  Only the first version of the PInS data structure
      * did *NOT* have the initial 0x412e (in little-endian order!) signature.
      */
-    
+
     pins_data = & bios_data[ offset ];
     if ( (pins_data[0] == 0x2e) && (pins_data[1] == 0x41) ) {
 	version = pins_data[5];
@@ -395,8 +395,8 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
 	version = 1;
 	pins_len = get_u16( pins_data );
     }
-    
-    
+
+
     if ( (version < 1) || (version > 5) ) {
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		   "PInS data version (%u) not supported.\n", version);
@@ -410,7 +410,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
 		   pins_len, expected_length[ version ], version);
 	return FALSE;
     }
-    
+
     switch( version ) {
     case 1:  mga_parse_bios_ver_1( & pMga->bios, pins_data ); break;
     case 2:  mga_parse_bios_ver_2( & pMga->bios, pins_data ); break;
@@ -418,7 +418,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     case 4:  mga_parse_bios_ver_4( & pMga->bios, pins_data ); break;
     case 5:  mga_parse_bios_ver_5( & pMga->bios, pins_data ); break;
     }
-    
+
 #ifdef BIOS_DEBUG
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "system VCO = [%u, %u]\n",

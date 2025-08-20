@@ -138,7 +138,7 @@ typedef struct {
 } drmMGABlit;
 
 /* 3.1: An ioctl to get parameters that aren't available to the 3d
- * client any other way.  
+ * client any other way.
  */
 #define MGA_PARAM_IRQ_NR            1
 

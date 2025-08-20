@@ -10,7 +10,7 @@
 #include "mga.h"
 #include "mga_reg.h"
 
-Bool 
+Bool
 MGAHWCursorInit(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
@@ -18,12 +18,12 @@ MGAHWCursorInit(ScreenPtr pScreen)
     MGARamdacPtr MGAdac = &pMga->Dac;
     xf86CursorInfoPtr infoPtr;
 
-    if (!MGAdac->isHwCursor) 
+    if (!MGAdac->isHwCursor)
         return FALSE;
 
     infoPtr = xf86CreateCursorInfoRec();
     if(!infoPtr) return FALSE;
-    
+
     pMga->CursorInfoRec = infoPtr;
 
     infoPtr->MaxWidth = MGAdac->CursorMaxWidth;

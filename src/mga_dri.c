@@ -98,7 +98,7 @@ static void MGAWaitForIdleDMA( ScrnInfoPtr pScrn )
          } while ( ret == -EBUSY && i++ < DRM_MGA_IDLE_RETRY );
 
          /* if it's still busy just try quiescent */
-         if ( ret == -EBUSY ) { 
+         if ( ret == -EBUSY ) {
             lock.flags = DRM_LOCK_QUIESCENT;
             do {
 	       ret = drmCommandWrite( pMga->drmFD, DRM_MGA_FLUSH,
@@ -259,7 +259,7 @@ static unsigned int mylog2( unsigned int n )
  * \todo
  * The sizes used for the primary DMA buffer and the bin size and count for
  * the secondary DMA buffers should be configurable from the xorg.conf.
- * 
+ *
  * \todo
  * This routine should use \c mga_bios_values::host_interface to limit the
  * AGP mode.  It the card is PCI, \c MGARec::agpSize should be forced to 0.
@@ -333,7 +333,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	    xf86DrvMsg( pScreen->myNum, X_ERROR, "[agp] AGP not available\n" );
 	    return FALSE;
 	}
-       
+
 	mode   = drmAgpGetMode( pMga->drmFD );        /* Default mode */
 	vendor = drmAgpVendorId( pMga->drmFD );
 	device = drmAgpDeviceId( pMga->drmFD );
@@ -359,7 +359,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 			    "[drm] Enabling AGP 2x PLL encoding\n" );
 		OUTREG( MGAREG_AGP_PLL, MGA_AGP2XPLL_ENABLE );
 		break;
-		
+
 	    case 1:
 	    default:
 		xf86DrvMsg( pScreen->myNum, X_INFO,
@@ -399,7 +399,7 @@ static Bool MGADRIBootstrapDMA(ScreenPtr pScreen)
 	}
 	xf86DrvMsg( pScreen->myNum, X_INFO,
  		    "[agp] %d kB allocated with handle 0x%08x\n",
-		    pMGADRIServer->agp.size/1024, 
+		    pMGADRIServer->agp.size/1024,
 		    (unsigned int) pMGADRIServer->agp.handle );
 
 	if ( drmAgpBind( pMga->drmFD, pMGADRIServer->agp.handle, 0 ) < 0 ) {
@@ -781,7 +781,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->CreateContext = MGACreateContext;
    pDRIInfo->DestroyContext = MGADestroyContext;
-   if ( xf86IsEntityShared( pScrn->entityList[0] ) 
+   if ( xf86IsEntityShared( pScrn->entityList[0] )
 		&& pMga->DualHeadEnabled) {
       pDRIInfo->SwapContext = MGADRISwapContextShared;
    } else {
@@ -876,11 +876,11 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 	* support old version of the client-side driver that don't use the
 	* new features of the 3.2 DRM).
 	*/
-       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		  "[drm] Direct rendering on PCI cards requires DRM version 3.2 or higher\n");
-       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		  "[drm] and a recent client-side driver.  Also make sure that 'OldDmaInit'\n");
-       xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		  "[drm] is not selected in xorg.conf.'\n");
        return FALSE;
    }
@@ -896,7 +896,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
        int scratch_int;
 
        DRIGetDeviceInfo(pScreen, &pMGADRIServer->fb.handle,
-			&scratch_int, &scratch_int, 
+			&scratch_int, &scratch_int,
 			&scratch_int, &scratch_int,
 			&scratch_ptr);
    }

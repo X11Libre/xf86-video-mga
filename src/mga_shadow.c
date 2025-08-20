@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 1999,  The XFree86 Project Inc. 
+   Copyright (c) 1999,  The XFree86 Project Inc.
    Written by Mark Vojkovich <markv@valinux.com>
 */
 
@@ -23,14 +23,14 @@ MGARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
     MGAPtr pMga = MGAPTR(pScrn);
     int width, height, Bpp, FBPitch;
     unsigned char *src, *dst;
-   
+
     Bpp = pScrn->bitsPerPixel >> 3;
     FBPitch = BitmapBytePad(pScrn->displayWidth * pScrn->bitsPerPixel);
 
     while(num--) {
 	width = (pbox->x2 - pbox->x1) * Bpp;
 	height = pbox->y2 - pbox->y1;
-	src = pMga->ShadowPtr + (pbox->y1 * pMga->ShadowPitch) + 
+	src = pMga->ShadowPtr + (pbox->y1 * pMga->ShadowPitch) +
 						(pbox->x1 * Bpp);
 	dst = pMga->FbStart + (pbox->y1 * FBPitch) + (pbox->x1 * Bpp);
 
@@ -39,10 +39,10 @@ MGARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	    dst += FBPitch;
 	    src += pMga->ShadowPitch;
 	}
-	
+
 	pbox++;
     }
-} 
+}
 
 void
 MGAPointerMoved(SCRN_ARG_TYPE arg, int x, int y)
@@ -80,11 +80,11 @@ MGARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	height = (y2 - y1) >> 2;  /* in dwords */
 
 	if(pMga->Rotate == 1) {
-	    dstPtr = pMga->FbStart + 
+	    dstPtr = pMga->FbStart +
 			(pbox->x1 * dstPitch) + pScrn->virtualX - y2;
 	    srcPtr = pMga->ShadowPtr + ((1 - y2) * srcPitch) + pbox->x1;
 	} else {
-	    dstPtr = pMga->FbStart + 
+	    dstPtr = pMga->FbStart +
 			((pScrn->virtualY - pbox->x2) * dstPitch) + y1;
 	    srcPtr = pMga->ShadowPtr + (y1 * srcPitch) + pbox->x2 - 1;
 	}
@@ -94,8 +94,8 @@ MGARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	    dst = (CARD32*)dstPtr;
 	    count = height;
 	    while(count--) {
-		*(dst++) = src[0] | (src[srcPitch] << 8) | 
-					(src[srcPitch * 2] << 16) | 
+		*(dst++) = src[0] | (src[srcPitch] << 8) |
+					(src[srcPitch * 2] << 16) |
 					(src[srcPitch * 3] << 24);
 		src += srcPitch * 4;
 	    }
@@ -105,7 +105,7 @@ MGARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 
 	pbox++;
     }
-} 
+}
 
 
 void
@@ -126,14 +126,14 @@ MGARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	height = (y2 - y1) >> 1;  /* in dwords */
 
 	if(pMga->Rotate == 1) {
-	    dstPtr = (CARD16*)pMga->FbStart + 
+	    dstPtr = (CARD16*)pMga->FbStart +
 			(pbox->x1 * dstPitch) + pScrn->virtualX - y2;
-	    srcPtr = (CARD16*)pMga->ShadowPtr + 
+	    srcPtr = (CARD16*)pMga->ShadowPtr +
 			((1 - y2) * srcPitch) + pbox->x1;
 	} else {
-	    dstPtr = (CARD16*)pMga->FbStart + 
+	    dstPtr = (CARD16*)pMga->FbStart +
 			((pScrn->virtualY - pbox->x2) * dstPitch) + y1;
-	    srcPtr = (CARD16*)pMga->ShadowPtr + 
+	    srcPtr = (CARD16*)pMga->ShadowPtr +
 			(y1 * srcPitch) + pbox->x2 - 1;
 	}
 
@@ -173,11 +173,11 @@ MGARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = (y2 - y1) >> 2;  /* blocks of 3 dwords */
 
 	if(pMga->Rotate == 1) {
-	    dstPtr = pMga->FbStart + 
+	    dstPtr = pMga->FbStart +
 			(pbox->x1 * dstPitch) + ((pScrn->virtualX - y2) * 3);
 	    srcPtr = pMga->ShadowPtr + ((1 - y2) * srcPitch) + (pbox->x1 * 3);
 	} else {
-	    dstPtr = pMga->FbStart + 
+	    dstPtr = pMga->FbStart +
 			((pScrn->virtualY - pbox->x2) * dstPitch) + (y1 * 3);
 	    srcPtr = pMga->ShadowPtr + (y1 * srcPitch) + (pbox->x2 * 3) - 3;
 	}
@@ -188,18 +188,18 @@ MGARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	    count = height;
 	    while(count--) {
 		dst[0] = src[0] | (src[1] << 8) | (src[2] << 16) |
-				(src[srcPitch] << 24);		
+				(src[srcPitch] << 24);
 		dst[1] = src[srcPitch + 1] | (src[srcPitch + 2] << 8) |
 				(src[srcPitch * 2] << 16) |
-				(src[(srcPitch * 2) + 1] << 24);		
+				(src[(srcPitch * 2) + 1] << 24);
 		dst[2] = src[(srcPitch * 2) + 2] | (src[srcPitch * 3] << 8) |
 				(src[(srcPitch * 3) + 1] << 16) |
-				(src[(srcPitch * 3) + 2] << 24);	
+				(src[(srcPitch * 3) + 2] << 24);
 		dst += 3;
 		src += srcPitch * 4;
 	    }
 	    srcPtr += pMga->Rotate * 3;
-	    dstPtr += dstPitch; 
+	    dstPtr += dstPitch;
 	}
 
 	pbox++;
@@ -221,14 +221,14 @@ MGARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 	height = pbox->y2 - pbox->y1;
 
 	if(pMga->Rotate == 1) {
-	    dstPtr = (CARD32*)pMga->FbStart + 
+	    dstPtr = (CARD32*)pMga->FbStart +
 			(pbox->x1 * dstPitch) + pScrn->virtualX - pbox->y2;
-	    srcPtr = (CARD32*)pMga->ShadowPtr + 
+	    srcPtr = (CARD32*)pMga->ShadowPtr +
 			((1 - pbox->y2) * srcPitch) + pbox->x1;
 	} else {
-	    dstPtr = (CARD32*)pMga->FbStart + 
+	    dstPtr = (CARD32*)pMga->FbStart +
 			((pScrn->virtualY - pbox->x2) * dstPitch) + pbox->y1;
-	    srcPtr = (CARD32*)pMga->ShadowPtr + 
+	    srcPtr = (CARD32*)pMga->ShadowPtr +
 			(pbox->y1 * srcPitch) + pbox->x2 - 1;
 	}
 
