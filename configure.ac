@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xlibre-xf86-video-mga],
-        [2.1.0],
+        [2.1.1],
         [https://github.com/X11Libre/xf86-video-mga/issues],
         [xlibre-xf86-video-mga])
 AC_CONFIG_SRCDIR([Makefile.am])
