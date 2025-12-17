@@ -43,10 +43,7 @@
  *		Niels Gram Jeppesen
  *		Added digital screen option for first head
  */
-
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 /* All drivers should typically include these */
 #include "xf86.h"
