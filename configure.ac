@@ -151,10 +151,5 @@ AM_CONDITIONAL(USE_EXA, test "x$USE_EXA" = xyes)
 
 AC_SUBST([moduledir])
 
-AC_CONFIG_FILES([
-                Makefile
-                src/Makefile
-                man/Makefile
-                util/Makefile
-])
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile util/Makefile])
 AC_OUTPUT
