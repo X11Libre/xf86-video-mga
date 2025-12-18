@@ -271,9 +271,6 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
     CARD8  bios_data[0x20000];
     unsigned offset;
     MGAPtr pMga = MGAPTR(pScrn);
-#ifndef XSERVER_LIBPCIACCESS
-    Bool pciBIOS = TRUE;
-#endif
     static const unsigned expected_length[] = { 0, 64, 64, 64, 128, 128 };
     unsigned version;
     unsigned pins_len;
@@ -308,27 +305,7 @@ Bool mga_read_and_process_bios( ScrnInfoPtr pScrn )
      * might be controlled by the PCI config space.
      */
 
-#ifdef XSERVER_LIBPCIACCESS
     err = pci_device_read_rom(pMga->PciInfo, bios_data);
-#else
-    if (pMga->BiosFrom == X_DEFAULT) {
-	pciBIOS = FALSE;
-    }
-    else if (pMga->BiosFrom == X_CONFIG && pMga->BiosAddress < 0x100000) {
-	pciBIOS = TRUE;
-    }
-
-    if (pciBIOS) {
-	rlen = xf86ReadPciBIOS(0, pMga->PciTag, pMga->framebuffer_bar,
-			       bios_data, sizeof(bios_data));
-    }
-    else {
-	rlen = xf86ReadDomainMemory(pMga->PciTag, pMga->BiosAddress,
-				    sizeof(bios_data), bios_data);
-    }
-
-    err = rlen < (bios_data[2] << 9);
-#endif
 
     if (err) {
 	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,

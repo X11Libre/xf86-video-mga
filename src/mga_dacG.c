@@ -1653,7 +1653,6 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
 	   if (!MGAISGx50(pMga)) {
 	       /* restore pci_option register */
-#ifdef XSERVER_LIBPCIACCESS
 	       pci_device_cfg_write_bits(pMga->PciInfo, optionMask,
 					 mgaReg->Option, PCI_OPTION_REG);
 
@@ -1668,17 +1667,6 @@ MGAGRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 						PCI_MGA_OPTION3);
 		  }
 	      }
-#else
-	      /* restore pci_option register */
-	      pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, optionMask,
-			     mgaReg->Option);
-	      if (pMga->Chipset != PCI_CHIP_MGA1064)
-		 pciSetBitsLong(pMga->PciTag, PCI_MGA_OPTION2, OPTION2_MASK,
-				mgaReg->Option2);
-	      if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
-		 pciSetBitsLong(pMga->PciTag, PCI_MGA_OPTION3, OPTION3_MASK,
-				mgaReg->Option3);
-#endif
 	   }
 
            if (pMga->is_G200ER) {
@@ -1860,23 +1848,13 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 
         mgaReg->PIXPLLCSaved = TRUE;
 
-#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option,
 				PCI_OPTION_REG);
 	pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option2,
 				PCI_MGA_OPTION2);
-#else
-	mgaReg->Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
-
-	mgaReg->Option2 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION2);
-#endif
 	if (pMga->Chipset == PCI_CHIP_MGAG400 || pMga->Chipset == PCI_CHIP_MGAG550)
-#ifdef XSERVER_LIBPCIACCESS
 		    pci_device_cfg_read_u32(pMga->PciInfo, & mgaReg->Option3,
 					    PCI_MGA_OPTION3);
-#else
-	    mgaReg->Option3 = pciReadLong(pMga->PciTag, PCI_MGA_OPTION3);
-#endif
 
 	for (i = 0; i < 6; i++)
 	{

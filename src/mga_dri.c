@@ -583,16 +583,10 @@ static void MGADRIIrqInit(MGAPtr pMga, ScreenPtr pScreen)
 
    if (!pMga->irq) {
       pMga->irq = drmGetInterruptFromBusID(pMga->drmFD,
-#ifdef XSERVER_LIBPCIACCESS
 					   ((pMga->PciInfo->domain << 8) |
 					    pMga->PciInfo->bus),
 					   pMga->PciInfo->dev,
 					   pMga->PciInfo->func
-#else
-	 ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
-	 ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
-	 ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
-#endif
 					   );
 
       if((drmCtlInstHandler(pMga->drmFD, pMga->irq)) != 0) {
@@ -708,14 +702,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    } else {
       pDRIInfo->busIdString = malloc(64);
       sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
-#ifdef XSERVER_LIBPCIACCESS
 	       ((pMga->PciInfo->domain << 8) | pMga->PciInfo->bus),
 	       pMga->PciInfo->dev, pMga->PciInfo->func
-#else
-	       ((pciConfigPtr)pMga->PciInfo->thisCard)->busnum,
-	       ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
-	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum
-#endif
 	       );
    }
    pDRIInfo->ddxDriverMajorVersion = PACKAGE_VERSION_MAJOR;

@@ -13,9 +13,7 @@
 #ifndef MGA_H
 #define MGA_H
 
-#ifdef XSERVER_LIBPCIACCESS
 #include <pciaccess.h>
-#endif
 #include <string.h>
 #include <stdio.h>
 
@@ -462,13 +460,7 @@ typedef struct {
     EntityInfoPtr	pEnt;
     struct mga_bios_values bios;
     CARD8               BiosOutputMode;
-#ifdef XSERVER_LIBPCIACCESS
     struct pci_device *	PciInfo;
-#else
-    pciVideoPtr		PciInfo;
-    PCITAG		PciTag;
-    xf86AccessRec	Access;
-#endif
     const struct mga_device_attributes * chip_attribs;
     int			Chipset;
     int                 ChipRev;
@@ -511,12 +503,6 @@ typedef struct {
      */
     int                 iload_bar;
 
-#ifndef XSERVER_LIBPCIACCESS
-    unsigned long	IOAddress;
-    unsigned long	ILOADAddress;
-    unsigned long	BiosAddress;
-    MessageType		BiosFrom;
-#endif
     unsigned long	FbAddress;
     void *		IOBase;
     unsigned char *	FbBase;

@@ -1,19 +1,11 @@
 #ifndef _MGA_MACROS_H_
 #define _MGA_MACROS_H_
 
-#ifdef XSERVER_LIBPCIACCESS
 #define MGA_IO_ADDRESS(p) (p)->PciInfo->regions[(p)->io_bar].base_addr
 #define VENDOR_ID(p)      (p)->vendor_id
 #define DEVICE_ID(p)      (p)->device_id
 #define SUBSYS_ID(p)      (p)->subdevice_id
 #define CHIP_REVISION(p)  (p)->revision
-#else
-#define MGA_IO_ADDRESS(p) (p)->IOAddress
-#define VENDOR_ID(p)      (p)->vendor
-#define DEVICE_ID(p)      (p)->chipType
-#define SUBSYS_ID(p)      (p)->subsysCard
-#define CHIP_REVISION(p)  (p)->chipRev
-#endif
 
 #define RGBEQUAL(c) (!((((c) >> 8) ^ (c)) & 0xffff))
 

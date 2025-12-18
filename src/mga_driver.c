@@ -55,11 +55,6 @@
 
 #include "compiler.h"
 
-/* Drivers that need to access the PCI config space directly need this */
-#ifndef XSERVER_LIBPCIACCESS
-#include "xf86Pci.h"
-#endif
-
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
 
@@ -94,12 +89,8 @@
 /* Mandatory functions */
 static const OptionInfoRec *	MGAAvailableOptions(int chipid, int busid);
 static void	MGAIdentify(int flags);
-#ifdef XSERVER_LIBPCIACCESS
 static Bool MGAPciProbe(DriverPtr drv, int entity_num,
     struct pci_device * dev, intptr_t match_data);
-#else
-static Bool	MGAProbe(DriverPtr drv, int flags);
-#endif
 static Bool	MGAPreInit(ScrnInfoPtr pScrn, int flags);
 static Bool	MGAScreenInit(SCREEN_INIT_ARGS_DECL);
 static Bool	MGAEnterVT(VT_FUNC_ARGS_DECL);
@@ -428,7 +419,6 @@ static const struct mga_device_attributes attribs[] = {
     }
 };
 
-#ifdef XSERVER_LIBPCIACCESS
 #define MGA_DEVICE_MATCH(d, i) \
     { 0x102B, (d), PCI_MATCH_ANY, PCI_MATCH_ANY, 0, 0, (i) }
 #define MGA_SUBDEVICE_MATCH(d, s, i) \
@@ -463,7 +453,6 @@ static const struct pci_id_match mga_device_match[] = {
 
     { 0, 0, 0 },
 };
-#endif
 
 /* Supported chipsets */
 static SymTabRec MGAChipsets[] = {
@@ -530,20 +519,13 @@ _X_EXPORT DriverRec MGA_C_NAME = {
     MGA_VERSION,
     MGA_DRIVER_NAME,
     MGAIdentify,
-#ifdef XSERVER_LIBPCIACCESS
     NULL,
-#else
-    MGAProbe,
-#endif
     MGAAvailableOptions,
     NULL,
     0,
     NULL,
-
-#ifdef XSERVER_LIBPCIACCESS
     mga_device_match,
     MGAPciProbe
-#endif
 };
 
 
@@ -674,8 +656,6 @@ MGAIdentify(int flags)
     xf86PrintChipsets(MGA_NAME, "driver for Matrox chipsets", MGAChipsets);
 }
 
-
-#ifdef XSERVER_LIBPCIACCESS
 Bool
 MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
 	    intptr_t match_data)
@@ -768,230 +748,6 @@ MGAPciProbe(DriverPtr drv, int entity_num, struct pci_device * dev,
     return (pScrn != NULL);
 }
 
-#else
-
-/* Mandatory */
-static Bool
-MGAProbe(DriverPtr drv, int flags)
-{
-    int i;
-    GDevPtr *devSections;
-    int *usedChips = NULL;
-    int numDevSections;
-    int numUsed;
-    Bool foundScreen = FALSE;
-
-    /*
-     * The aim here is to find all cards that this driver can handle,
-     * and for the ones not already claimed by another driver, claim the
-     * slot, and allocate a ScrnInfoRec.
-     *
-     * This should be a minimal probe, and it should under no circumstances
-     * change the state of the hardware.  Because a device is found, don't
-     * assume that it will be used.  Don't do any initialisations other than
-     * the required ScrnInfoRec initialisations.  Don't allocate any new
-     * data structures.
-     */
-
-    /*
-     * Check if there has been a chipset override in the config file.
-     * For this we must find out if there is an active device section which
-     * is relevant, i.e., which has no driver specified or has THIS driver
-     * specified.
-     */
-
-    if ((numDevSections = xf86MatchDevice(MGA_DRIVER_NAME,
-					  &devSections)) <= 0) {
-	/*
-	 * There's no matching device section in the config file, so quit
-	 * now.
-	 */
-	return FALSE;
-    }
-
-    /*
-     * We need to probe the hardware first.  We then need to see how this
-     * fits in with what is given in the config file, and allow the config
-     * file info to override any contradictions.
-     */
-
-    /*
-     * All of the cards this driver supports are PCI, so the "probing" just
-     * amounts to checking the PCI data that the server has already collected.
-     */
-    if (xf86GetPciVideoInfo() == NULL) {
-	/*
-	 * We won't let anything in the config file override finding no
-	 * PCI video cards at all.  This seems reasonable now, but we'll see.
-	 */
-	return FALSE;
-    }
-
-    numUsed = xf86MatchPciInstances(MGA_NAME, PCI_VENDOR_MATROX,
-			            MGAChipsets, MGAPciChipsets, devSections,
-			            numDevSections, drv, &usedChips);
-    /* Free it since we don't need that list after this */
-    free(devSections);
-    if (numUsed <= 0)
-	return FALSE;
-
-
-    if (flags & PROBE_DETECT)
-	foundScreen = TRUE;
-    else for (i = 0; i < numUsed; i++) {
-	ScrnInfoPtr pScrn = NULL;
-	EntityInfoPtr pEnt;
-	int attrib_no;
-
-	/* Allocate a ScrnInfoRec and claim the slot */
-	pScrn = xf86ConfigPciEntity(pScrn, 0,usedChips[i],
-				    MGAPciChipsets, NULL, NULL,
-				    NULL, NULL, NULL);
-        if (pScrn != NULL) {
-	    MGAPtr pMga;
-
-	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = MGA_VERSION;
-	    pScrn->driverName	= MGA_DRIVER_NAME;
-	    pScrn->name		= MGA_NAME;
-	    pScrn->Probe	= MGAProbe;
-	    pScrn->PreInit	= MGAPreInit;
-	    pScrn->ScreenInit	= MGAScreenInit;
-	    pScrn->SwitchMode	= MGASwitchMode;
-	    pScrn->AdjustFrame	= MGAAdjustFrame;
-	    pScrn->EnterVT	= MGAEnterVT;
-	    pScrn->LeaveVT	= MGALeaveVT;
-	    pScrn->FreeScreen	= MGAFreeScreen;
-	    pScrn->ValidMode	= MGAValidMode;
-
-	    foundScreen = TRUE;
-
-	    /* Allocate the MGARec driverPrivate */
-	    if (!MGAGetRec(pScrn)) {
-		return FALSE;
-	    }
-
-	    pMga = MGAPTR(pScrn);
-
-	    /*
-	     * For cards that can do dual head per entity, mark the entity
-	     * as shareable.
-	     */
-	    pEnt = xf86GetEntityInfo(usedChips[i]);
-
-            switch (pEnt->chipset) {
-            case PCI_CHIP_MGA2064:
-                attrib_no = 0;
-                break;
-
-            case PCI_CHIP_MGA1064:
-                attrib_no = 1;
-                break;
-
-            case PCI_CHIP_MGA2164:
-                attrib_no = 2;
-                break;
-
-            case PCI_CHIP_MGA2164_AGP:
-                attrib_no = 3;
-                break;
-
-            case PCI_CHIP_MGAG100:
-                attrib_no = 4;
-                break;
-
-            case PCI_CHIP_MGAG100_PCI:
-                attrib_no = 5;
-                break;
-
-            case PCI_CHIP_MGAG200:
-                attrib_no = 6;
-                break;
-
-            case PCI_CHIP_MGAG200_PCI:
-                attrib_no = 7;
-                break;
-
-            case PCI_CHIP_MGAG400:
-                attrib_no = 8;
-                break;
-
-            case PCI_CHIP_MGAG550:
-                attrib_no = 9;
-                break;
-
-            case PCI_CHIP_MGAG200_SE_A_PCI:
-                attrib_no = 10;
-                break;
-
-            case PCI_CHIP_MGAG200_SE_B_PCI:
-                attrib_no = 11;
-                break;
-
-            case PCI_CHIP_MGAG200_EV_PCI:
-                attrib_no = 12;
-                break;
-
-            case PCI_CHIP_MGAG200_WINBOND_PCI:
-                attrib_no = 13;
-                break;
-
-            case PCI_CHIP_MGAG200_EH_PCI:
-                attrib_no = 14;
-                break;
-
-            case PCI_CHIP_MGAG200_ER_PCI:
-                attrib_no = 15;
-                break;
-
-            case PCI_CHIP_MGAG200_EW3_PCI:
-                attrib_no = 16;
-                break;
-
-            case PCI_CHIP_MGAG200_EH3_PCI:
-                attrib_no = 17;
-                break;
-
-	    default:
-		return FALSE;
-            }
-
-	    pMga->chip_attribs = & attribs[attrib_no];
-
-	    if (pMga->chip_attribs->dual_head_possible) {
-		MGAEntPtr pMgaEnt = NULL;
-		DevUnion *pPriv;
-
-		xf86SetEntitySharable(usedChips[i]);
-		/* Allocate an entity private if necessary */
-		if (MGAEntityIndex < 0)
-		    MGAEntityIndex = xf86AllocateEntityPrivateIndex();
-		pPriv = xf86GetEntityPrivate(pScrn->entityList[0], MGAEntityIndex);
-		if (!pPriv->ptr) {
-		    pPriv->ptr = XNFcallocarray(sizeof(MGAEntRec), 1);
-		    pMgaEnt = pPriv->ptr;
-		    pMgaEnt->lastInstance = -1;
-		} else {
-		    pMgaEnt = pPriv->ptr;
-		}
-		/*
-		 * Set the entity instance for this instance of the driver.  For
-		 * dual head per card, instance 0 is the "master" instance, driving
-		 * the primary head, and instance 1 is the "slave".
-		 */
-		pMgaEnt->lastInstance++;
-		xf86SetEntityInstanceForScreen(pScrn, pScrn->entityList[0],
-					       pMgaEnt->lastInstance);
-	    }
-        }
-    }
-    free(usedChips);
-
-    return foundScreen;
-}
-#endif
-
-
 /*
  * MGASoftReset --
  *
@@ -1054,12 +810,8 @@ MGACountRam(ScrnInfoPtr pScrn)
 	it.  At least, my cards don't advertise the documented
 	values (my 8 and 16 Meg G200s have the same values) */
     if (pMga->Primary) { /* can only trust this for primary cards */
-#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_read_u32(pMga->PciInfo, & biosInfo,
 				PCI_OPTION_REG);
-#else
-	biosInfo = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
-#endif
     }
 #endif
 
@@ -1145,14 +897,9 @@ MGACountRam(ScrnInfoPtr pScrn)
         if (pMga->is_G200WB) {
             uint32_t Option, MaxMapSize;
 
-#ifdef XSERVER_LIBPCIACCESS
             pci_device_cfg_read_u32(pMga->PciInfo, &Option,
                                     PCI_OPTION_REG);
             MaxMapSize = pMga->PciInfo->regions[0].size;
-#else
-            Option = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
-            MaxMapSize = 1UL << pMga->PciInfo->size[0];
-#endif
             Option = (Option & 0x3000000) >> 24 ;
 
             if (Option == 2)
@@ -1500,19 +1247,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!vgaHWGetHWRec(pScrn))
 	return FALSE;
 
-#ifndef XSERVER_LIBPCIACCESS
-    /* Find the PCI info for this screen */
-    pMga->PciInfo = xf86GetPciInfoForEntity(pMga->pEnt->index);
-    pMga->PciTag = pciTag(pMga->PciInfo->bus, pMga->PciInfo->device,
-			  pMga->PciInfo->func);
-#endif
-
     pMga->Primary = xf86IsPrimaryPci(pMga->PciInfo);
-
-#ifndef XSERVER_LIBPCIACCESS
-    xf86SetOperatingState(resVgaIo, pMga->pEnt->index, ResUnusedOpr);
-    xf86SetOperatingState(resVgaMem, pMga->pEnt->index, ResDisableOpr);
-#endif
 
     /* Set pScrn->monitor */
     pScrn->monitor = pScrn->confScreen->monitor;
@@ -1713,68 +1448,19 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	break;
     }
 
-#ifdef XSERVER_LIBPCIACCESS
     pMga->FbAddress = pMga->PciInfo->regions[pMga->framebuffer_bar].base_addr;
-#else
-    pMga->FbAddress = pMga->PciInfo->memBase[pMga->framebuffer_bar] & 0xff800000;
-#endif
 
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Linear framebuffer at 0x%lX\n",
 	       (unsigned long)pMga->FbAddress);
 
-#ifdef XSERVER_LIBPCIACCESS
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO registers at 0x%lX\n",
 	       (unsigned long) pMga->PciInfo->regions[pMga->io_bar].base_addr);
-#else
-    pMga->IOAddress = pMga->PciInfo->memBase[pMga->io_bar] & 0xffffc000;
-
-    xf86DrvMsg(pScrn->scrnIndex, from, "MMIO registers at 0x%lX\n",
-	       (unsigned long)pMga->IOAddress);
-#endif
 
     if (pMga->iload_bar != -1) {
-#ifdef XSERVER_LIBPCIACCESS
 	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
 		   "Pseudo-DMA transfer window at 0x%lX\n",
 		   (unsigned long) pMga->PciInfo->regions[pMga->iload_bar].base_addr);
-#else
-	if (pMga->PciInfo->memBase[2] != 0) {
-	    pMga->ILOADAddress = pMga->PciInfo->memBase[2] & 0xffffc000;
-	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		       "Pseudo-DMA transfer window at 0x%lX\n",
-		       (unsigned long)pMga->ILOADAddress);
-	}
-#endif
     }
-
-#ifndef XSERVER_LIBPCIACCESS
-    /*
-     * Find the BIOS base.  Get it from the PCI config if possible.  Otherwise
-     * use the VGA default.
-     */
-
-	/* details: rombase sdk pp 4-15 */
-	if (pMga->PciInfo->biosBase != 0) {
-	    pMga->BiosAddress = pMga->PciInfo->biosBase & 0xffff0000;
-	    pMga->BiosFrom = X_PROBED;
-	} else if (pMga->Primary) {
-	    pMga->BiosAddress = 0xc0000;
-	    pMga->BiosFrom = X_DEFAULT;
-	}
-    if (pMga->BiosAddress) {
-	xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom, "BIOS at 0x%lX\n",
-		   (unsigned long)pMga->BiosAddress);
-    }
-#endif
-
-#ifndef XSERVER_LIBPCIACCESS
-    if (xf86RegisterResources(pMga->pEnt->index, NULL, ResExclusive)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		"xf86RegisterResources() found resource conflicts\n");
-	MGAFreeRec(pScrn);
-	return FALSE;
-    }
-#endif
 
     /*
      * The first thing we should figure out is the depth, bpp, etc.
@@ -1866,13 +1552,9 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (pMga->is_G200SE) {
         /* Disable MTRR support on PCIe systems */
-#ifdef XSERVER_LIBPCIACCESS
 	uint32_t temp;
 
 	pci_device_cfg_read_u32(pMga->PciInfo, & temp, 0xDC);
-#else
-        CARD32 temp = pciReadLong(pMga->PciTag, 0xDC);
-#endif
 
         if ((temp & 0x0000FF00) != 0x0) {
             xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Disabling MTRR support.\n");
@@ -2091,23 +1773,6 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	break;
     }
 
-    /*
-     * Read the BIOS data struct
-     */
-
-#if defined(__alpha__) && !defined(XSERVER_LIBPCIACCESS)
-    /*
-     * Some old Digital-OEMed Matrox Millennium I cards have a VGA
-     * disable switch.  If the disable is on, we can't read the BIOS,
-     * and pMga->BiosAddress = 0x0. The disable switch is needed to
-     * allow multi-head operation with brain-dead console code... ;-}
-     */
-
-    if ((pMga->BiosAddress == 0) && !xf86IsPrimaryPci(pMga->PciInfo))
-        xf86DrvMsg(pScrn->scrnIndex, pMga->BiosFrom,
-                   "BIOS not found, skipping read\n");
-    else
-#endif
     mga_read_and_process_bios( pScrn );
 
 
@@ -2433,12 +2098,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	     && pMga->chip_attribs->probe_for_sdram) {
 	    uint32_t option_reg;
 
-#ifdef XSERVER_LIBPCIACCESS
 	    pci_device_cfg_read_u32(pMga->PciInfo, & option_reg,
 				    PCI_OPTION_REG);
-#else
-	    option_reg = pciReadLong(pMga->PciTag, PCI_OPTION_REG);
-#endif
 	    pMga->HasSDRAM = ((option_reg & (1 << 14)) == 0);
 	}
 	else {
@@ -2618,15 +2279,11 @@ static Bool
 MGAMapMem(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-#ifdef XSERVER_LIBPCIACCESS
     struct pci_device *const dev = pMga->PciInfo;
     struct pci_mem_region *region;
     int err;
-#endif
-
 
     if (!pMga->FBDev) {
-#ifdef XSERVER_LIBPCIACCESS
 	pciaddr_t fbaddr = pMga->FbAddress;
 	pciaddr_t fbsize = pMga->FbMapSize;
 	err = pci_device_map_range(dev,
@@ -2670,34 +2327,6 @@ MGAMapMem(ScrnInfoPtr pScrn)
 
 	if(pMga->entityPrivate != NULL)
 		pMga->entityPrivate->mappedIOUsage ++;
-
-#else
-	/*
-	 * For Alpha, we need to map SPARSE memory, since we need
-	 * byte/short access.  This is taken care of automatically by the
-	 * os-support layer.
-	 */
-	pMga->IOBase = xf86MapPciMem(pScrn->scrnIndex,
-				     VIDMEM_MMIO | VIDMEM_READSIDEEFFECT,
-				     pMga->PciTag, pMga->IOAddress, 0x4000);
-	if (pMga->IOBase == NULL)
-	    return FALSE;
-
-    if (pMga->is_G200ER)
-    {
-        pMga->FbBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
-                         pMga->PciTag, pMga->FbAddress,
-                         pMga->FbMapSize);
-    }
-    else
-    {
-        pMga->FbBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
-                         pMga->PciTag, pMga->FbAddress,
-                         pMga->FbMapSize);
-    }
-	if (pMga->FbBase == NULL)
-	    return FALSE;
-#endif
     }
     else {
 	pMga->FbBase = fbdevHWMapVidmem(pScrn);
@@ -2719,7 +2348,6 @@ MGAMapMem(ScrnInfoPtr pScrn)
 
     pMga->ILOADBase = NULL;
     if (pMga->iload_bar != -1) {
-#ifdef XSERVER_LIBPCIACCESS
         region = &dev->regions[pMga->iload_bar];
 
 	if(pMga->entityPrivate == NULL || pMga->entityPrivate->mappedILOADUsage == 0) {
@@ -2742,15 +2370,7 @@ MGAMapMem(ScrnInfoPtr pScrn)
 
 	if(pMga->entityPrivate != NULL)
 		pMga->entityPrivate->mappedILOADUsage ++;
-#else
-	pMga->ILOADBase = xf86MapPciMem(pScrn->scrnIndex,
-					VIDMEM_MMIO | VIDMEM_MMIO_32BIT |
-					VIDMEM_READSIDEEFFECT,
-					pMga->PciTag, pMga->ILOADAddress,
-					0x800000);
-#endif
     }
-
 
     return TRUE;
 }
@@ -2764,13 +2384,9 @@ static Bool
 MGAUnmapMem(ScrnInfoPtr pScrn)
 {
     MGAPtr pMga = MGAPTR(pScrn);
-#ifdef XSERVER_LIBPCIACCESS
     struct pci_device * const dev = pMga->PciInfo;
-#endif
-
 
     if (!pMga->FBDev) {
-#ifdef XSERVER_LIBPCIACCESS
 	    if(pMga->entityPrivate != NULL)
 		pMga->entityPrivate->mappedIOUsage--;
 
@@ -2785,10 +2401,6 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "UNMAPPING framebuffer 0x%08llX, 0x%llX.\n", (long long)(uintptr_t)pMga->FbBase, (long long)pMga->FbMapSize);
         pci_device_unmap_range(dev, pMga->FbBase,
 			       pMga->FbMapSize);
-#else
-	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->IOBase, 0x4000);
-	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->FbBase, pMga->FbMapSize);
-#endif
     }
     else {
 	fbdevHWUnmapVidmem(pScrn);
@@ -2796,7 +2408,6 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
     }
 
     if ((pMga->iload_bar != -1) && (pMga->ILOADBase != NULL)) {
-#ifdef XSERVER_LIBPCIACCESS
 	    if(pMga->entityPrivate != NULL)
 		pMga->entityPrivate->mappedILOADUsage--;
 
@@ -2807,10 +2418,6 @@ MGAUnmapMem(ScrnInfoPtr pScrn)
 		if(pMga->entityPrivate != NULL)
 		    pMga->entityPrivate->mappedILOADBase = NULL;
 	    }
-
-#else
-	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pMga->ILOADBase, 0x800000);
-#endif
     }
 
     pMga->IOBase = NULL;
@@ -3223,12 +2830,8 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
     else {
 	fbdevHWSave(pScrn);
 	/* Disable VGA core, and leave memory access on */
-#ifdef XSERVER_LIBPCIACCESS
 	pci_device_cfg_write_bits(pMga->PciInfo, 0x00000100, 0x00000000,
 				  PCI_OPTION_REG);
-#else
-	pciSetBitsLong(pMga->PciTag, PCI_OPTION_REG, 0x100, 0x000);
-#endif
 	if (!fbdevHWModeInit(pScrn, pScrn->currentMode))
 	    return FALSE;
 
