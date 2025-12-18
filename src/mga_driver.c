@@ -588,8 +588,6 @@ static const OptionInfoRec MGAOptions[] = {
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
-#ifdef XFree86LOADER
-
 static MODULESETUPPROTO(mgaSetup);
 
 static XF86ModuleVersionInfo mgaVersRec =
@@ -628,9 +626,6 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	return NULL;
     }
 }
-
-
-#endif /* XFree86LOADER */
 
 /*
  * ramdac info structure initialization
