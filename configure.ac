@@ -162,9 +162,6 @@ AM_CONDITIONAL(USE_EXA, test "x$USE_EXA" = xyes)
 
 AC_SUBST([moduledir])
 
-DRIVER_NAME=mga
-AC_SUBST([DRIVER_NAME])
-
 AC_CONFIG_FILES([
                 Makefile
                 src/Makefile
