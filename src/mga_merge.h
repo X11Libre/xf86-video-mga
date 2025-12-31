@@ -4,8 +4,8 @@
 void		MGADisplayPowerManagementSetMerged(ScrnInfoPtr pScrn,
 					     int PowerManagementMode,
 				             int flags);
-void	        MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y);
-void            MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL);
+void		MGAMergePointerMoved(ScrnInfoPtr arg, int x, int y);
+void		MGAAdjustMergeFrames(ScrnInfoPtr arg, int x, int y);
 Bool            MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags);
 Bool		MGACloseScreenMerged(ScreenPtr pScreen);
 Bool		MGASaveScreenMerged(ScreenPtr pScreen, int mode);

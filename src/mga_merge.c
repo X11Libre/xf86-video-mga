@@ -664,9 +664,8 @@ InRegion(int x, int y, region r) {
         low += test-hi; \
         hi = test; } } while (0)
  void
-MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
+MGAMergePointerMoved(ScrnInfoPtr pScrn, int x, int y)
 {
-  SCRN_INFO_PTR(arg);
   MGAPtr        pMga = MGAPTR(pScrn);
   ScrnInfoPtr   pScr2 = pMga->pScrn2;
 
@@ -783,8 +782,8 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
         pScrn->frameX1 = pScrn->frameX0 + pScrn->currentMode->HDisplay -1;
         pScrn->frameY1 = pScrn->frameY0 + pScrn->currentMode->VDisplay -1;
 
-        MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pMga->M1frameX0, pMga->M1frameY0));
-        MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS(pScrn, pScr2->frameX0, pScr2->frameY0));
+        MGAAdjustFrame(pScrn, pMga->M1frameX0, pMga->M1frameY0);
+        MGAAdjustFrameCrtc2(pScrn, pScr2->frameX0, pScr2->frameY0);
     }
 
 /*  if(pMga->PointerMoved)
@@ -794,8 +793,7 @@ MGAMergePointerMoved(SCRN_ARG_TYPE arg, int x, int y)
 
 
 void
-MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL) {
-    SCRN_INFO_PTR(arg);
+MGAAdjustMergeFrames(ScrnInfoPtr pScrn, int x, int y) {
     ScrnInfoPtr pScrn1 = pScrn;
     MGAPtr pMga = MGAPTR(pScrn1);
     ScrnInfoPtr pScrn2 = pMga->pScrn2;
@@ -860,8 +858,8 @@ MGAAdjustMergeFrames(ADJUST_FRAME_ARGS_DECL) {
     pScrn1->frameX1 = pScrn1->frameX0 + pScrn1->currentMode->HDisplay -1;
     pScrn1->frameY1 = pScrn1->frameY0 + pScrn1->currentMode->VDisplay -1;
 
-    MGAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pMga->M1frameX0, pMga->M1frameY0));
-    MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS(pScrn, pScrn2->frameX0, pScrn2->frameY0));
+    MGAAdjustFrame(pScrn, pMga->M1frameX0, pMga->M1frameY0);
+    MGAAdjustFrameCrtc2(pScrn, pScrn2->frameX0, pScrn2->frameY0);
     return;
 }
 

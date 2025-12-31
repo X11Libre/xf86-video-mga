@@ -92,17 +92,17 @@ static void	MGAIdentify(int flags);
 static Bool MGAPciProbe(DriverPtr drv, int entity_num,
     struct pci_device * dev, intptr_t match_data);
 static Bool	MGAPreInit(ScrnInfoPtr pScrn, int flags);
-static Bool	MGAScreenInit(SCREEN_INIT_ARGS_DECL);
-static Bool	MGAEnterVT(VT_FUNC_ARGS_DECL);
-static Bool	MGAEnterVTFBDev(VT_FUNC_ARGS_DECL);
-static void	MGALeaveVT(VT_FUNC_ARGS_DECL);
-static Bool	MGACloseScreen(CLOSE_SCREEN_ARGS_DECL);
+static Bool	MGAScreenInit(ScreenPtr pScreen, int argc, char **argv);
+static Bool	MGAEnterVT(ScrnInfoPtr arg);
+static Bool	MGAEnterVTFBDev(ScrnInfoPtr arg);
+static void	MGALeaveVT(ScrnInfoPtr arg);
+static Bool	MGACloseScreen(ScreenPtr pScreen);
 static Bool	MGASaveScreen(ScreenPtr pScreen, int mode);
 static Bool	MGASaveScreenCrtc2(ScreenPtr pScreen, int mode);
 
 /* Optional functions */
-static void	MGAFreeScreen(FREE_SCREEN_ARGS_DECL);
-static ModeStatus MGAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode,
+static void	MGAFreeScreen(ScrnInfoPtr arg);
+static ModeStatus MGAValidMode(ScrnInfoPtr arg, DisplayModePtr mode,
 			       Bool verbose, int flags);
 
 #if ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ >= 4)
@@ -117,7 +117,7 @@ static Bool	MGAUnmapMem(ScrnInfoPtr pScrn);
 static void	MGASave(ScrnInfoPtr pScrn);
 static void	MGARestore(ScrnInfoPtr pScrn);
 static Bool	MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
-static void 	MGABlockHandler(BLOCKHANDLER_ARGS_DECL);
+static void 	MGABlockHandler(ScreenPtr arg, pointer pTimeout);
 static void	MGAG100BlackMagic(ScrnInfoPtr pScrn);
 
 static int MGAEntityIndex = -1;
@@ -1090,18 +1090,18 @@ MGAdoDDC(ScrnInfoPtr pScrn)
 
     /* DDC for second head... */
     if (pMga->SecondCrtc && pMga->DDC_Bus2) {
-	MonInfo = xf86DoEDID_DDC2(XF86_SCRN_ARG(pScrn), pMga->DDC_Bus2);
+	MonInfo = xf86DoEDID_DDC2(pScrn, pMga->DDC_Bus2);
 	from = "I2C";
     } else {
 	/* Its the first head... */
 	if (pMga->DDC_Bus1) {
-	    MonInfo = xf86DoEDID_DDC2(XF86_SCRN_ARG(pScrn), pMga->DDC_Bus1);
+	    MonInfo = xf86DoEDID_DDC2(pScrn, pMga->DDC_Bus1);
 	    from = "I2C";
 	}
 	if (!MonInfo)
 	    /* Read and output monitor info using DDC1 */
 	    if (pMga->ddc1Read && pMga->DDC1SetSpeed) {
-		MonInfo = xf86DoEDID_DDC1(XF86_SCRN_ARG(pScrn),
+		MonInfo = xf86DoEDID_DDC1(pScrn,
 					  pMga->DDC1SetSpeed,
 					  pMga->ddc1Read ) ;
 		from = "DDC1";
@@ -2735,7 +2735,7 @@ MGACrtc2FillStrip(ScrnInfoPtr pScrn)
 /* This gets called at the start of each server generation */
 
 static Bool
-MGAScreenInit(SCREEN_INIT_ARGS_DECL)
+MGAScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     vgaHWPtr hwp;
@@ -2847,7 +2847,7 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
     /* Darken the screen for aesthetic reasons and set the viewport
      */
     (*pScreen->SaveScreen)(pScreen, SCREEN_SAVER_ON);
-    pScrn->AdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
+    pScrn->AdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
 
     /*
@@ -3100,9 +3100,8 @@ MGAScreenInit(SCREEN_INIT_ARGS_DECL)
 
 /* Usually mandatory */
 Bool
-MGASwitchMode(SWITCH_MODE_ARGS_DECL)
+MGASwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    SCRN_INFO_PTR(arg);
     if  (mode->Flags & 0x80000000) {
  	return FALSE;
     }   else
@@ -3124,9 +3123,8 @@ MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y)
  */
 /* Usually mandatory */
 void
-MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
+MGAAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    SCRN_INFO_PTR(arg);
     int Base, tmp, count, last_vcount;
 
     MGAFBLayout *pLayout;
@@ -3174,9 +3172,8 @@ MGAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
 }
 
 void
-MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS_DECL)
+MGAAdjustFrameCrtc2(ScrnInfoPtr pScrn, int x, int y)
 {
-    SCRN_INFO_PTR(arg);
     int Base;
     MGAFBLayout *pLayout;
     MGAPtr pMga;
@@ -3207,9 +3204,8 @@ MGAAdjustFrameCrtc2(ADJUST_FRAME_ARGS_DECL)
 
 /* Mandatory */
 static Bool
-MGAEnterVT(VT_FUNC_ARGS_DECL)
+MGAEnterVT(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
     MGAPtr pMga;
 
     pMga = MGAPTR(pScrn);
@@ -3226,7 +3222,7 @@ MGAEnterVT(VT_FUNC_ARGS_DECL)
 
     if (!MGAModeInit(pScrn, pScrn->currentMode))
 	return FALSE;
-    pScrn->AdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
+    pScrn->AdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
     /* For the second head, work around display problem. */
    if (pMga->SecondCrtc) {
@@ -3237,9 +3233,8 @@ MGAEnterVT(VT_FUNC_ARGS_DECL)
 }
 
 static Bool
-MGAEnterVTFBDev(VT_FUNC_ARGS_DECL)
+MGAEnterVTFBDev(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
 #ifdef MGADRI
     ScreenPtr pScreen;
     MGAPtr pMga;
@@ -3251,7 +3246,7 @@ MGAEnterVTFBDev(VT_FUNC_ARGS_DECL)
     }
 #endif
 
-    fbdevHWEnterVT(VT_FUNC_ARGS);
+    fbdevHWEnterVT(pScrn);
     MGAStormEngineInit(pScrn);
     return TRUE;
 }
@@ -3275,9 +3270,8 @@ MGAEnterVTFBDev(VT_FUNC_ARGS_DECL)
 
 /* Mandatory */
 static void
-MGALeaveVT(VT_FUNC_ARGS_DECL)
+MGALeaveVT(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
 #ifdef MGADRI
     MGAPtr pMga = MGAPTR(pScrn);
@@ -3305,7 +3299,7 @@ MGALeaveVT(VT_FUNC_ARGS_DECL)
 
 /* Mandatory */
 static Bool
-MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
+MGACloseScreen(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
@@ -3386,7 +3380,7 @@ MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
 
     pScreen->CloseScreen = pMga->CloseScreen;
 
-    return (*pScreen->CloseScreen)(CLOSE_SCREEN_ARGS);
+    return (*pScreen->CloseScreen)(pScreen);
 }
 
 
@@ -3394,9 +3388,8 @@ MGACloseScreen(CLOSE_SCREEN_ARGS_DECL)
 
 /* Optional */
 static void
-MGAFreeScreen(FREE_SCREEN_ARGS_DECL)
+MGAFreeScreen(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
     /*
      * This only gets called when a screen is being deleted.  It does not
      * get called routinely at the end of a server generation.
@@ -3411,9 +3404,8 @@ MGAFreeScreen(FREE_SCREEN_ARGS_DECL)
 
 /* Optional */
 static ModeStatus
-MGAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
+MGAValidMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool verbose, int flags)
 {
-    SCRN_INFO_PTR(arg);
     int lace;
     MGAPtr pMga = MGAPTR(pScrn);
 
@@ -3617,9 +3609,8 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 
 
 static void
-MGABlockHandler (BLOCKHANDLER_ARGS_DECL)
+MGABlockHandler (ScreenPtr pScreen, void *pTimeout)
 {
-    SCREEN_PTR(arg);
     ScrnInfoPtr    pScrn = xf86ScreenToScrn(pScreen);
     MGAPtr         pMga = MGAPTR(pScrn);
 
@@ -3627,7 +3618,7 @@ MGABlockHandler (BLOCKHANDLER_ARGS_DECL)
 	(*pMga->PaletteLoadCallback)(pScrn);
 
     pScreen->BlockHandler = pMga->BlockHandler;
-    (*pScreen->BlockHandler) (BLOCKHANDLER_ARGS);
+    (*pScreen->BlockHandler) (pScreen, pTimeout);
     pScreen->BlockHandler = MGABlockHandler;
 
     if(pMga->VideoTimerCallback) {

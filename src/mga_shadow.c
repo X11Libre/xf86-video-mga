@@ -42,9 +42,8 @@ MGARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 }
 
 void
-MGAPointerMoved(SCRN_ARG_TYPE arg, int x, int y)
+MGAPointerMoved(ScrnInfoPtr pScrn, int x, int y)
 {
-    SCRN_INFO_PTR(arg);
     MGAPtr pMga = MGAPTR(pScrn);
     int newX, newY;
 
@@ -56,7 +55,7 @@ MGAPointerMoved(SCRN_ARG_TYPE arg, int x, int y)
 	newY = pScrn->pScreen->width - x - 1;
     }
 
-    (*pMga->PointerMoved)(arg, newX, newY);
+    (*pMga->PointerMoved)(pScrn, newX, newY);
 }
 
 void
