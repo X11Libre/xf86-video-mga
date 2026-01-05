@@ -117,7 +117,7 @@ static Bool	MGAUnmapMem(ScrnInfoPtr pScrn);
 static void	MGASave(ScrnInfoPtr pScrn);
 static void	MGARestore(ScrnInfoPtr pScrn);
 static Bool	MGAModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
-static void 	MGABlockHandler(ScreenPtr arg, pointer pTimeout);
+static void 	MGABlockHandler(ScreenPtr arg, void *pTimeout);
 static void	MGAG100BlackMagic(ScrnInfoPtr pScrn);
 
 static int MGAEntityIndex = -1;
@@ -588,8 +588,8 @@ static XF86ModuleVersionInfo mgaVersRec =
 
 _X_EXPORT XF86ModuleData MGA_MODULE_DATA = { &mgaVersRec, mgaSetup, NULL };
 
-static pointer
-mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
+static void*
+mgaSetup(void *module, void *opts, int *errmaj, int *errmin)
 {
     static Bool setupDone = FALSE;
 
@@ -602,7 +602,7 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	 * The return value must be non-NULL on success even though there
 	 * is no TearDownProc.
 	 */
-	return (pointer)1;
+	return (void*)1;
     } else {
 	if (errmaj) *errmaj = LDR_ONCEONLY;
 	return NULL;
