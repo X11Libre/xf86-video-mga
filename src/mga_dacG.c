@@ -2219,7 +2219,7 @@ MGAGRamdacInit(ScrnInfoPtr pScrn)
     MGAdac->LoadCursorImage        = MGAGLoadCursorImage;
     MGAdac->HideCursor             = MGAGHideCursor;
     if ((pMga->Chipset == PCI_CHIP_MGAG100)
-	|| (pMga->Chipset == PCI_CHIP_MGAG100)) {
+	|| (pMga->Chipset == PCI_CHIP_MGAG100_PCI)) {
       MGAdac->SetCursorColors        = MGAGSetCursorColorsG100;
       MGAdac->ShowCursor             = MGAGShowCursorG100;
     } else {
