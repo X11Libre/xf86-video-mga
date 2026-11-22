@@ -2104,7 +2104,7 @@ MGAG_I2CPutBits(I2CBusPtr b, int clock, int data)
 
 
 static I2CBusPtr
-mgag_create_i2c_bus(char *name, unsigned bus_index, unsigned scrn_index)
+mgag_create_i2c_bus(const char *name, unsigned bus_index, unsigned scrn_index)
 {
     I2CBusPtr I2CPtr = xf86CreateI2CBusRec();
 
