@@ -1592,7 +1592,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pScrn->rgbBits = 8;
 
 #ifdef MGADRI
-    from = X_DEFAULT;
+    MessageType agp_from = X_DEFAULT;
     pMga->agpMode = MGA_DEFAULT_AGP_MODE;
 
     if (xf86GetOptValInteger(pMga->Options,
@@ -1603,16 +1603,16 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
        if (pMga->agpMode > MGA_MAX_AGP_MODE) {
 	  pMga->agpMode = MGA_MAX_AGP_MODE;
        }
-       from = X_CONFIG;
+       agp_from = X_CONFIG;
     }
     if (xf86GetOptValInteger(pMga->Options,
                              OPTION_AGP_SIZE, &(pMga->agpSize))) {
                              /* check later */
-       xf86DrvMsg(pScrn->scrnIndex, from, "Using %d MB of AGP memory\n",
+       xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Using %d MB of AGP memory\n",
 	          pMga->agpSize);
     }
 
-    xf86DrvMsg(pScrn->scrnIndex, from, "Using AGP %dx mode\n",
+    xf86DrvMsg(pScrn->scrnIndex, agp_from, "Using AGP %dx mode\n",
 	       pMga->agpMode);
 
     if (xf86ReturnOptValBool(pMga->Options, OPTION_OLDDMA, FALSE)) {
@@ -1628,20 +1628,21 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	pMga->NoAccel = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
     } else {
-	int from = X_DEFAULT;
+	MessageType accel_from = X_DEFAULT;
 #ifdef USE_EXA
-	const char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
+	const char *accel_method = xf86GetOptValString(pMga->Options,
+						       OPTION_ACCELMETHOD);
 #endif
 	pMga->NoAccel = FALSE;
 	pMga->Exa = FALSE;
 #ifdef USE_EXA
 	pMga->Exa = TRUE;
-	if (!xf86NameCmp(s, "EXA")) {
+	if (!xf86NameCmp(accel_method, "EXA")) {
 	    pMga->Exa = TRUE;
-	    from = X_CONFIG;
+	    accel_from = X_CONFIG;
 	}
 #endif
-	xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration\n",
+	xf86DrvMsg(pScrn->scrnIndex, accel_from, "Using %s acceleration\n",
 		   pMga->Exa ? "EXA" : "no");
     }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_PCI_RETRY, FALSE)) {

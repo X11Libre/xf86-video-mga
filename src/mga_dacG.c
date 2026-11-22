@@ -660,10 +660,6 @@ static void MGAG200ERComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *piM, int 
                         //
                         // XG200ERPIXPLLCP R<1:0> cg<7:4> (Use R value)
                         *piP = (CARD8)ulR | (CARD8)(ulR<<3);
-
-                        // Test
-                        int ftest = (G200ER_PLLREF * (ulN+1)) / ((ulR+1) * aulMDivValue[ulM] * (ulO+1));
-                        ftest=ftest;
                     }
                 } // End O Loop
             } // End M Loop
@@ -2104,7 +2100,7 @@ MGAG_I2CPutBits(I2CBusPtr b, int clock, int data)
 
 
 static I2CBusPtr
-mgag_create_i2c_bus(char *name, unsigned bus_index, unsigned scrn_index)
+mgag_create_i2c_bus(const char *name, unsigned bus_index, unsigned scrn_index)
 {
     I2CBusPtr I2CPtr = xf86CreateI2CBusRec();
 
@@ -2219,7 +2215,7 @@ MGAGRamdacInit(ScrnInfoPtr pScrn)
     MGAdac->LoadCursorImage        = MGAGLoadCursorImage;
     MGAdac->HideCursor             = MGAGHideCursor;
     if ((pMga->Chipset == PCI_CHIP_MGAG100)
-	|| (pMga->Chipset == PCI_CHIP_MGAG100)) {
+	|| (pMga->Chipset == PCI_CHIP_MGAG100_PCI)) {
       MGAdac->SetCursorColors        = MGAGSetCursorColorsG100;
       MGAdac->ShowCursor             = MGAGShowCursorG100;
     } else {
