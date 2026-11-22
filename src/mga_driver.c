@@ -579,7 +579,7 @@ static XF86ModuleVersionInfo mgaVersRec =
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
-    PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
+    MGA_VERSION_MAJOR, MGA_VERSION_MINOR, MGA_VERSION_PATCH,
 	ABI_CLASS_VIDEODRV,			/* This is a video driver */
 	ABI_VIDEODRV_VERSION,
 	MOD_CLASS_VIDEODRV,
@@ -587,6 +587,10 @@ static XF86ModuleVersionInfo mgaVersRec =
 };
 
 _X_EXPORT XF86ModuleData MGA_MODULE_DATA = { &mgaVersRec, mgaSetup, NULL };
+
+#ifdef XF86_MODULE_VERSION_SUFFIX
+XF86_MODULE_VERSION_SUFFIX(mga, MGA_VERSION_SUFFIX);
+#endif
 
 static void*
 mgaSetup(void *module, void *opts, int *errmaj, int *errmin)
