@@ -77,17 +77,17 @@ CopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest, DisplayModePtr i, DisplayM
         switch(srel) {
             case mgaLeftOf:
             case mgaRightOf:
-                dx = min(pScrn->virtualX,i->HDisplay + j->HDisplay) -  mode->HDisplay;
-                dy = min(pScrn->virtualY,  max(i->VDisplay,j->VDisplay)) - mode->VDisplay;
+                dx = MIN(pScrn->virtualX,i->HDisplay + j->HDisplay) -  mode->HDisplay;
+                dy = MIN(pScrn->virtualY,  MAX(i->VDisplay,j->VDisplay)) - mode->VDisplay;
                 break;
             case mgaAbove:
             case mgaBelow:
-                dy = min(pScrn->virtualY,i->VDisplay + j->VDisplay) - mode->VDisplay;
-                dx = min(pScrn->virtualX, max(i->HDisplay,j->HDisplay)) - mode->HDisplay;
+                dy = MIN(pScrn->virtualY,i->VDisplay + j->VDisplay) - mode->VDisplay;
+                dx = MIN(pScrn->virtualX, MAX(i->HDisplay,j->HDisplay)) - mode->HDisplay;
                 break;
             case mgaClone:
-                dx = min(pScrn->virtualX, max(i->HDisplay,j->HDisplay)) - mode->HDisplay;
-                dy = min(pScrn->virtualY, max(i->VDisplay,j->VDisplay)) - mode->VDisplay;
+                dx = MIN(pScrn->virtualX, MAX(i->HDisplay,j->HDisplay)) - mode->HDisplay;
+                dy = MIN(pScrn->virtualY, MAX(i->VDisplay,j->VDisplay)) - mode->VDisplay;
                 break;
         }
     mode->HDisplay += dx;

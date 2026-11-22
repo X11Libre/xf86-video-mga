@@ -91,11 +91,11 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     switch (pMga->Chipset) {
     case PCI_CHIP_MGAG200_SE_A_PCI:
     case PCI_CHIP_MGAG200_SE_B_PCI:
-	maxlines = (min(pMga->FbUsableSize, 1*1024*1024)) /
+	maxlines = (MIN(pMga->FbUsableSize, 1*1024*1024)) /
 		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
 	break;
     default:
-	maxlines = (min(pMga->FbUsableSize, 16*1024*1024)) /
+	maxlines = (MIN(pMga->FbUsableSize, 16*1024*1024)) /
 		   (pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel / 8);
 	break;
     }

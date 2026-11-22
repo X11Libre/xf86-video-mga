@@ -138,11 +138,11 @@ SECOND_PASS:
 	    switch (pMga->Chipset) {
 	    case PCI_CHIP_MGAG200_SE_A_PCI:
 	    case PCI_CHIP_MGAG200_SE_B_PCI:
-		mode->pixmapHeight = (min(pMga->FbUsableSize, 1*1024*1024)) /
+		mode->pixmapHeight = (MIN(pMga->FbUsableSize, 1*1024*1024)) /
 				     mode->bytesPerScanline;
 		break;
 	    default:
-		mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) /
+		mode->pixmapHeight = (MIN(pMga->FbUsableSize, 16*1024*1024)) /
 				     mode->bytesPerScanline;
 	    }
 	    mode->maxViewportX = mode->imageWidth - mode->viewportWidth;
