@@ -1829,7 +1829,7 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 			   "Crtc2 will use %dK of VideoRam\n",
 			   adjust);
 	    } else {
-	        adjust = min(adjust, 8192);
+	        adjust = MIN(adjust, 8192);
 	        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
 			   "Crtc2 will use %dK of VideoRam\n",
 			   adjust);
