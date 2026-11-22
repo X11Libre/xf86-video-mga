@@ -660,10 +660,6 @@ static void MGAG200ERComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *piM, int 
                         //
                         // XG200ERPIXPLLCP R<1:0> cg<7:4> (Use R value)
                         *piP = (CARD8)ulR | (CARD8)(ulR<<3);
-
-                        // Test
-                        int ftest = (G200ER_PLLREF * (ulN+1)) / ((ulR+1) * aulMDivValue[ulM] * (ulO+1));
-                        ftest=ftest;
                     }
                 } // End O Loop
             } // End M Loop
